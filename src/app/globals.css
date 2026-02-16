@@ -1,0 +1,99 @@
+/* Import Inter font - must be first */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@import "tailwindcss";
+
+/* Custom theme variables */
+@theme {
+  /* Baby Blue Primary Colors */
+  --color-primary-50: #F0F9FF;
+  --color-primary-100: #E0F2FE;
+  --color-primary-200: #BAE6FD;
+  --color-primary-300: #7DD3FC;
+  --color-primary-400: #38BDF8;
+  --color-primary-500: #3B9AFF;
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-800: #1E40AF;
+  --color-primary-900: #1E3A8A;
+  
+  /* Baby Blue Accent */
+  --color-baby-blue-50: #F0F9FF;
+  --color-baby-blue-100: #E0F2FE;
+  --color-baby-blue-200: #BAE6FD;
+  --color-baby-blue-300: #7DD3FC;
+  --color-baby-blue-400: #38BDF8;
+  --color-baby-blue-500: #3B9AFF;
+  --color-baby-blue-600: #2563EB;
+  --color-baby-blue-700: #1D4ED8;
+  --color-baby-blue-800: #1E40AF;
+  --color-baby-blue-900: #1E3A8A;
+  
+  /* Success Colors */
+  --color-success-50: #F0FDF4;
+  --color-success-100: #DCFCE7;
+  --color-success-200: #BBF7D0;
+  --color-success-300: #86EFAC;
+  --color-success-400: #4ADE80;
+  --color-success-500: #22C55E;
+  --color-success-600: #16A34A;
+  --color-success-700: #15803D;
+  --color-success-800: #166534;
+  --color-success-900: #14532D;
+  
+  /* Warning Colors */
+  --color-warning-50: #FFFBEB;
+  --color-warning-100: #FEF3C7;
+  --color-warning-200: #FDE68A;
+  --color-warning-300: #FCD34D;
+  --color-warning-400: #FBBF24;
+  --color-warning-500: #F59E0B;
+  --color-warning-600: #D97706;
+  --color-warning-700: #B45309;
+  --color-warning-800: #92400E;
+  --color-warning-900: #78350F;
+  
+  /* Error Colors */
+  --color-error-50: #FEF2F2;
+  --color-error-100: #FEE2E2;
+  --color-error-200: #FECACA;
+  --color-error-300: #FCA5A5;
+  --color-error-400: #F87171;
+  --color-error-500: #EF4444;
+  --color-error-600: #DC2626;
+  --color-error-700: #B91C1C;
+  --color-error-800: #991B1B;
+  --color-error-900: #7F1D1D;
+
+  /* Custom shadows */
+  --shadow-soft: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  --shadow-medium: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 30px -5px rgba(0, 0, 0, 0.04);
+  --shadow-blue-glow: 0 4px 20px -2px rgba(59, 154, 255, 0.25);
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Focus states for accessibility */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px white, 0 0 0 4px var(--color-primary-500);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
