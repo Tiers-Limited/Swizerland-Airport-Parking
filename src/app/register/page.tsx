@@ -6,12 +6,14 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Input, Card, Alert, Logo } from '@/components/ui';
 import { isValidEmail, isValidSwissPhone } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 type AccountType = 'customer' | 'host';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isAuthenticated } = useAuth();
+  const { t } = useI18n();
   
   const [step, setStep] = useState<'type' | 'details'>('type');
   const [accountType, setAccountType] = useState<AccountType>('customer');
@@ -49,25 +51,25 @@ export default function RegisterPage() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('auth.nameRequired');
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.name = t('auth.nameMinLength');
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.emailRequired');
     } else if (!isValidEmail(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = t('auth.emailInvalid');
     }
     if (formData.phone && !isValidSwissPhone(formData.phone)) {
-      newErrors.phone = 'Please enter a valid Swiss phone number';
+      newErrors.phone = t('auth.phoneInvalid');
     }
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = t('auth.passwordMinLength');
     }
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('auth.passwordsMismatch');
     }
 
     setErrors(newErrors);
@@ -88,7 +90,7 @@ export default function RegisterPage() {
         password: formData.password,
         name: formData.name.trim(),
         phone: formData.phone || undefined,
-        role: accountType,
+        role: accountType, // 'host' or 'customer' — host profile is created separately during onboarding
       });
 
       if (result.success) {
@@ -99,10 +101,10 @@ export default function RegisterPage() {
           router.push('/account');
         }
       } else {
-        setGeneralError(result.error || 'Registration failed. Please try again.');
+        setGeneralError(result.error || t('auth.registerFailed'));
       }
     } catch (err) {
-      setGeneralError('An unexpected error occurred. Please try again.');
+      setGeneralError(t('auth.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -123,8 +125,8 @@ export default function RegisterPage() {
           {step === 'type' ? (
             <Card padding="lg" className="animate-fade-in">
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Create an account</h1>
-                <p className="text-gray-500 mt-2">Choose how you want to use ZurichPark</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('auth.registerTitle')}</h1>
+                <p className="text-gray-500 mt-2">{t('auth.chooseType')}</p>
               </div>
 
               <div className="space-y-4">
@@ -145,9 +147,9 @@ export default function RegisterPage() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">I'm a traveler</h3>
+                      <h3 className="font-semibold text-gray-900">{t('auth.imTraveler')}</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        Book parking spaces near Zurich Airport with shuttle service
+                        {t('auth.travelDesc')}
                       </p>
                     </div>
                   </div>
@@ -170,9 +172,9 @@ export default function RegisterPage() {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">I'm a parking company</h3>
+                      <h3 className="font-semibold text-gray-900">{t('auth.imCompany')}</h3>
                       <p className="text-sm text-gray-500 mt-1">
-                        List your parking spaces and manage bookings
+                        {t('auth.companyDesc')}
                       </p>
                     </div>
                   </div>
@@ -181,9 +183,9 @@ export default function RegisterPage() {
 
               <div className="mt-8 text-center">
                 <p className="text-sm text-gray-500">
-                  Already have an account?{' '}
+                  {t('auth.hasAccount')}{' '}
                   <Link href="/login" className="text-baby-blue-600 hover:text-baby-blue-700 font-medium">
-                    Sign in
+                    {t('common.signIn')}
                   </Link>
                 </p>
               </div>
@@ -203,9 +205,9 @@ export default function RegisterPage() {
 
               <div className="text-center mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {accountType === 'host' ? 'Create host account' : 'Create your account'}
+                  {accountType === 'host' ? t('auth.createHostAccount') : t('auth.registerTitle')}
                 </h1>
-                <p className="text-gray-500 mt-2">Fill in your details to get started</p>
+                <p className="text-gray-500 mt-2">{t('auth.fillDetails')}</p>
               </div>
 
               {generalError && (
@@ -216,7 +218,7 @@ export default function RegisterPage() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <Input
-                  label="Full name"
+                  label={t('auth.name')}
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
@@ -231,7 +233,7 @@ export default function RegisterPage() {
                 />
 
                 <Input
-                  label="Email address"
+                  label={t('auth.email')}
                   type="email"
                   name="email"
                   value={formData.email}
@@ -243,31 +245,31 @@ export default function RegisterPage() {
                 />
 
                 <Input
-                  label="Phone number"
+                  label={t('auth.phone')}
                   type="tel"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+41 XX XXX XX XX"
                   error={errors.phone}
-                  helperText="Optional, but recommended for booking updates"
+                  helperText={t('auth.phoneHelper')}
                 />
 
                 <Input
-                  label="Password"
+                  label={t('auth.password')}
                   type="password"
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
                   error={errors.password}
-                  helperText="At least 8 characters"
+                  helperText={t('auth.passwordHelper')}
                   autoComplete="new-password"
                   required
                 />
 
                 <Input
-                  label="Confirm password"
+                  label={t('auth.confirmPassword')}
                   type="password"
                   name="confirmPassword"
                   value={formData.confirmPassword}
@@ -284,18 +286,18 @@ export default function RegisterPage() {
                   size="lg"
                   isLoading={isLoading}
                 >
-                  Create account
+                  {t('auth.createAccount')}
                 </Button>
               </form>
 
               <p className="text-center text-sm text-gray-500 mt-6">
-                By creating an account, you agree to our{' '}
+                {t('auth.byCreating')}{' '}
                 <Link href="/terms" className="text-baby-blue-600 hover:text-baby-blue-700">
-                  Terms of Service
+                  {t('booking.termsOfService')}
                 </Link>{' '}
-                and{' '}
+                {t('auth.and')}{' '}
                 <Link href="/privacy" className="text-baby-blue-600 hover:text-baby-blue-700">
-                  Privacy Policy
+                  {t('booking.privacyPolicy')}
                 </Link>
               </p>
             </Card>

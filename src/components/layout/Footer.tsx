@@ -1,19 +1,21 @@
 import Link from 'next/link';
 import { Logo } from '@/components/ui';
+import { useI18n } from '@/i18n';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { t } = useI18n();
 
   const navigation = {
     product: [
-      { name: 'How It Works', href: '/how-it-works' },
-      { name: 'Search Parking', href: '/zurich' },
+      { name: t('footer.howItWorks'), href: '/how-it-works' },
+      { name: t('footer.searchParking'), href: '/zurich' },
     //   { name: 'Pricing', href: '/pricing' },
     ],
     support: [
-      { name: 'FAQ', href: '/faq' },
-      { name: 'Contact Us', href: '/contact' },
-      { name: 'Help Center', href: '/help' },
+      { name: t('footer.faq'), href: '/faq' },
+      { name: t('footer.contactUs'), href: '/contact' },
+      { name: t('footer.helpCenter'), href: '/help' },
     ],
     // company: [
     //   { name: 'About Us', href: '/about' },
@@ -21,9 +23,9 @@ export default function Footer() {
     //   { name: 'Careers', href: '/careers' },
     // ],
     legal: [
-      { name: 'Terms of Service', href: '/terms' },
-      { name: 'Privacy Policy', href: '/privacy' },
-      { name: 'Cancellation Policy', href: '/cancellation-policy' },
+      { name: t('footer.terms'), href: '/terms' },
+      { name: t('footer.privacy'), href: '/privacy' },
+      { name: t('footer.cancellation'), href: '/cancellation-policy' },
     ],
   };
 
@@ -58,13 +60,13 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-gray-400 text-sm">
-              Secure airport parking near Zurich Airport with integrated shuttle service.
+              {t('footer.tagline')}
             </p>
           </div>
 
           {/* Product */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Product</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{t('footer.product')}</h3>
             <ul className="space-y-3">
               {navigation.product.map((item) => (
                 <li key={item.name}>
@@ -81,7 +83,7 @@ export default function Footer() {
 
           {/* Support */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Support</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{t('footer.support')}</h3>
             <ul className="space-y-3">
               {navigation.support.map((item) => (
                 <li key={item.name}>
@@ -115,7 +117,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Legal</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{t('footer.legal')}</h3>
             <ul className="space-y-3">
               {navigation.legal.map((item) => (
                 <li key={item.name}>
@@ -135,7 +137,7 @@ export default function Footer() {
         <div className="mt-12 pt-8 border-t border-gray-800">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-gray-400">
-              © {currentYear} ZurichPark. All rights reserved.
+              © {currentYear} ZurichPark. {t('footer.allRights')}
             </p>
             <div className="flex items-center gap-4">
               {/* Social links */}

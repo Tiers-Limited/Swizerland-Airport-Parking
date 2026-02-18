@@ -47,3 +47,5 @@ export type { TabsProps, TabItem } from './Tabs';
 
 export { default as Toggle } from './Toggle';
 export type { ToggleProps } from './Toggle';
+
+export { default as LanguageSwitcher } from './LanguageSwitcher';

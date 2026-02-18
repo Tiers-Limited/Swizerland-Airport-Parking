@@ -271,15 +271,22 @@ export interface ShuttlePassenger {
 
 export interface ShuttleVehicle {
   id: string;
-  listingId: string;
-  name: string;
-  plateNumber: string;
-  capacity: number;
-  isActive: boolean;
+  location_id: string;
+  plate: string;
+  capacity_passengers: number;
+  capacity_luggage: number;
+  vehicle_type?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  active: boolean;
+  maintenance_notes?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Host Types
-export type HostType = 'individual' | 'company';
+export type HostType = 'operator' | 'private';
 export type VerificationStatus = 'pending' | 'approved' | 'rejected';
 
 export interface HostProfile {

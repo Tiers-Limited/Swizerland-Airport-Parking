@@ -172,11 +172,11 @@ export function canAccessRoute(role: UserRole, route: string): boolean {
 export function getDefaultRedirectPath(role: UserRole): string {
   const redirectPaths: Record<UserRole, string> = {
     customer: '/account',
-    host: '/host/dashboard',
-    dispatcher: '/dispatch/dashboard',
+    host: '/host',
+    dispatcher: '/dispatch',
     driver: '/driver/trips',
-    admin: '/admin/dashboard',
-    super_admin: '/admin/dashboard',
+    admin: '/admin',
+    super_admin: '/admin',
   };
 
   return redirectPaths[role] || '/';

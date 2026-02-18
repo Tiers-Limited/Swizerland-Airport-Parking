@@ -27,6 +27,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     const generatedId = useId();
     const inputId = id || generatedId;
 
+    // normalize `value` so React never receives `null` for the input value
+    const { value: propValue, ...restProps } = props as InputHTMLAttributes<HTMLInputElement>;
+    const normalizedValue = propValue === null ? '' : propValue;
+
     return (
       <div className="w-full">
         {label && (
@@ -57,7 +61,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
               rightIcon && 'pr-10',
               className
             )}
-            {...props}
+            value={normalizedValue}
+            {...restProps}
           />
           {rightIcon && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">

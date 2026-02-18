@@ -4,9 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRBAC } from '@/hooks/useRBAC';
-import { Logo, Button } from '@/components/ui';
+import { Logo, Button, LanguageSwitcher } from '@/components/ui';
 import { cn, getInitials, getFirstName } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 
 interface HeaderProps {
   transparent?: boolean;
@@ -15,15 +15,15 @@ interface HeaderProps {
 export default function Header({ transparent = false }: HeaderProps) {
   const pathname = usePathname();
   const { isAuthenticated, user, logout } = useAuth();
-  const { getRedirectPath } = useRBAC();
+  const { t } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Home', href: '/' },
-    { name: 'How It Works', href: '/how-it-works' },
-    { name: 'FAQ', href: '/faq' },
-    { name: 'Contact', href: '/contact' },
+    { name: t('nav.home'), href: '/' },
+    { name: t('nav.howItWorks'), href: '/how-it-works' },
+    { name: t('nav.faq'), href: '/faq' },
+    { name: t('nav.contact'), href: '/contact' },
   ];
 
   const handleLogout = async () => {
@@ -62,7 +62,8 @@ export default function Header({ transparent = false }: HeaderProps) {
           </nav>
 
           {/* Desktop Auth */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            <LanguageSwitcher variant="compact" />
             {isAuthenticated ? (
               <div className="relative">
                 <button
@@ -97,29 +98,47 @@ export default function Header({ transparent = false }: HeaderProps) {
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        My Account
+                        {t('common.myAccount')}
                       </Link>
                       <Link
                         href="/account/bookings"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        My Bookings
+                        {t('nav.myBookings')}
                       </Link>
                       <Link
                         href="/account/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsProfileMenuOpen(false)}
                       >
-                        Settings
+                        {t('common.settings')}
                       </Link>
+                      {user?.role === 'host' && (
+                        <Link
+                          href="/host"
+                          className="block px-4 py-2 text-sm text-baby-blue-600 hover:bg-gray-50 font-medium"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          {t('nav.hostPortal')}
+                        </Link>
+                      )}
+                      {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                        <Link
+                          href="/admin"
+                          className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-50 font-medium"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                        >
+                          {t('nav.adminPortal')}
+                        </Link>
+                      )}
                       <div className="border-t border-gray-100 mt-2 pt-2">
                         <button
                           type="button"
                           onClick={handleLogout}
                           className="block w-full text-left px-4 py-2 text-sm text-error-600 hover:bg-gray-50"
                         >
-                          Sign out
+                          {t('common.signOut')}
                         </button>
                       </div>
                     </div>
@@ -130,11 +149,11 @@ export default function Header({ transparent = false }: HeaderProps) {
               <>
                 <Link href="/login">
                   <Button variant="ghost" size="sm">
-                    Sign in
+                    {t('common.signIn')}
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">Get Started</Button>
+                  <Button size="sm">{t('common.getStarted')}</Button>
                 </Link>
               </>
             )}
@@ -186,23 +205,44 @@ export default function Header({ transparent = false }: HeaderProps) {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg"
                   >
-                    My Account
+                    {t('common.myAccount')}
                   </Link>
+                  {user?.role === 'host' && (
+                    <Link
+                      href="/host"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-baby-blue-600 hover:bg-gray-50 rounded-lg"
+                    >
+                      {t('nav.hostPortal')}
+                    </Link>
+                  )}
+                  {(user?.role === 'admin' || user?.role === 'super_admin') && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-gray-50 rounded-lg"
+                    >
+                      {t('nav.adminPortal')}
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handleLogout}
                     className="px-4 py-2 text-sm font-medium text-error-600 hover:bg-gray-50 rounded-lg text-left"
                   >
-                    Sign out
+                    {t('common.signOut')}
                   </button>
                 </>
               ) : (
                 <>
+                  <div className="px-4 pb-2">
+                    <LanguageSwitcher variant="compact" />
+                  </div>
                   <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="secondary" className="w-full">Sign in</Button>
+                    <Button variant="secondary" className="w-full">{t('common.signIn')}</Button>
                   </Link>
                   <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full">Get Started</Button>
+                    <Button className="w-full">{t('common.getStarted')}</Button>
                   </Link>
                 </>
               )}

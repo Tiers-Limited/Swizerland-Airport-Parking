@@ -137,7 +137,7 @@ export default function AccountDashboardPage() {
                           'gray'
                         }
                       >
-                        {booking.status.replace('_', ' ')}
+                        {(booking.status || '').replace('_', ' ')}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">

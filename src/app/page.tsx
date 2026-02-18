@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Header, Footer } from '@/components/layout';
 import { Button, Card } from '@/components/ui';
 import { buildQueryString } from '@/lib/utils';
+import { useI18n } from '@/i18n';
 import { 
   PageTransition, 
   FadeIn, 
@@ -18,6 +19,7 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [searchData, setSearchData] = useState({
     startDate: '',
     endDate: '',
@@ -41,8 +43,8 @@ export default function HomePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
-      title: 'Secure Parking',
-      description: '24/7 CCTV surveillance, fenced lots, and on-site security staff.',
+      title: t('home.featSecure'),
+      description: t('home.featSecureDesc'),
     },
     {
       icon: (
@@ -50,8 +52,8 @@ export default function HomePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
         </svg>
       ),
-      title: 'Free Shuttle',
-      description: 'Complimentary shuttle service to and from Zurich Airport terminals.',
+      title: t('home.featShuttle'),
+      description: t('home.featShuttleDesc'),
     },
     {
       icon: (
@@ -59,8 +61,8 @@ export default function HomePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      title: 'Best Prices',
-      description: 'Compare rates from multiple providers and save up to 60%.',
+      title: t('home.featPrice'),
+      description: t('home.featPriceDesc'),
     },
     {
       icon: (
@@ -68,31 +70,31 @@ export default function HomePage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
         </svg>
       ),
-      title: 'Quick & Easy',
-      description: 'Book in under 2 minutes. Instant confirmation to your email.',
+      title: t('home.featQuick'),
+      description: t('home.featQuickDesc'),
     },
   ];
 
   const steps = [
     {
       number: '01',
-      title: 'Search & Compare',
-      description: 'Enter your travel dates and compare parking options near Zurich Airport.',
+      title: t('home.step1Title'),
+      description: t('home.step1Desc'),
     },
     {
       number: '02',
-      title: 'Book Online',
-      description: 'Reserve your spot in seconds with secure payment.',
+      title: t('home.step2Title'),
+      description: t('home.step2Desc'),
     },
     {
       number: '03',
-      title: 'Park & Shuttle',
-      description: 'Park at the lot, take the free shuttle to the terminal.',
+      title: t('home.step3Title'),
+      description: t('home.step3Desc'),
     },
     {
       number: '04',
-      title: 'Fly & Return',
-      description: 'When you land, the shuttle brings you back to your car.',
+      title: t('home.step4Title'),
+      description: t('home.step4Desc'),
     },
   ];
 
@@ -123,8 +125,8 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                Airport Parking
-                <span className="text-gradient"> Made Simple</span>
+                {t('home.heroTitle1')}
+                <span className="text-gradient"> {t('home.heroTitleHighlight')}</span>
               </motion.h1>
               <motion.p 
                 className="text-lg md:text-xl text-gray-600 mb-8"
@@ -132,8 +134,7 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                Book secure parking near Zurich Airport with free shuttle service.
-                Compare prices, read reviews, and reserve your spot in minutes.
+                {t('home.heroDescription')}
               </motion.p>
             </FadeIn>
 
@@ -143,7 +144,7 @@ export default function HomePage() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Drop-off date
+                        {t('home.dropOffDate')}
                       </label>
                       <input
                         type="date"
@@ -156,7 +157,7 @@ export default function HomePage() {
                     </div>
                     <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Pick-up date
+                        {t('home.pickUpDate')}
                       </label>
                       <input
                         type="date"
@@ -169,7 +170,7 @@ export default function HomePage() {
                     </div>
                     <div className="md:col-span-1">
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Arrival time
+                        {t('home.arrivalTime')}
                       </label>
                       <input
                         type="time"
@@ -181,7 +182,7 @@ export default function HomePage() {
                     </div>
                     <div className="md:col-span-1 flex items-end">
                       <Button type="submit" className="w-full" size="lg">
-                        Search Parking
+                        {t('home.searchButton')}
                       </Button>
                     </div>
                   </div>
@@ -196,19 +197,19 @@ export default function HomePage() {
                   <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Free cancellation
+                  {t('home.trustFreeCancellation')}
                 </div>
                 <div className="flex items-center gap-2">
                   <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  No hidden fees
+                  {t('home.trustNoHiddenFees')}
                 </div>
                 <div className="flex items-center gap-2">
                   <svg className="h-5 w-5 text-success-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Secure payment
+                  {t('home.trustSecurePayment')}
                 </div>
               </div>
             </FadeIn>
@@ -220,10 +221,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose ZurichPark?
+              {t('home.whyChoose')}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              We make airport parking simple, secure, and affordable.
+              {t('home.whyChooseDesc')}
             </p>
           </FadeIn>
 
@@ -248,10 +249,10 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              How It Works
+              {t('home.howItWorksTitle')}
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Book your parking spot in four simple steps.
+              {t('home.howItWorksDesc')}
             </p>
           </FadeIn>
 
@@ -279,7 +280,7 @@ export default function HomePage() {
           <FadeIn delay={0.6} className="text-center mt-12">
             <Link href="/how-it-works">
               <Button variant="secondary" size="lg">
-                Learn More
+                {t('common.learnMore')}
               </Button>
             </Link>
           </FadeIn>
@@ -290,10 +291,10 @@ export default function HomePage() {
       <section className="py-16 md:py-24 bg-baby-blue-500">
         <FadeIn className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Park Stress-Free?
+            {t('home.readyTitle')}
           </h2>
           <p className="text-lg text-baby-blue-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of travelers who trust ZurichPark for their airport parking needs.
+            {t('home.readySubtitle')}
           </p>
           <motion.div 
             className="flex flex-col sm:flex-row gap-4 justify-center"
@@ -308,7 +309,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-white text-baby-blue-600 hover:bg-gray-50"
               >
-                Find Parking
+                {t('home.findParking')}
               </Button>
             </Link>
             <Link href="/register">
@@ -316,7 +317,7 @@ export default function HomePage() {
                 size="lg"
                 className="bg-baby-blue-600 text-white hover:bg-baby-blue-700 border border-baby-blue-400"
               >
-                Create Account
+                {t('home.createAccount')}
               </Button>
             </Link>
           </motion.div>

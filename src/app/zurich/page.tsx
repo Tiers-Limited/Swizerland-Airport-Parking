@@ -7,6 +7,7 @@ import { Header, Footer } from '@/components/layout';
 import { Button, Card, Badge, Spinner } from '@/components/ui';
 import { formatCurrency, calculateDays, cn } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
+import { useI18n } from '@/i18n';
 import { 
   PageTransition, 
   FadeIn, 
@@ -16,159 +17,56 @@ import {
 } from '@/components/animations';
 import type { ParkingListing, SearchFilters, SearchResult } from '@/types';
 
-// Mock data for now (will be replaced with API calls)
-const mockListings: ParkingListing[] = [
-  {
-    id: '1',
-    hostId: 'h1',
-    name: 'Zurich Secure Parking',
-    description: 'Premium secure parking with covered spaces and 24/7 security surveillance. Direct shuttle service to all terminals.',
-    address: 'Flughofstrasse 45',
-    city: 'Kloten',
-    postalCode: '8302',
-    country: 'Switzerland',
-    airportCode: 'ZRH',
-    latitude: 47.464,
-    longitude: 8.549,
-    distanceToAirport: '5 min drive',
-    transferTime: 5,
-    totalSpaces: 200,
-    availableSpaces: 45,
-    pricePerDay: 25,
+// Map backend snake_case response to frontend ParkingListing type
+function mapBackendListing(raw: Record<string, unknown>): ParkingListing {
+  return {
+    id: raw.id as string,
+    hostId: (raw.host_id as string) || '',
+    name: (raw.name as string) || '',
+    description: (raw.description as string) || '',
+    address: (raw.address as string) || '',
+    city: (raw.city as string) || '',
+    postalCode: (raw.postal_code as string) || '',
+    country: (raw.country as string) || 'CH',
+    airportCode: (raw.airport_code as string) || 'ZRH',
+    latitude: (raw.latitude as number) || 0,
+    longitude: (raw.longitude as number) || 0,
+    distanceToAirport: `${raw.distance_to_airport_min || '?'} min`,
+    transferTime: (raw.distance_to_airport_min as number) || 0,
+    totalSpaces: (raw.capacity_total as number) || 0,
+    availableSpaces: (raw.capacity_available as number) || (raw.capacity_total as number) || 0,
+    pricePerDay: (raw.base_price_per_day as number) || 0,
     currency: 'CHF',
-    amenities: {
-      covered: true,
-      evCharging: true,
-      security247: true,
-      cctv: true,
-      fenced: true,
-      lit: true,
-      accessible: true,
-      carWash: false,
-      valetParking: false,
+    amenities: (raw.amenities as ParkingListing['amenities']) || {
+      covered: false, evCharging: false, security247: false, cctv: false,
+      fenced: false, lit: false, accessible: false, carWash: false, valetParking: false,
     },
-    images: ['/images/parking-1.jpg'],
-    shuttleMode: 'scheduled',
-    shuttleSchedule: {
-      operatingHours: { start: '04:00', end: '00:00' },
+    images: (raw.images as string[]) || (raw.photos as string[]) || [],
+    shuttleMode: (raw.shuttle_mode as ParkingListing['shuttleMode']) || 'scheduled',
+    shuttleSchedule: raw.shuttle_hours ? {
+      operatingHours: {
+        start: (raw.shuttle_hours as Record<string, string>).start || '04:00',
+        end: (raw.shuttle_hours as Record<string, string>).end || '23:00',
+      },
       frequency: 20,
-    },
-    offers: [
-      {
-        id: 'o1',
-        name: 'Week Special',
-        type: 'duration_discount',
-        conditions: { minDays: 7 },
-        discount: { type: 'percentage', value: 10 },
-        isActive: true,
-      },
-    ],
-    isActive: true,
-    isApproved: true,
-    rating: 4.8,
-    reviewCount: 234,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: '2',
-    hostId: 'h2',
-    name: 'Budget Park ZRH',
-    description: 'Affordable parking solution with reliable shuttle service. Open-air parking with security patrol.',
-    address: 'Industriestrasse 12',
-    city: 'Kloten',
-    postalCode: '8302',
-    country: 'Switzerland',
-    airportCode: 'ZRH',
-    latitude: 47.458,
-    longitude: 8.555,
-    distanceToAirport: '8 min drive',
-    transferTime: 8,
-    totalSpaces: 350,
-    availableSpaces: 120,
-    pricePerDay: 15,
-    currency: 'CHF',
-    amenities: {
-      covered: false,
-      evCharging: false,
-      security247: true,
-      cctv: true,
-      fenced: true,
-      lit: true,
-      accessible: true,
-      carWash: false,
-      valetParking: false,
-    },
-    images: ['/images/parking-1b.jpg'],
-    shuttleMode: 'on_demand',
-    offers: [],
-    isActive: true,
-    isApproved: true,
-    rating: 4.5,
-    reviewCount: 456,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-  {
-    id: '3',
-    hostId: 'h3',
-    name: 'Premium Airport Parking',
-    description: 'VIP parking experience with valet service, car wash, and meet & greet. Covered parking only.',
-    address: 'Flughafenstrasse 22',
-    city: 'Kloten',
-    postalCode: '8302',
-    country: 'Switzerland',
-    airportCode: 'ZRH',
-    latitude: 47.465,
-    longitude: 8.552,
-    distanceToAirport: '3 min drive',
-    transferTime: 3,
-    totalSpaces: 100,
-    availableSpaces: 15,
-    pricePerDay: 45,
-    currency: 'CHF',
-    amenities: {
-      covered: true,
-      evCharging: true,
-      security247: true,
-      cctv: true,
-      fenced: true,
-      lit: true,
-      accessible: true,
-      carWash: true,
-      valetParking: true,
-    },
-    images: ['/images/parking-1c.jpg'],
-    shuttleMode: 'scheduled',
-    shuttleSchedule: {
-      operatingHours: { start: '05:00', end: '23:00' },
-      frequency: 15,
-    },
-    offers: [
-      {
-        id: 'o2',
-        name: 'Early Bird',
-        type: 'early_bird',
-        conditions: { bookingWindow: 14 },
-        discount: { type: 'percentage', value: 15 },
-        isActive: true,
-      },
-    ],
-    isActive: true,
-    isApproved: true,
-    rating: 4.9,
-    reviewCount: 89,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01',
-  },
-];
+    } : undefined,
+    offers: (raw.pricing_rules as ParkingListing['offers']) || [],
+    isActive: raw.status === 'active',
+    isApproved: raw.status === 'active',
+    rating: (raw.rating as number) || undefined,
+    reviewCount: (raw.review_count as number) || 0,
+    createdAt: (raw.created_at as string) || '',
+    updatedAt: (raw.updated_at as string) || '',
+  };
+}
 
 type SortOption = 'price' | 'rating' | 'distance';
 
 export default function ZurichSearchPage() {
   const searchParams = useSearchParams();
-  const [listings, setListings] = useState<ParkingListing[]>(mockListings);
-  const [isLoading, setIsLoading] = useState(false);
+  const { t } = useI18n();
+  const [listings, setListings] = useState<ParkingListing[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('price');
   const [filters, setFilters] = useState({
     covered: false,
@@ -182,7 +80,28 @@ export default function ZurichSearchPage() {
   const endDate = searchParams.get('endDate') || '';
   const days = startDate && endDate ? calculateDays(startDate, endDate) : 1;
 
-  // Sort listings
+  // Fetch listings from API
+  useEffect(() => {
+    async function fetchListings() {
+      setIsLoading(true);
+      const params = new URLSearchParams({ airportCode: 'ZRH' });
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      if (sortBy) params.set('sortBy', sortBy);
+
+      const res = await apiCall<{ listings: Record<string, unknown>[]; total: number }>(
+        'GET', `/listings/search?${params}`
+      );
+      if (res.success && res.data) {
+        const rawListings = res.data || [];
+        setListings(rawListings.map(mapBackendListing));
+      }
+      setIsLoading(false);
+    }
+    fetchListings();
+  }, [startDate, endDate, sortBy]);
+
+  // Sort listings client-side for immediate UX
   const sortedListings = [...listings].sort((a, b) => {
     switch (sortBy) {
       case 'price':
@@ -207,10 +126,10 @@ export default function ZurichSearchPage() {
 
   const getAmenityBadges = (amenities: ParkingListing['amenities']) => {
     const badges = [];
-    if (amenities.covered) badges.push({ label: 'Covered', icon: '🏠' });
-    if (amenities.evCharging) badges.push({ label: 'EV Charging', icon: '⚡' });
-    if (amenities.security247) badges.push({ label: '24/7 Security', icon: '🛡️' });
-    if (amenities.valetParking) badges.push({ label: 'Valet', icon: '🎩' });
+    if (amenities.covered) badges.push({ label: t('listing.amenity.covered'), icon: '🏠' });
+    if (amenities.evCharging) badges.push({ label: t('listing.amenity.evCharging'), icon: '⚡' });
+    if (amenities.security247) badges.push({ label: t('listing.amenity.security'), icon: '🛡️' });
+    if (amenities.valetParking) badges.push({ label: t('listing.amenity.valetParking'), icon: '🎩' });
     return badges;
   };
 
@@ -225,19 +144,19 @@ export default function ZurichSearchPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  Parking near Zurich Airport (ZRH)
+                  {t('search.title')}
                 </h1>
               <p className="text-gray-500 mt-1">
-                {filteredListings.length} options available
+                {filteredListings.length} {t('search.optionsAvailable')}
                 {startDate && endDate && (
-                  <> for {days} day{days > 1 ? 's' : ''}</>
+                  <> {t('search.forDays', { days: String(days) })}</>
                 )}
               </p>
             </div>
             {/* Date modifier */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">From:</span>
+                <span className="text-gray-500">{t('search.from')}:</span>
                 <input
                   type="date"
                   defaultValue={startDate}
@@ -245,7 +164,7 @@ export default function ZurichSearchPage() {
                 />
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">To:</span>
+                <span className="text-gray-500">{t('search.to')}:</span>
                 <input
                   type="date"
                   defaultValue={endDate}
@@ -263,25 +182,25 @@ export default function ZurichSearchPage() {
           {/* Filters Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">
             <Card padding="md" className="sticky top-24">
-              <h2 className="font-semibold text-gray-900 mb-4">Filters</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">{t('search.filters')}</h2>
               
               {/* Sort */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('search.sortBy')}</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
                   className="select w-full"
                 >
-                  <option value="price">Price: Low to High</option>
-                  <option value="rating">Rating: High to Low</option>
-                  <option value="distance">Distance: Closest</option>
+                  <option value="price">{t('search.sortPrice')}</option>
+                  <option value="rating">{t('search.sortRating')}</option>
+                  <option value="distance">{t('search.sortDistance')}</option>
                 </select>
               </div>
 
               {/* Amenities */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Amenities</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('search.amenities')}</h3>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -290,7 +209,7 @@ export default function ZurichSearchPage() {
                       onChange={(e) => setFilters({ ...filters, covered: e.target.checked })}
                       className="checkbox"
                     />
-                    <span className="text-sm text-gray-600">Covered parking</span>
+                    <span className="text-sm text-gray-600">{t('listing.amenity.covered')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -299,7 +218,7 @@ export default function ZurichSearchPage() {
                       onChange={(e) => setFilters({ ...filters, evCharging: e.target.checked })}
                       className="checkbox"
                     />
-                    <span className="text-sm text-gray-600">EV charging</span>
+                    <span className="text-sm text-gray-600">{t('listing.amenity.evCharging')}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -308,7 +227,7 @@ export default function ZurichSearchPage() {
                       onChange={(e) => setFilters({ ...filters, security247: e.target.checked })}
                       className="checkbox"
                     />
-                    <span className="text-sm text-gray-600">24/7 security</span>
+                    <span className="text-sm text-gray-600">{t('listing.amenity.security')}</span>
                   </label>
                 </div>
               </div>
@@ -316,7 +235,7 @@ export default function ZurichSearchPage() {
               {/* Price Range */}
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  Price per day: {formatCurrency(filters.priceMin)} - {formatCurrency(filters.priceMax)}
+                  {t('search.pricePerDay')}: {formatCurrency(filters.priceMin)} - {formatCurrency(filters.priceMax)}
                 </h3>
                 <input
                   type="range"
@@ -342,8 +261,8 @@ export default function ZurichSearchPage() {
                   <svg className="h-12 w-12 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No parking found</h3>
-                  <p className="text-gray-500">Try adjusting your filters or dates.</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">{t('search.noResults')}</h3>
+                  <p className="text-gray-500">{t('search.tryAdjusting')}</p>
                 </div>
               </Card>
             ) : (
@@ -376,7 +295,7 @@ export default function ZurichSearchPage() {
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="text-lg font-semibold text-gray-900">{listing.name}</h3>
                               {listing.offers.length > 0 && (
-                                <Badge variant="success" size="sm">Offer</Badge>
+                                <Badge variant="success" size="sm">{t('search.offer')}</Badge>
                               )}
                             </div>
                             <p className="text-sm text-gray-500 mb-3 line-clamp-2">{listing.description}</p>
@@ -403,7 +322,7 @@ export default function ZurichSearchPage() {
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                 </svg>
-                                Shuttle every {listing.shuttleSchedule?.frequency || 20} min
+                                {t('search.shuttleEvery', { min: String(listing.shuttleSchedule?.frequency || 20) })}
                               </div>
                               {listing.rating && (
                                 <div className="flex items-center gap-1">
@@ -425,7 +344,7 @@ export default function ZurichSearchPage() {
                               {formatCurrency(listing.pricePerDay)}/day × {days} days
                             </p>
                             <Link href={`/parking/${listing.id}?startDate=${startDate}&endDate=${endDate}`}>
-                              <Button>View Details</Button>
+                              <Button>{t('search.viewDetails')}</Button>
                             </Link>
                           </div>
                         </div>

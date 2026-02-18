@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRBAC } from '@/hooks/useRBAC';
 import { Button, Input, Card, Alert, Logo } from '@/components/ui';
+import { useI18n } from '@/i18n';
+import { getDefaultRedirectPath } from '@/lib/rbac';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl') || '/account';
+  const returnUrl = searchParams.get('returnUrl');
   
-  const { login, isAuthenticated } = useAuth();
-  const { getRedirectPath } = useRBAC();
+  const { login, isAuthenticated, user } = useAuth();
+  const { t } = useI18n();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -24,10 +25,10 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push(returnUrl);
+    if (isAuthenticated && user) {
+      router.push(returnUrl || getDefaultRedirectPath(user.role));
     }
-  }, [isAuthenticated, returnUrl, router]);
+  }, [isAuthenticated, user, returnUrl, router]);
 
   // Show nothing while redirecting
   if (isAuthenticated) {
@@ -53,13 +54,13 @@ export default function LoginPage() {
 
       if (result.success) {
         // Redirect to appropriate dashboard based on role
-        const redirectPath = decodeURIComponent(returnUrl) || getRedirectPath();
+        const redirectPath = returnUrl ? decodeURIComponent(returnUrl) : getDefaultRedirectPath(result.user?.role || 'customer');
         router.push(redirectPath);
       } else {
-        setError(result.error || 'Login failed. Please check your credentials.');
+        setError(result.error || t('auth.loginFailed'));
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError(t('auth.unexpectedError'));
     } finally {
       setIsLoading(false);
     }
@@ -79,8 +80,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <Card padding="lg" className="animate-fade-in">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-              <p className="text-gray-500 mt-2">Sign in to your account to continue</p>
+              <h1 className="text-2xl font-bold text-gray-900">{t('auth.loginTitle')}</h1>
+              <p className="text-gray-500 mt-2">{t('auth.loginSubtitle')}</p>
             </div>
 
             {error && (
@@ -91,7 +92,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <Input
-                label="Email address"
+                label={t('auth.email')}
                 type="email"
                 name="email"
                 value={formData.email}
@@ -108,7 +109,7 @@ export default function LoginPage() {
 
               <div>
                 <Input
-                  label="Password"
+                  label={t('auth.password')}
                   type="password"
                   name="password"
                   value={formData.password}
@@ -124,7 +125,7 @@ export default function LoginPage() {
                 />
                 <div className="text-right mt-2">
                   <Link href="/forgot-password" className="text-sm text-baby-blue-600 hover:text-baby-blue-700">
-                    Forgot password?
+                    {t('auth.forgotPassword')}
                   </Link>
                 </div>
               </div>
@@ -135,7 +136,7 @@ export default function LoginPage() {
                 size="lg"
                 isLoading={isLoading}
               >
-                Sign in
+                {t('common.signIn')}
               </Button>
             </form>
 
@@ -145,14 +146,14 @@ export default function LoginPage() {
                   <div className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">Don't have an account?</span>
+                  <span className="px-4 bg-white text-gray-500">{t('auth.noAccount')}</span>
                 </div>
               </div>
 
               <div className="mt-6">
                 <Link href="/register">
                   <Button variant="secondary" className="w-full" size="lg">
-                    Create an account
+                    {t('auth.createAccount')}
                   </Button>
                 </Link>
               </div>
@@ -160,13 +161,13 @@ export default function LoginPage() {
           </Card>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            By signing in, you agree to our{' '}
+            {t('auth.bySigningIn')}{' '}
             <Link href="/terms" className="text-baby-blue-600 hover:text-baby-blue-700">
-              Terms of Service
+              {t('booking.termsOfService')}
             </Link>{' '}
-            and{' '}
+            {t('auth.and')}{' '}
             <Link href="/privacy" className="text-baby-blue-600 hover:text-baby-blue-700">
-              Privacy Policy
+              {t('booking.privacyPolicy')}
             </Link>
           </p>
         </div>

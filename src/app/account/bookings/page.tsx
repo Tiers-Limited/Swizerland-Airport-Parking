@@ -120,8 +120,8 @@ export default function BookingsPage() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        booking.bookingCode.toLowerCase().includes(query) ||
-        booking.listing.name.toLowerCase().includes(query)
+        (booking.bookingCode || '').toLowerCase().includes(query) ||
+        (booking.listing?.name || '').toLowerCase().includes(query)
       );
     }
 
@@ -189,7 +189,7 @@ export default function BookingsPage() {
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900">{booking.listing.name}</h3>
                       <Badge variant={statusColors[booking.status]}>
-                        {booking.status.replace('_', ' ')}
+                        {(booking.status || '').replace('_', ' ')}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

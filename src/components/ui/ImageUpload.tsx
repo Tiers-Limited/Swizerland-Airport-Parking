@@ -1,0 +1,203 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { uploadToCloudinary } from '@/lib/cloudinary';
+import { useI18n } from '@/i18n';
+
+interface ImageUploadProps {
+  images: string[];
+  onChange: (images: string[]) => void;
+  maxImages?: number;
+  label?: string;
+}
+
+export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUploadProps) {
+  const { t } = useI18n();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState('');
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const remaining = maxImages - images.length;
+    if (remaining <= 0) {
+      setError(t('host.maxImagesReached'));
+      return;
+    }
+
+    const filesToUpload = files.slice(0, remaining);
+    setUploading(true);
+    setError('');
+
+    const newUrls: string[] = [];
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i];
+
+      // Validate file
+      if (!file.type.startsWith('image/')) {
+        setError(t('host.onlyImages'));
+        continue;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError(t('host.imageTooLarge'));
+        continue;
+      }
+
+      try {
+        setProgress(Math.round(((i) / filesToUpload.length) * 100));
+        const result = await uploadToCloudinary(file, (p) => {
+          const baseProgress = (i / filesToUpload.length) * 100;
+          const fileProgress = (p / filesToUpload.length);
+          setProgress(Math.round(baseProgress + fileProgress));
+        });
+        newUrls.push(result.secure_url);
+      } catch {
+        setError(t('host.uploadFailed'));
+      }
+    }
+
+    if (newUrls.length > 0) {
+      onChange([...images, ...newUrls]);
+    }
+
+    setUploading(false);
+    setProgress(0);
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    onChange(images.filter((_, i) => i !== index));
+  };
+
+  const moveImage = (index: number, direction: 'left' | 'right') => {
+    const newImages = [...images];
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= newImages.length) return;
+    [newImages[index], newImages[targetIndex]] = [newImages[targetIndex], newImages[index]];
+    onChange(newImages);
+  };
+
+  return (
+    <div className="space-y-3">
+      {label && (
+        <label className="block text-sm font-medium text-gray-700">{label}</label>
+      )}
+
+      {/* Image Grid */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {images.map((url, index) => (
+            <div key={url} className="relative group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+              <img
+                src={url}
+                alt={`Image ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              {index === 0 && (
+                <span className="absolute top-1.5 left-1.5 bg-baby-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  Cover
+                </span>
+              )}
+              {/* Overlay controls */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                {index > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, 'left')}
+                    className="p-1.5 bg-white/90 rounded-lg hover:bg-white transition-colors"
+                    title="Move left"
+                  >
+                    <svg className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                )}
+                {index < images.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, 'right')}
+                    className="p-1.5 bg-white/90 rounded-lg hover:bg-white transition-colors"
+                    title="Move right"
+                  >
+                    <svg className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="p-1.5 bg-red-500/90 rounded-lg hover:bg-red-600 transition-colors"
+                  title="Remove"
+                >
+                  <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upload Area */}
+      {images.length < maxImages && (
+        <div
+          onClick={() => !uploading && fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+            uploading
+              ? 'border-baby-blue-300 bg-baby-blue-50'
+              : 'border-gray-300 hover:border-baby-blue-400 hover:bg-baby-blue-50/50'
+          }`}
+        >
+          {uploading ? (
+            <div className="space-y-2">
+              <div className="w-8 h-8 border-3 border-baby-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-sm text-baby-blue-600 font-medium">
+                {t('host.uploading')} {progress}%
+              </p>
+              <div className="w-48 mx-auto bg-gray-200 rounded-full h-1.5">
+                <div
+                  className="bg-baby-blue-600 h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <svg className="h-10 w-10 text-gray-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <div>
+                <p className="text-sm font-medium text-gray-700">{t('host.clickToUpload')}</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  PNG, JPG, WebP • max 10 MB • {images.length}/{maxImages}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-red-600">{error}</p>
+      )}
+    </div>
+  );
+}
+
+export default ImageUpload;

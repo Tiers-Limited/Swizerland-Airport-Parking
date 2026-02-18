@@ -1,72 +1,58 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useEffect, use } from 'react';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Header, Footer } from '@/components/layout';
-import { Button, Card, Badge, Alert } from '@/components/ui';
+import { Button, Card, Badge, Alert, Spinner } from '@/components/ui';
 import { formatCurrency, calculateDays, formatDate } from '@/lib/utils';
+import { apiCall } from '@/lib/api';
+import { useI18n } from '@/i18n';
 import type { ParkingListing, SpecialRequests } from '@/types';
 
-// Mock data (will be replaced by API)
-const getMockListing = (id: string): ParkingListing | null => {
-  const listings: Record<string, ParkingListing> = {
-    '1': {
-      id: '1',
-      hostId: 'h1',
-      name: 'Zurich Secure Parking',
-      description: 'Premium secure parking with covered spaces and 24/7 security surveillance. Our facility offers the best combination of security, convenience, and value for travelers using Zurich Airport. With our modern covered parking structure, your vehicle is protected from the elements while you travel. Our free shuttle service runs every 20 minutes to all terminals, making your journey seamless from start to finish.',
-      address: 'Flughofstrasse 45',
-      city: 'Kloten',
-      postalCode: '8302',
-      country: 'Switzerland',
-      airportCode: 'ZRH',
-      latitude: 47.464,
-      longitude: 8.549,
-      distanceToAirport: '5 min drive',
-      transferTime: 5,
-      totalSpaces: 200,
-      availableSpaces: 45,
-      pricePerDay: 25,
-      currency: 'CHF',
-      amenities: {
-        covered: true,
-        evCharging: true,
-        security247: true,
-        cctv: true,
-        fenced: true,
-        lit: true,
-        accessible: true,
-        carWash: false,
-        valetParking: false,
-      },
-      images: ['/images/parking-1.jpg', '/images/parking-1b.jpg', '/images/parking-1c.jpg'],
-      shuttleMode: 'scheduled',
-      shuttleSchedule: {
-        operatingHours: { start: '04:00', end: '00:00' },
-        frequency: 20,
-      },
-      offers: [
-        {
-          id: 'o1',
-          name: 'Week Special',
-          type: 'duration_discount',
-          conditions: { minDays: 7 },
-          discount: { type: 'percentage', value: 10 },
-          isActive: true,
-        },
-      ],
-      isActive: true,
-      isApproved: true,
-      rating: 4.8,
-      reviewCount: 234,
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
+// Map backend response to ParkingListing
+function mapBackendListing(raw: Record<string, unknown>): ParkingListing {
+  return {
+    id: raw.id as string,
+    hostId: (raw.host_id as string) || '',
+    name: (raw.name as string) || '',
+    description: (raw.description as string) || '',
+    address: (raw.address as string) || '',
+    city: (raw.city as string) || '',
+    postalCode: (raw.postal_code as string) || '',
+    country: (raw.country as string) || 'CH',
+    airportCode: (raw.airport_code as string) || 'ZRH',
+    latitude: (raw.latitude as number) || 0,
+    longitude: (raw.longitude as number) || 0,
+    distanceToAirport: `${raw.distance_to_airport_min || '?'} min`,
+    transferTime: (raw.distance_to_airport_min as number) || 0,
+    totalSpaces: (raw.capacity_total as number) || 0,
+    availableSpaces: (raw.capacity_available as number) || (raw.capacity_total as number) || 0,
+    pricePerDay: (raw.base_price_per_day as number) || 0,
+    currency: 'CHF',
+    amenities: (raw.amenities as ParkingListing['amenities']) || {
+      covered: false, evCharging: false, security247: false, cctv: false,
+      fenced: false, lit: false, accessible: false, carWash: false, valetParking: false,
     },
+    images: (raw.images as string[]) || (raw.photos as string[]) || [],
+    shuttleMode: (raw.shuttle_mode as ParkingListing['shuttleMode']) || 'scheduled',
+    shuttleSchedule: raw.shuttle_hours ? {
+      operatingHours: {
+        start: (raw.shuttle_hours as Record<string, string>).start || '04:00',
+        end: (raw.shuttle_hours as Record<string, string>).end || '23:00',
+      },
+      frequency: 20,
+    } : undefined,
+    offers: (raw.pricing_rules as ParkingListing['offers']) || [],
+    isActive: raw.status === 'active',
+    isApproved: raw.status === 'active',
+    rating: (raw.rating as number) || undefined,
+    reviewCount: (raw.review_count as number) || 0,
+    createdAt: (raw.created_at as string) || '',
+    updatedAt: (raw.updated_at as string) || '',
   };
-  return listings[id] || listings['1'];
-};
+}
 
 interface PageParams {
   params: Promise<{ id: string }>;
@@ -76,10 +62,12 @@ export default function ParkingDetailPage({ params }: PageParams) {
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
 
-  const [listing] = useState<ParkingListing | null>(() => getMockListing(id));
+  const [listing, setListing] = useState<ParkingListing | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [bookingData, setBookingData] = useState({
     arrivalTime: '10:00',
@@ -97,16 +85,40 @@ export default function ParkingDetailPage({ params }: PageParams) {
     } as SpecialRequests,
   });
 
+  useEffect(() => {
+    async function fetchListing() {
+      setIsLoading(true);
+      const res = await apiCall<Record<string, unknown>>('GET', `/listings/public/${id}`);
+      if (res.success && res.data) {
+        setListing(mapBackendListing(res.data));
+      }
+      setIsLoading(false);
+    }
+    fetchListing();
+  }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Header />
+        <main className="flex-1 flex items-center justify-center">
+          <Spinner size="lg" />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!listing) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <Card padding="lg" className="text-center">
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">Parking not found</h1>
-            <p className="text-gray-500 mb-4">The parking location you're looking for doesn't exist.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('listing.parkingNotFound')}</h1>
+            <p className="text-gray-500 mb-4">{t('listing.parkingNotFoundDesc')}</p>
             <Link href="/zurich">
-              <Button>Browse All Parking</Button>
+              <Button>{t('listing.browseAll')}</Button>
             </Link>
           </Card>
         </main>
@@ -122,8 +134,8 @@ export default function ParkingDetailPage({ params }: PageParams) {
   let discountAmount = 0;
   let appliedOffer = '';
   listing.offers.forEach((offer) => {
-    if (offer.isActive && offer.conditions.minDays && days >= offer.conditions.minDays) {
-      if (offer.discount.type === 'percentage') {
+    if (offer.isActive && offer.conditions?.minDays && days >= offer.conditions.minDays) {
+      if (offer.discount?.type === 'percentage' && offer.discount?.value) {
         const discount = (basePrice * offer.discount.value) / 100;
         if (discount > discountAmount) {
           discountAmount = discount;
@@ -137,20 +149,20 @@ export default function ParkingDetailPage({ params }: PageParams) {
   const totalPrice = basePrice - discountAmount + serviceFee;
 
   const amenityList = [
-    { key: 'covered', label: 'Covered Parking', icon: '🏠' },
-    { key: 'evCharging', label: 'EV Charging', icon: '⚡' },
-    { key: 'security247', label: '24/7 Security', icon: '🛡️' },
-    { key: 'cctv', label: 'CCTV Surveillance', icon: '📹' },
-    { key: 'fenced', label: 'Fenced Area', icon: '🔒' },
-    { key: 'lit', label: 'Well Lit', icon: '💡' },
-    { key: 'accessible', label: 'Accessible', icon: '♿' },
-    { key: 'carWash', label: 'Car Wash', icon: '🚿' },
-    { key: 'valetParking', label: 'Valet Parking', icon: '🎩' },
+    { key: 'covered', label: t('listing.covered'), icon: '🏠' },
+    { key: 'evCharging', label: t('listing.evCharging'), icon: '⚡' },
+    { key: 'security247', label: t('listing.security247'), icon: '🛡️' },
+    { key: 'cctv', label: t('listing.cctv'), icon: '📹' },
+    { key: 'fenced', label: t('listing.fenced'), icon: '🔒' },
+    { key: 'lit', label: t('listing.lit'), icon: '💡' },
+    { key: 'accessible', label: t('listing.accessible'), icon: '♿' },
+    { key: 'carWash', label: t('listing.carWash'), icon: '🚿' },
+    { key: 'valetParking', label: t('listing.valetParking'), icon: '🎩' },
   ];
 
   const handleProceedToBooking = () => {
     if (!startDate || !endDate) {
-      alert('Please select your travel dates');
+      alert(t('listing.selectDates'));
       return;
     }
     setShowBookingForm(true);
@@ -180,7 +192,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                   <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p>Parking Images</p>
+                  <p>{t('listing.parkingImages')}</p>
                 </div>
               </div>
             )}
@@ -215,7 +227,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                       <span className="font-semibold text-gray-900">{listing.rating}</span>
-                      <span className="text-gray-500">({listing.reviewCount} reviews)</span>
+                      <span className="text-gray-500">({t('listing.reviews', { count: listing.reviewCount })})</span>
                     </div>
                   )}
                 </div>
@@ -223,13 +235,13 @@ export default function ParkingDetailPage({ params }: PageParams) {
 
               {/* Description */}
               <Card padding="md" className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">About this parking</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.aboutTitle')}</h2>
                 <p className="text-gray-600">{listing.description}</p>
               </Card>
 
               {/* Shuttle Info */}
               <Card padding="md" className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Shuttle Service</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.shuttleService')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-baby-blue-100 text-baby-blue-600">
@@ -238,8 +250,8 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Free Shuttle</p>
-                      <p className="text-xs text-gray-500">Every {listing.shuttleSchedule?.frequency || 20} minutes</p>
+                      <p className="text-sm font-medium text-gray-900">{t('listing.freeShuttle')}</p>
+                      <p className="text-xs text-gray-500">{t('listing.every', { min: listing.shuttleSchedule?.frequency || 20 })}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -249,7 +261,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Operating Hours</p>
+                      <p className="text-sm font-medium text-gray-900">{t('listing.operatingHours')}</p>
                       <p className="text-xs text-gray-500">
                         {listing.shuttleSchedule?.operatingHours.start} - {listing.shuttleSchedule?.operatingHours.end}
                       </p>
@@ -262,8 +274,8 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Transfer Time</p>
-                      <p className="text-xs text-gray-500">{listing.transferTime} minutes to terminal</p>
+                      <p className="text-sm font-medium text-gray-900">{t('listing.transferTime')}</p>
+                      <p className="text-xs text-gray-500">{t('listing.minutesToTerminal', { min: listing.transferTime })}</p>
                     </div>
                   </div>
                 </div>
@@ -271,7 +283,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
 
               {/* Amenities */}
               <Card padding="md" className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Amenities</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.amenities')}</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {amenityList.map((amenity) => {
                     const isAvailable = listing.amenities[amenity.key as keyof typeof listing.amenities];
@@ -297,25 +309,25 @@ export default function ParkingDetailPage({ params }: PageParams) {
 
               {/* Cancellation Policy */}
               <Card padding="md">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Cancellation Policy</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.cancellationPolicy')}</h2>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-success-600">
                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span>Full refund if cancelled more than 24 hours before arrival</span>
+                    <span>{t('listing.cancel24h')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-warning-600">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>50% refund if cancelled 12-24 hours before arrival</span>
+                    <span>{t('listing.cancel12h')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-error-600">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    <span>No refund if cancelled less than 12 hours before arrival</span>
+                    <span>{t('listing.cancelLess12h')}</span>
                   </div>
                 </div>
               </Card>
@@ -333,7 +345,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                     <span className="text-gray-500">/day</span>
                   </div>
                   {listing.availableSpaces < 20 && (
-                    <Badge variant="warning">Only {listing.availableSpaces} left</Badge>
+                    <Badge variant="warning">{t('listing.onlyLeft', { count: listing.availableSpaces })}</Badge>
                   )}
                 </div>
 
@@ -341,7 +353,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Drop-off</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('listing.dropOff')}</label>
                       <input
                         type="date"
                         value={startDate}
@@ -351,7 +363,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Pick-up</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('listing.pickUp')}</label>
                       <input
                         type="date"
                         value={endDate}
@@ -368,23 +380,23 @@ export default function ParkingDetailPage({ params }: PageParams) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">
-                        {formatCurrency(listing.pricePerDay)} × {days} days
+                        {formatCurrency(listing.pricePerDay)} × {days} {t('common.days')}
                       </span>
                       <span className="text-gray-900">{formatCurrency(basePrice)}</span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-success-600">
-                        <span>{appliedOffer} discount</span>
+                      <span>{appliedOffer} {t('listing.discount')}</span>
                         <span>-{formatCurrency(discountAmount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-500">Service fee</span>
+                      <span className="text-gray-500">{t('listing.serviceFee')}</span>
                       <span className="text-gray-900">{formatCurrency(serviceFee)}</span>
                     </div>
                   </div>
                   <div className="flex justify-between pt-3 mt-3 border-t border-gray-100">
-                    <span className="font-semibold text-gray-900">Total</span>
+                    <span className="font-semibold text-gray-900">{t('common.total')}</span>
                     <span className="font-bold text-gray-900">{formatCurrency(totalPrice)}</span>
                   </div>
                 </div>
@@ -392,7 +404,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                 {/* Offer Badge */}
                 {listing.offers.length > 0 && (
                   <Alert variant="success" className="mb-4">
-                    <span className="font-medium">Special Offer:</span> Book 7+ days and save 10%!
+                    <span className="font-medium">{t('listing.specialOffer')}</span> {t('listing.specialOfferDesc')}
                   </Alert>
                 )}
 
@@ -402,11 +414,11 @@ export default function ParkingDetailPage({ params }: PageParams) {
                   size="lg"
                   onClick={handleProceedToBooking}
                 >
-                  Reserve Now
+                  {t('listing.reserveNow')}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  You won't be charged yet
+                  {t('listing.notChargedYet')}
                 </p>
               </Card>
             </div>
