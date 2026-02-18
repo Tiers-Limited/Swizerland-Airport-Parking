@@ -17,8 +17,8 @@ export enum UserStatus {
 
 // Host Types
 export enum HostType {
-  OPERATOR = 'operator', // Owns parking lot + provides own shuttle
-  PRIVATE = 'private',   // Provides parking space; platform provides shuttle
+  OPERATOR = 'operator', // Owns parking lot + provides own shuttle service
+  PRIVATE = 'private',   // Provides parking space; platform/operator provides shuttle
 }
 
 // Verification Status

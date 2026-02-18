@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 
 export async function seed(knex: Knex): Promise<void> {
   // Clear existing entries
-  await knex('users').del();
+  // await knex('users').del();
 
   // Create admin user
   const adminPasswordHash = await bcrypt.hash('Admin123!', 12);

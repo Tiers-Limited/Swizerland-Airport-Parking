@@ -46,6 +46,29 @@ router.get(
 );
 
 /**
+ * @route   GET /api/v1/hosts/profile
+ * @desc    Get current user's host profile (alias for /me)
+ * @access  Hosts only
+ */
+router.get(
+  '/profile',
+  requireRole(UserRole.HOST, UserRole.ADMIN),
+  hostController.getMe
+);
+
+/**
+ * @route   PATCH /api/v1/hosts/profile
+ * @desc    Update current user's host profile
+ * @access  Hosts only
+ */
+router.patch(
+  '/profile',
+  requireRole(UserRole.HOST, UserRole.ADMIN),
+  validateBody(registerHostSchema.partial()),
+  hostController.updateMe
+);
+
+/**
  * @route   GET /api/v1/hosts/:id
  * @desc    Get host by ID
  * @access  Admin or own profile

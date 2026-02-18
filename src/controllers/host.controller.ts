@@ -133,6 +133,46 @@ export const hostController = {
   }),
 
   /**
+   * PATCH /api/v1/hosts/profile
+   * Update current user's host profile
+   */
+  updateMe: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authenticated',
+      });
+    }
+
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host) {
+      return res.status(404).json({
+        success: false,
+        message: 'You are not registered as a host',
+      });
+    }
+
+    const data: Partial<RegisterHostInput> = req.body;
+    const updatedHost = await hostService.update(host.id, data);
+
+    await auditService.log({
+      userId: req.user.userId,
+      action: 'host.update',
+      resource: 'hosts',
+      resourceId: host.id,
+      newValues: data,
+      ipAddress: getIp(req),
+    });
+
+    res.json({
+      success: true,
+      data: updatedHost,
+      message: 'Host profile updated',
+    });
+  }),
+
+  /**
    * PATCH /api/v1/hosts/:id
    * Update host profile
    */

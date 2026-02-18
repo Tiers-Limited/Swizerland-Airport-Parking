@@ -73,12 +73,17 @@ export class HostService {
   async update(id: string, data: Partial<RegisterHostInput>): Promise<Host> {
     await this.findByIdOrFail(id);
 
+    // Map camelCase input to snake_case DB columns
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    if (data.companyName !== undefined) updateData.company_name = data.companyName;
+    if (data.hostType !== undefined) updateData.host_type = data.hostType;
+    if (data.taxId !== undefined) updateData.tax_id = data.taxId;
+    if (data.address !== undefined) updateData.address = data.address;
+    if (data.website !== undefined) updateData.website = data.website;
+
     const [updated] = await db(this.tableName)
       .where('id', id)
-      .update({
-        ...data,
-        updated_at: new Date(),
-      })
+      .update(updateData)
       .returning('*');
 
     return updated;
