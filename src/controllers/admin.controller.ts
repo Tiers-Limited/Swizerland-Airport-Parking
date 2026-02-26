@@ -58,6 +58,35 @@ export const adminController = {
     res.json({ success: true, data: result });
   }),
 
+  createHost: asyncHandler(async (req: Request, res: Response) => {
+    const { name, email, phone, companyName, hostType } = req.body;
+
+    if (!name || !email || !companyName || !hostType) {
+      res.status(400).json({
+        success: false,
+        message: 'Name, E-Mail, Firmenname und Host-Typ sind erforderlich',
+      });
+      return;
+    }
+
+    const result = await adminService.createHost({ name, email, phone, companyName, hostType });
+
+    await auditService.log({
+      userId: req.user?.userId,
+      action: 'admin.host.create',
+      resource: 'hosts',
+      resourceId: result.host.id,
+      newValues: { name, email, companyName, hostType },
+      ipAddress: getIp(req),
+    });
+
+    res.status(201).json({
+      success: true,
+      data: result,
+      message: 'Host erstellt. Zugangsdaten wurden per E-Mail gesendet.',
+    });
+  }),
+
   updateHostVerification: asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id as string;
     const { status, documentsVerified } = req.body;
@@ -118,18 +147,23 @@ export const adminController = {
 
   refundBooking: asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id as string;
-    const updated = await adminService.refundBooking(id);
+    const { amount, reason } = req.body;
+    const result = await adminService.refundBooking(id, amount, reason);
 
     await auditService.log({
       userId: req.user?.userId,
       action: 'admin.booking.refund',
       resource: 'bookings',
       resourceId: id,
-      newValues: { status: 'refunded' },
+      newValues: { status: 'refunded', refundAmount: result.refundAmount, reason: result.reason },
       ipAddress: getIp(req),
     });
 
-    res.json({ success: true, data: updated, message: 'Booking refunded successfully' });
+    res.json({
+      success: true,
+      data: result,
+      message: `Booking refunded: CHF ${result.refundAmount.toFixed(2)}`,
+    });
   }),
 
   // ── Payments ───────────────────────────────────────────────────────

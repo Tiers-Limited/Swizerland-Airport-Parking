@@ -18,6 +18,7 @@ router.patch('/users/:id/status', adminController.updateUserStatus);
 
 // Hosts
 router.get('/hosts', adminController.listHosts);
+router.post('/hosts', adminController.createHost);
 router.patch('/hosts/:id/verify', adminController.updateHostVerification);
 
 // Listings

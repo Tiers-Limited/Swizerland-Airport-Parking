@@ -12,6 +12,8 @@ const router = Router();
 // ===== PUBLIC ENDPOINTS (no auth required) =====
 router.get('/search', listingController.search);
 router.get('/public/:id', validateParams(z.object({ id: uuidSchema })), listingController.getPublicListing);
+// Public: get active add-ons for a listing
+router.get('/public/:id/addons', validateParams(z.object({ id: uuidSchema })), listingController.getAddons);
 
 // ===== HOST ENDPOINTS (auth required) =====
 router.use(authenticate);
@@ -35,6 +37,13 @@ router.get('/:id/pricing', validateParams(z.object({ id: uuidSchema })), listing
 router.post('/:id/vehicles', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.createVehicle);
 router.patch('/vehicles/:vehicleId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.updateVehicle);
 router.delete('/vehicles/:vehicleId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.deleteVehicle);
+
+// Add-on / Extra services management (host + admin)
+router.get('/:id/addons', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getAddons);
+router.post('/:id/addons', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.createAddon);
+router.put('/:id/addons/reorder', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.reorderAddons);
+router.patch('/addons/:addonId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.updateAddon);
+router.delete('/addons/:addonId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.deleteAddon);
 
 // Admin status management
 router.patch('/:id/status', isAdmin, validateParams(z.object({ id: uuidSchema })),

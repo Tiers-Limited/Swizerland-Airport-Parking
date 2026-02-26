@@ -338,4 +338,115 @@ export const listingController = {
 
     res.json({ success: true, message: 'Vehicle deleted successfully' });
   }),
+
+  // ===== ADD-ON / EXTRA SERVICES ENDPOINTS =====
+
+  getAddons: asyncHandler(async (req: Request, res: Response) => {
+    const id = getId(req);
+    await listingService.findByIdOrFail(id);
+    // For public/host view: return all addons; public route will pass activeOnly=true via query
+    const activeOnly = req.query.activeOnly === 'true';
+    const addons = await listingService.getAddonsByLocationId(id, activeOnly);
+    res.json({ success: true, data: addons });
+  }),
+
+  createAddon: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const id = getId(req);
+    const listing = await listingService.findByIdOrFail(id);
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host || (listing.host_id !== host.id && req.user.role !== UserRole.ADMIN)) {
+      throw new ForbiddenError('You can only manage add-ons for your own listings');
+    }
+
+    const addon = await listingService.createAddon(id, req.body);
+
+    await auditService.log({
+      userId: req.user.userId,
+      action: 'addon.create',
+      resource: 'location_addons',
+      resourceId: addon.id,
+      newValues: req.body,
+      ipAddress: getIp(req),
+    });
+
+    res.status(201).json({ success: true, data: addon, message: 'Add-on service created successfully' });
+  }),
+
+  updateAddon: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const addonId = req.params.addonId as string;
+    const addon = await listingService.getAddonByIdOrFail(addonId);
+    const listing = await listingService.findByIdOrFail(addon.location_id);
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host || (listing.host_id !== host.id && req.user.role !== UserRole.ADMIN)) {
+      throw new ForbiddenError('You can only manage add-ons for your own listings');
+    }
+
+    const updated = await listingService.updateAddon(addonId, req.body);
+
+    await auditService.log({
+      userId: req.user.userId,
+      action: 'addon.update',
+      resource: 'location_addons',
+      resourceId: addonId,
+      newValues: req.body,
+      ipAddress: getIp(req),
+    });
+
+    res.json({ success: true, data: updated, message: 'Add-on service updated successfully' });
+  }),
+
+  deleteAddon: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const addonId = req.params.addonId as string;
+    const addon = await listingService.getAddonByIdOrFail(addonId);
+    const listing = await listingService.findByIdOrFail(addon.location_id);
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host || (listing.host_id !== host.id && req.user.role !== UserRole.ADMIN)) {
+      throw new ForbiddenError('You can only manage add-ons for your own listings');
+    }
+
+    await listingService.deleteAddon(addonId);
+
+    await auditService.log({
+      userId: req.user.userId,
+      action: 'addon.delete',
+      resource: 'location_addons',
+      resourceId: addonId,
+      ipAddress: getIp(req),
+    });
+
+    res.json({ success: true, message: 'Add-on service deleted successfully' });
+  }),
+
+  reorderAddons: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const id = getId(req);
+    const listing = await listingService.findByIdOrFail(id);
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host || (listing.host_id !== host.id && req.user.role !== UserRole.ADMIN)) {
+      throw new ForbiddenError('You can only manage add-ons for your own listings');
+    }
+
+    const { addonIds } = req.body;
+    const addons = await listingService.reorderAddons(id, addonIds);
+    res.json({ success: true, data: addons, message: 'Add-ons reordered successfully' });
+  }),
 };

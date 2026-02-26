@@ -214,6 +214,8 @@ export interface Booking extends BaseEntity {
   total_price: number;
   platform_commission?: number;
   host_payout?: number;
+  addons?: BookingAddon[];
+  addons_total?: number;
   currency: string;
   payment_id?: string;
   special_notes?: string;
@@ -298,6 +300,32 @@ export interface Payment extends BaseEntity {
   refunded_amount: number;
   payment_method?: string;
   metadata?: Record<string, unknown>;
+}
+
+// ============================================
+// ADD-ONS / EXTRA SERVICES
+// ============================================
+
+// Location Add-on entity (host-defined extra services per listing)
+export interface LocationAddon extends BaseEntity {
+  location_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  currency: string;
+  max_quantity: number;
+  icon?: string;
+  is_active: boolean;
+  sort_order: number;
+}
+
+// Selected add-on stored in booking.addons JSONB
+export interface BookingAddon {
+  addon_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  total: number; // price × quantity
 }
 
 // Notification Type

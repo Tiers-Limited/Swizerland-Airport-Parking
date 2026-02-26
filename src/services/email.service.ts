@@ -25,6 +25,12 @@ export interface WelcomeEmailData {
   firstName: string;
 }
 
+export interface HostCredentialsEmailData {
+  email: string;
+  firstName: string;
+  tempPassword: string;
+}
+
 class EmailService {
   private transporter: Transporter | null = null;
   private isConfigured: boolean = false;
@@ -316,6 +322,83 @@ The Airport Parking Team
   
   <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
     <p>&copy; ${new Date().getFullYear()} Airport Parking. All rights reserved.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.sendEmail({
+      to: data.email,
+      subject,
+      text,
+      html,
+    });
+  }
+
+  /**
+   * Send host credentials email (when admin creates a host account)
+   */
+  async sendHostCredentialsEmail(data: HostCredentialsEmailData): Promise<boolean> {
+    const loginUrl = `${config.frontendUrl}/login`;
+
+    const subject = 'Ihr Host-Konto – Airport Parking';
+
+    const text = `
+Hallo ${data.firstName},
+
+Ihr Host-Konto bei Airport Parking wurde erstellt.
+
+Hier sind Ihre Zugangsdaten:
+
+E-Mail: ${data.email}
+Passwort: ${data.tempPassword}
+
+Bitte melden Sie sich an und ändern Sie Ihr Passwort: ${loginUrl}
+
+Mit freundlichen Grüssen,
+Das Airport Parking Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ihr Host-Konto</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Airport Parking</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.firstName}!</h2>
+
+    <p>Ihr Host-Konto bei Airport Parking wurde erfolgreich erstellt.</p>
+
+    <p>Hier sind Ihre Zugangsdaten:</p>
+
+    <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>E-Mail:</strong> ${data.email}</p>
+      <p style="margin: 5px 0;"><strong>Passwort:</strong> ${data.tempPassword}</p>
+    </div>
+
+    <p style="color: #e74c3c; font-weight: bold;">Bitte ändern Sie Ihr Passwort nach der ersten Anmeldung.</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${loginUrl}"
+         style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+        Jetzt anmelden
+      </a>
+    </div>
+
+    <p style="color: #666; font-size: 14px;">Falls Sie den Button nicht anklicken können, kopieren Sie diesen Link in Ihren Browser:</p>
+    <p style="word-break: break-all; font-size: 12px; color: #888;">${loginUrl}</p>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
   </div>
 </body>
 </html>

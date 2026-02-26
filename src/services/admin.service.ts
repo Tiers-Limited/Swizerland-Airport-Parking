@@ -1,5 +1,17 @@
 import { db } from '../database';
-import { NotFoundError } from '../utils/errors';
+import { NotFoundError, ConflictError } from '../utils/errors';
+import { hashPassword, generateRandomToken } from '../utils/auth.utils';
+import { emailService } from './email.service';
+import { UserRole, UserStatus, VerificationStatus } from '../types/roles';
+
+// ─── Create Host Input ───────────────────────────────────────────────
+export interface CreateHostInput {
+  name: string;
+  email: string;
+  phone?: string;
+  companyName: string;
+  hostType: 'operator' | 'private';
+}
 
 // ─── Dashboard Stats ─────────────────────────────────────────────────
 export interface DashboardStats {
@@ -170,6 +182,73 @@ export class AdminService {
     return updated;
   }
 
+  /**
+   * Create a new host (admin only).
+   * Creates user with HOST role, creates host record, sends credentials via email.
+   */
+  async createHost(data: CreateHostInput) {
+    const email = data.email.toLowerCase();
+
+    // Check if email already exists
+    const existing = await db('users').where('email', email).first();
+    if (existing) {
+      throw new ConflictError('E-Mail-Adresse ist bereits registriert');
+    }
+
+    // Generate a temporary password
+    const tempPassword = generateRandomToken(6); // 12 hex chars
+
+    const passwordHash = await hashPassword(tempPassword);
+
+    // Create the user with HOST role, active, email verified
+    const [user] = await db('users')
+      .insert({
+        email,
+        password_hash: passwordHash,
+        name: data.name,
+        phone: data.phone || null,
+        role: UserRole.HOST,
+        status: UserStatus.ACTIVE,
+        email_verified: true,
+      })
+      .returning('*');
+
+    // Create the host record
+    const [host] = await db('hosts')
+      .insert({
+        user_id: user.id,
+        company_name: data.companyName,
+        host_type: data.hostType,
+        verification_status: VerificationStatus.APPROVED,
+        documents_verified: true,
+      })
+      .returning('*');
+
+    // Send credentials email
+    await emailService.sendHostCredentialsEmail({
+      email,
+      firstName: data.name,
+      tempPassword,
+    });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+      },
+      host: {
+        id: host.id,
+        company_name: host.company_name,
+        host_type: host.host_type,
+        verification_status: host.verification_status,
+      },
+    };
+  }
+
   // ── Listings ───────────────────────────────────────────────────────
   async listListings(filters: {
     status?: string;
@@ -266,23 +345,51 @@ export class AdminService {
     };
   }
 
-  async refundBooking(bookingId: string) {
+  async refundBooking(bookingId: string, amount?: number, reason?: string) {
     const booking = await db('bookings').where('id', bookingId).first();
     if (!booking) throw new NotFoundError('Booking');
+
+    // Calculate refund amount based on cancellation policy if not specified
+    let refundAmount = amount;
+    if (refundAmount === undefined || refundAmount === null) {
+      const now = new Date();
+      const arrival = new Date(booking.start_datetime);
+      const hoursUntilArrival = (arrival.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+      if (hoursUntilArrival > 24) {
+        refundAmount = Number(booking.total_price);
+      } else if (hoursUntilArrival >= 12) {
+        refundAmount = Number(booking.total_price) * 0.5;
+      } else {
+        refundAmount = 0;
+      }
+    }
+
+    refundAmount = Math.round(refundAmount * 100) / 100;
 
     const [updated] = await db('bookings')
       .where('id', bookingId)
       .update({ status: 'refunded', updated_at: new Date() })
       .returning('*');
 
-    // If payment exists, update payment status
+    // If payment exists, process refund
     if (booking.payment_id) {
+      const newRefundedAmount = Math.min(
+        Number(booking.total_price),
+        refundAmount
+      );
+      const isFullRefund = newRefundedAmount >= Number(booking.total_price);
+
       await db('payments')
         .where('id', booking.payment_id)
-        .update({ status: 'refunded', refunded_amount: booking.total_price, updated_at: new Date() });
+        .update({
+          status: isFullRefund ? 'refunded' : 'partially_refunded',
+          refunded_amount: newRefundedAmount,
+          updated_at: new Date(),
+        });
     }
 
-    return updated;
+    return { booking: updated, refundAmount, reason: reason || 'Admin refund' };
   }
 
   // ── Payments ───────────────────────────────────────────────────────

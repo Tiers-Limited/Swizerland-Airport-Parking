@@ -1,5 +1,5 @@
 import { db } from '../database';
-import { ParkingLocation, PricingRule } from '../types/entities';
+import { ParkingLocation, PricingRule, LocationAddon } from '../types/entities';
 import { NotFoundError, ForbiddenError } from '../utils/errors';
 
 export interface CreateListingInput {
@@ -30,6 +30,20 @@ export interface CreatePricingRuleInput {
   minStayDays?: number;
   maxStayDays?: number;
   currency?: string;
+}
+
+export interface CreateAddonInput {
+  name: string;
+  description?: string;
+  price: number;
+  currency?: string;
+  maxQuantity?: number;
+  icon?: string;
+  sortOrder?: number;
+}
+
+export interface UpdateAddonInput extends Partial<CreateAddonInput> {
+  isActive?: boolean;
 }
 
 export interface ListingSearchFilters {
@@ -216,7 +230,7 @@ export class ListingService {
   }
 
   // Get single listing with pricing for public view
-  async getPublicListing(id: string): Promise<ParkingLocation & { pricing_rule?: PricingRule }> {
+  async getPublicListing(id: string): Promise<ParkingLocation & { pricing_rule?: PricingRule; addons?: LocationAddon[] }> {
     const listing = await db(this.tableName)
       .leftJoin('pricing_rules', 'parking_locations.id', 'pricing_rules.location_id')
       .select(
@@ -231,7 +245,10 @@ export class ListingService {
       .first();
 
     if (!listing) throw new NotFoundError('Parking location');
-    return listing;
+
+    // Include active add-ons
+    const addons = await this.getAddonsByLocationId(id, true);
+    return { ...listing, addons };
   }
 
   // Pricing rules
@@ -414,6 +431,88 @@ export class ListingService {
 
   async deleteVehicle(vehicleId: string): Promise<void> {
     await db('shuttle_vehicles').where('id', vehicleId).delete();
+  }
+
+  // ── Location Add-ons / Extra Services ─────────────────────────────
+
+  async getAddonsByLocationId(locationId: string, activeOnly: boolean = false): Promise<LocationAddon[]> {
+    let query = db('location_addons').where('location_id', locationId);
+    if (activeOnly) {
+      query = query.where('is_active', true);
+    }
+    return query.orderBy('sort_order', 'asc').orderBy('created_at', 'asc');
+  }
+
+  async getAddonById(addonId: string): Promise<LocationAddon | null> {
+    const addon = await db('location_addons').where('id', addonId).first();
+    return addon || null;
+  }
+
+  async getAddonByIdOrFail(addonId: string): Promise<LocationAddon> {
+    const addon = await this.getAddonById(addonId);
+    if (!addon) throw new NotFoundError('Add-on service');
+    return addon;
+  }
+
+  async createAddon(locationId: string, data: CreateAddonInput): Promise<LocationAddon> {
+    await this.findByIdOrFail(locationId);
+
+    // Determine next sort order
+    const [{ max }] = await db('location_addons')
+      .where('location_id', locationId)
+      .max('sort_order as max');
+    const nextSort = (max || 0) + 1;
+
+    const [addon] = await db('location_addons').insert({
+      location_id: locationId,
+      name: data.name,
+      description: data.description || null,
+      price: data.price,
+      currency: data.currency || 'CHF',
+      max_quantity: data.maxQuantity || 1,
+      icon: data.icon || null,
+      is_active: true,
+      sort_order: data.sortOrder ?? nextSort,
+    }).returning('*');
+
+    return addon;
+  }
+
+  async updateAddon(addonId: string, data: UpdateAddonInput): Promise<LocationAddon> {
+    await this.getAddonByIdOrFail(addonId);
+
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.currency !== undefined) updateData.currency = data.currency;
+    if (data.maxQuantity !== undefined) updateData.max_quantity = data.maxQuantity;
+    if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.isActive !== undefined) updateData.is_active = data.isActive;
+    if (data.sortOrder !== undefined) updateData.sort_order = data.sortOrder;
+
+    const [updated] = await db('location_addons')
+      .where('id', addonId)
+      .update(updateData)
+      .returning('*');
+
+    return updated;
+  }
+
+  async deleteAddon(addonId: string): Promise<void> {
+    await this.getAddonByIdOrFail(addonId);
+    await db('location_addons').where('id', addonId).delete();
+  }
+
+  async reorderAddons(locationId: string, addonIds: string[]): Promise<LocationAddon[]> {
+    // Update sort_order for each addon
+    for (let i = 0; i < addonIds.length; i++) {
+      await db('location_addons')
+        .where('id', addonIds[i])
+        .where('location_id', locationId)
+        .update({ sort_order: i, updated_at: new Date() });
+    }
+    return this.getAddonsByLocationId(locationId);
   }
 }
 
