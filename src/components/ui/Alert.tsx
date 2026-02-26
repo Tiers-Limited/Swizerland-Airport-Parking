@@ -73,7 +73,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
         role="alert"
         {...props}
       >
-        <div className="flex-shrink-0">{icons[variant]}</div>
+        <div className="shrink-0">{icons[variant]}</div>
         <div className="ml-3 flex-1">
           {title && (
             <h3 className={cn('text-sm font-medium', textColors[variant])}>
@@ -89,7 +89,7 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
             type="button"
             onClick={onClose}
             className={cn(
-              'ml-3 flex-shrink-0 inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2',
+              'ml-3 shrink-0 inline-flex rounded-lg p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2',
               textColors[variant],
               variant === 'success' && 'hover:bg-success-100 focus:ring-success-500',
               variant === 'error' && 'hover:bg-error-100 focus:ring-error-500',

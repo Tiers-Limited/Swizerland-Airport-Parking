@@ -29,14 +29,14 @@ export default function UnauthorizedPage() {
               </svg>
             </div>
 
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Zugriff verweigert</h1>
             <p className="text-gray-500 mb-6">
-              You don't have permission to access this page.
+              Sie haben keine Berechtigung, auf diese Seite zuzugreifen.
               {isAuthenticated && user && (
                 <>
                   <br />
                   <span className="text-sm">
-                    You are logged in as a <strong>{getRoleDisplayName(user.role)}</strong>.
+                    Sie sind als <strong>{getRoleDisplayName(user.role)}</strong> angemeldet.
                   </span>
                 </>
               )}
@@ -46,19 +46,19 @@ export default function UnauthorizedPage() {
               {isAuthenticated ? (
                 <>
                   <Link href={getRedirectPath()}>
-                    <Button className="w-full">Go to Dashboard</Button>
+                    <Button className="w-full">Zum Dashboard</Button>
                   </Link>
                   <Link href="/">
-                    <Button variant="secondary" className="w-full">Go to Home</Button>
+                    <Button variant="secondary" className="w-full">Zur Startseite</Button>
                   </Link>
                 </>
               ) : (
                 <>
                   <Link href="/login">
-                    <Button className="w-full">Sign In</Button>
+                    <Button className="w-full">Anmelden</Button>
                   </Link>
                   <Link href="/">
-                    <Button variant="secondary" className="w-full">Go to Home</Button>
+                    <Button variant="secondary" className="w-full">Zur Startseite</Button>
                   </Link>
                 </>
               )}

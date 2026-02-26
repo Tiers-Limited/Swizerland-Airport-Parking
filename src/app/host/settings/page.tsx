@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useI18n } from '@/i18n';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiCall } from '@/lib/api';
 import { Card, Button, Input, Alert, Spinner, Badge } from '@/components/ui';
@@ -9,7 +8,6 @@ import { FadeIn } from '@/components/animations';
 import type { HostProfile } from '@/types';
 
 export default function HostSettingsPage() {
-  const { t } = useI18n();
   const { user } = useAuth();
   const [profile, setProfile] = useState<HostProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,9 +49,9 @@ export default function HostSettingsPage() {
 
     const res = await apiCall('PATCH', '/hosts/profile', form);
     if (res.success) {
-      setSuccess(t('host.profileSaved'));
+      setSuccess('Profil erfolgreich gespeichert');
     } else {
-      setError(res.error?.message || t('common.error'));
+      setError(res.error?.message || 'Fehler');
     }
     setSaving(false);
   }
@@ -69,7 +67,7 @@ export default function HostSettingsPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('host.settings')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Einstellungen</h1>
 
         {error && <Alert variant="error">{error}</Alert>}
         {success && <Alert variant="success">{success}</Alert>}
@@ -78,8 +76,8 @@ export default function HostSettingsPage() {
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-semibold text-gray-900">{t('host.verificationStatus')}</h2>
-              <p className="text-sm text-gray-500 mt-1">{t('host.verificationDesc')}</p>
+              <h2 className="font-semibold text-gray-900">Verifizierungsstatus</h2>
+              <p className="text-sm text-gray-500 mt-1">Ihr Account wird von unserem Team geprüft.</p>
             </div>
             <Badge variant={
               profile?.verification_status === 'approved' ? 'success' :
@@ -90,11 +88,11 @@ export default function HostSettingsPage() {
           </div>
           <div className="mt-4 flex items-center gap-6 text-sm">
             <div>
-              <span className="text-gray-500">{t('host.commissionRate')}:</span>
+              <span className="text-gray-500">Provisionsrate:</span>
               <span className="font-medium text-gray-900 ml-1">{profile?.commission_rate}%</span>
             </div>
             <div>
-              <span className="text-gray-500">{t('host.hostType')}:</span>
+              <span className="text-gray-500">Anbietertyp:</span>
               <span className="font-medium text-gray-900 ml-1 capitalize">{profile?.host_type}</span>
             </div>
           </div>
@@ -103,49 +101,49 @@ export default function HostSettingsPage() {
         {/* Profile form */}
         <form onSubmit={handleSave}>
           <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.businessDetails')}</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Geschäftsdetails</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label={t('host.companyName')}
+                label="Firmenname"
                 value={form.companyName}
                 onChange={(e) => setForm({ ...form, companyName: e.target.value })}
               />
               <Input
-                label={t('host.taxId')}
+                label="Steuernummer"
                 value={form.taxId}
                 onChange={(e) => setForm({ ...form, taxId: e.target.value })}
               />
               <Input
-                label={t('host.address')}
+                label="Adresse"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
               <Input
-                label={t('host.website')}
+                label="Website"
                 value={form.website}
                 onChange={(e) => setForm({ ...form, website: e.target.value })}
               />
             </div>
             <div className="flex justify-end mt-4">
-              <Button type="submit" loading={saving}>{t('common.save')}</Button>
+              <Button type="submit" loading={saving}>Speichern</Button>
             </div>
           </Card>
         </form>
 
         {/* Account info */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.accountInfo')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Kontoinformationen</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-gray-500">{t('common.name')}</p>
+              <p className="text-gray-500">Name</p>
               <p className="text-gray-900 font-medium mt-0.5">{user?.name}</p>
             </div>
             <div>
-              <p className="text-gray-500">{t('common.email')}</p>
+              <p className="text-gray-500">E-Mail</p>
               <p className="text-gray-900 font-medium mt-0.5">{user?.email}</p>
             </div>
             <div>
-              <p className="text-gray-500">{t('host.memberSince')}</p>
+              <p className="text-gray-500">Mitglied seit</p>
               <p className="text-gray-900 font-medium mt-0.5">
                 {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('de-CH') : '–'}
               </p>

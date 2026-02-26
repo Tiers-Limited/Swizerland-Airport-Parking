@@ -2,7 +2,6 @@
 
 import { useState, useRef } from 'react';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import { useI18n } from '@/i18n';
 
 interface ImageUploadProps {
   images: string[];
@@ -12,7 +11,6 @@ interface ImageUploadProps {
 }
 
 export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUploadProps) {
-  const { t } = useI18n();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -24,7 +22,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
 
     const remaining = maxImages - images.length;
     if (remaining <= 0) {
-      setError(t('host.maxImagesReached'));
+      setError('Maximale Bildanzahl erreicht');
       return;
     }
 
@@ -39,11 +37,11 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
 
       // Validate file
       if (!file.type.startsWith('image/')) {
-        setError(t('host.onlyImages'));
+        setError('Nur Bilddateien erlaubt');
         continue;
       }
       if (file.size > 10 * 1024 * 1024) {
-        setError(t('host.imageTooLarge'));
+        setError('Bild ist zu gross (max. 10 MB)');
         continue;
       }
 
@@ -56,7 +54,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
         });
         newUrls.push(result.secure_url);
       } catch {
-        setError(t('host.uploadFailed'));
+        setError('Upload fehlgeschlagen');
       }
     }
 
@@ -159,7 +157,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
             <div className="space-y-2">
               <div className="w-8 h-8 border-3 border-baby-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
               <p className="text-sm text-baby-blue-600 font-medium">
-                {t('host.uploading')} {progress}%
+                Wird hochgeladen... {progress}%
               </p>
               <div className="w-48 mx-auto bg-gray-200 rounded-full h-1.5">
                 <div
@@ -174,7 +172,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <div>
-                <p className="text-sm font-medium text-gray-700">{t('host.clickToUpload')}</p>
+                <p className="text-sm font-medium text-gray-700">Klicken zum Hochladen</p>
                 <p className="text-xs text-gray-500 mt-0.5">
                   PNG, JPG, WebP • max 10 MB • {images.length}/{maxImages}
                 </p>

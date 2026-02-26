@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Button, Input, Select, Alert } from '@/components/ui';
 import { ImageUpload } from '@/components/ui/ImageUpload';
@@ -15,7 +14,6 @@ const amenityKeys = [
 const shuttleModes = ['scheduled', 'on_demand', 'hybrid'] as const;
 
 export default function CreateListingPage() {
-  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -84,48 +82,48 @@ export default function CreateListingPage() {
     if (res.success) {
       router.push('/host/listings');
     } else {
-      setError(res.error?.message || t('common.error'));
+      setError(res.error?.message || 'Fehler');
     }
     setLoading(false);
   }
 
   const amenityLabels: Record<string, string> = {
-    covered: t('listing.amenity.covered'),
-    evCharging: t('listing.amenity.evCharging'),
-    security247: t('listing.amenity.security'),
-    cctv: t('listing.amenity.cctv'),
-    fenced: t('listing.amenity.fenced'),
-    lit: t('listing.amenity.lit'),
-    accessible: t('listing.amenity.accessible'),
-    carWash: t('listing.amenity.carWash'),
-    valetParking: t('listing.amenity.valetParking'),
+    covered: 'Überdacht',
+    evCharging: 'E-Ladestation',
+    security247: '24/7 Sicherheit',
+    cctv: 'Videoüberwachung',
+    fenced: 'Eingezäunt',
+    lit: 'Beleuchtet',
+    accessible: 'Barrierefrei',
+    carWash: 'Autowaschanlage',
+    valetParking: 'Valet Parking',
   };
 
   return (
     <FadeIn>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{t('host.createListing')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Parkplatz erstellen</h1>
         </div>
 
         {error && <Alert variant="error">{error}</Alert>}
 
         {/* Basic Info */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.basicInfo')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Grundinformationen</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <Input
-                label={t('host.listingName')}
+                label="Name des Parkplatzes"
                 value={form.name}
                 onChange={(e) => updateField('name', e.target.value)}
-                placeholder={t('host.listingNamePlaceholder')}
+                placeholder="z.B. Sicheres Parken Zürich"
                 required
               />
             </div>
             <div className="md:col-span-2">
               <Input
-                label={t('host.address')}
+                label="Adresse"
                 value={form.address}
                 onChange={(e) => updateField('address', e.target.value)}
                 placeholder="Musterstrasse 123"
@@ -133,27 +131,27 @@ export default function CreateListingPage() {
               />
             </div>
             <Input
-              label={t('host.city')}
+              label="Stadt"
               value={form.city}
               onChange={(e) => updateField('city', e.target.value)}
               required
             />
             <Input
-              label={t('host.postalCode')}
+              label="Postleitzahl"
               value={form.postalCode}
               onChange={(e) => updateField('postalCode', e.target.value)}
               placeholder="8000"
               required
             />
             <Input
-              label={t('host.latitude')}
+              label="Breitengrad"
               type="number"
               step="any"
               value={form.latitude}
               onChange={(e) => updateField('latitude', parseFloat(e.target.value))}
             />
             <Input
-              label={t('host.longitude')}
+              label="Längengrad"
               type="number"
               step="any"
               value={form.longitude}
@@ -164,10 +162,10 @@ export default function CreateListingPage() {
 
         {/* Capacity & Pricing */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.capacityPricing')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Kapazität & Preisgestaltung</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label={t('host.totalCapacity')}
+              label="Gesamtkapazität"
               type="number"
               value={form.capacityTotal}
               onChange={(e) => updateField('capacityTotal', e.target.value)}
@@ -175,7 +173,7 @@ export default function CreateListingPage() {
               required
             />
             <Input
-              label={t('host.pricePerDay')}
+              label="Preis pro Tag"
               type="number"
               step="0.01"
               value={form.basePricePerDay}
@@ -184,20 +182,20 @@ export default function CreateListingPage() {
               required
             />
             <Input
-              label={t('host.distanceToAirport')}
+              label="Entfernung zum Flughafen (Min.)"
               type="number"
               value={form.distanceToAirportMin}
               onChange={(e) => updateField('distanceToAirportMin', e.target.value)}
               placeholder="5"
             />
             <Select
-              label={t('host.cancellationPolicy')}
+              label="Stornierungsrichtlinie"
               value={form.cancellationPolicy}
               onChange={(val) => updateField('cancellationPolicy', val)}
               options={[
-                { value: 'flexible', label: t('host.policyFlexible') },
-                { value: 'moderate', label: t('host.policyModerate') },
-                { value: 'strict', label: t('host.policyStrict') },
+                { value: 'flexible', label: 'Flexibel' },
+                { value: 'moderate', label: 'Moderat' },
+                { value: 'strict', label: 'Streng' },
               ]}
             />
           </div>
@@ -205,22 +203,22 @@ export default function CreateListingPage() {
 
         {/* Shuttle Settings */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.shuttleSettings')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shuttle-Einstellungen</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Select
-              label={t('host.shuttleMode')}
+              label="Shuttle-Modus"
               value={form.shuttleMode}
               onChange={(val) => updateField('shuttleMode', val)}
-              options={shuttleModes.map((m) => ({ value: m, label: t(`host.shuttle.${m}`) }))}
+              options={shuttleModes.map((m) => ({ value: m, label: { scheduled: 'Planmässig', on_demand: 'Auf Anfrage', hybrid: 'Hybrid' }[m] }))}
             />
             <Input
-              label={t('host.shuttleStart')}
+              label="Shuttle Beginn"
               type="time"
               value={form.shuttleHours.start}
               onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, start: e.target.value } }))}
             />
             <Input
-              label={t('host.shuttleEnd')}
+              label="Shuttle Ende"
               type="time"
               value={form.shuttleHours.end}
               onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, end: e.target.value } }))}
@@ -230,7 +228,7 @@ export default function CreateListingPage() {
 
         {/* Amenities */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.amenities')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ausstattung</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {amenityKeys.map((key) => (
               <label
@@ -266,26 +264,26 @@ export default function CreateListingPage() {
 
         {/* Description & Instructions */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.descriptionSection')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Beschreibung & Anweisungen</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('host.description')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Beschreibung</label>
               <textarea
                 rows={4}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-baby-blue-500 focus:border-transparent resize-none"
                 value={form.description}
                 onChange={(e) => updateField('description', e.target.value)}
-                placeholder={t('host.descriptionPlaceholder')}
+                placeholder="Beschreiben Sie Ihren Parkplatz..."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('host.checkInInstructions')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Check-in Anweisungen</label>
               <textarea
                 rows={3}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-baby-blue-500 focus:border-transparent resize-none"
                 value={form.checkInInstructions}
                 onChange={(e) => updateField('checkInInstructions', e.target.value)}
-                placeholder={t('host.checkInPlaceholder')}
+                placeholder="Wie finden Kunden den Parkplatz?"
               />
             </div>
           </div>
@@ -293,22 +291,22 @@ export default function CreateListingPage() {
 
         {/* Images */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.images')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Bilder</h2>
           <ImageUpload
             images={form.images}
             onChange={(images) => setForm((prev) => ({ ...prev, images }))}
             maxImages={8}
-            label={t('host.uploadImages')}
+            label="Bilder hochladen"
           />
         </Card>
 
         {/* Submit */}
         <div className="flex items-center justify-end gap-3">
           <Button variant="secondary" type="button" onClick={() => router.back()}>
-            {t('common.cancel')}
+            Abbrechen
           </Button>
           <Button type="submit" loading={loading}>
-            {t('host.publishListing')}
+            Parkplatz veröffentlichen
           </Button>
         </div>
       </form>

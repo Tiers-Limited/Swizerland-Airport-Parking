@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
+import { useState, useEffect } from 'react';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Button, Input, Select, Spinner, Alert } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -20,7 +19,6 @@ interface ListingRow {
 }
 
 export default function AdminListingsPage() {
-  const { t } = useI18n();
   const [listings, setListings] = useState<ListingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -28,28 +26,30 @@ export default function AdminListingsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadListings = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '15' });
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-    if (search) params.set('search', search);
+  useEffect(() => {
+    async function loadListings() {
+      setLoading(true);
+      const params = new URLSearchParams({ page: String(page), limit: '15' });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (search) params.set('search', search);
 
-    const res = await apiCall<{ listings: ListingRow[]; totalPages: number }>('GET', `/admin/listings?${params}`);
-    if (res.success && res.data) {
-      setListings(res.data.listings || []);
-      setTotalPages(res.data.totalPages || 1);
+      const res = await apiCall<{ listings: ListingRow[]; totalPages: number }>('GET', `/admin/listings?${params}`);
+      if (res.success && res.data) {
+        setListings(res.data.listings || []);
+        setTotalPages(res.data.totalPages || 1);
+      }
+      setLoading(false);
     }
-    setLoading(false);
-  }, [page, statusFilter, search]);
-
-  useEffect(() => { loadListings(); }, [loadListings]);
+    loadListings();
+  }, [page, statusFilter, search, refreshKey]);
 
   async function handleStatusChange(id: string, status: string) {
     const res = await apiCall('PATCH', `/admin/listings/${id}/status`, { status });
     if (res.success) {
-      setMessage(t('admin.statusUpdated'));
-      loadListings();
+      setMessage('Status erfolgreich aktualisiert');
+      setRefreshKey(k => k + 1);
     }
   }
 
@@ -66,7 +66,7 @@ export default function AdminListingsPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.manageListings')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Inserate verwalten</h1>
 
         {message && <Alert variant="success" onClose={() => setMessage('')}>{message}</Alert>}
 
@@ -74,7 +74,7 @@ export default function AdminListingsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder={t('admin.searchPlaceholder')}
+                placeholder="Suchen..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
@@ -83,11 +83,11 @@ export default function AdminListingsPage() {
               value={statusFilter}
               onChange={(val) => { setStatusFilter(val); setPage(1); }}
               options={[
-                { value: 'all', label: t('common.all') },
-                { value: 'pending', label: t('common.pending') },
-                { value: 'active', label: t('common.active') },
-                { value: 'inactive', label: t('common.inactive') },
-                { value: 'rejected', label: t('common.rejected') },
+                { value: 'all', label: 'Alle' },
+                { value: 'pending', label: 'Ausstehend' },
+                { value: 'active', label: 'Aktiv' },
+                { value: 'inactive', label: 'Inaktiv' },
+                { value: 'rejected', label: 'Abgelehnt' },
               ]}
             />
           </div>
@@ -101,12 +101,12 @@ export default function AdminListingsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.listingLabel')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.host')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.capacity')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.price')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('common.status')}</th>
-                    <th className="text-right py-3 px-4 text-gray-500 font-medium">{t('admin.actions')}</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Inserat</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Host</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Kapazität</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Preis</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                    <th className="text-right py-3 px-4 text-gray-500 font-medium">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -134,21 +134,21 @@ export default function AdminListingsPage() {
                           {listing.status === 'pending' && (
                             <>
                               <Button size="sm" onClick={() => handleStatusChange(listing.id, 'active')}>
-                                {t('admin.approve')}
+                                Genehmigen
                               </Button>
                               <Button size="sm" variant="danger" onClick={() => handleStatusChange(listing.id, 'rejected')}>
-                                {t('admin.reject')}
+                                Ablehnen
                               </Button>
                             </>
                           )}
                           {listing.status === 'active' && (
                             <Button size="sm" variant="secondary" onClick={() => handleStatusChange(listing.id, 'inactive')}>
-                              {t('admin.deactivate')}
+                              Deaktivieren
                             </Button>
                           )}
                           {(listing.status === 'inactive' || listing.status === 'rejected') && (
                             <Button size="sm" onClick={() => handleStatusChange(listing.id, 'active')}>
-                              {t('admin.activate')}
+                              Aktivieren
                             </Button>
                           )}
                         </div>
@@ -157,7 +157,7 @@ export default function AdminListingsPage() {
                   ))}
                   {listings.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-400">{t('common.noResults')}</td>
+                      <td colSpan={6} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                     </tr>
                   )}
                 </tbody>
@@ -167,11 +167,11 @@ export default function AdminListingsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4 border-t border-gray-100">
                 <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  {t('common.previous')}
+                  Zurück
                 </Button>
                 <span className="text-sm text-gray-500">{page} / {totalPages}</span>
                 <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  {t('common.next')}
+                  Weiter
                 </Button>
               </div>
             )}

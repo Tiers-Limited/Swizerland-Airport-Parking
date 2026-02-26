@@ -6,17 +6,11 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Input, Card, Alert, Logo } from '@/components/ui';
 import { isValidEmail, isValidSwissPhone } from '@/lib/utils';
-import { useI18n } from '@/i18n';
-
-type AccountType = 'customer' | 'host';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isAuthenticated } = useAuth();
-  const { t } = useI18n();
   
-  const [step, setStep] = useState<'type' | 'details'>('type');
-  const [accountType, setAccountType] = useState<AccountType>('customer');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -51,25 +45,25 @@ export default function RegisterPage() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = t('auth.nameRequired');
+      newErrors.name = 'Name ist erforderlich';
     } else if (formData.name.trim().length < 2) {
-      newErrors.name = t('auth.nameMinLength');
+      newErrors.name = 'Name muss mindestens 2 Zeichen lang sein';
     }
     if (!formData.email.trim()) {
-      newErrors.email = t('auth.emailRequired');
+      newErrors.email = 'E-Mail ist erforderlich';
     } else if (!isValidEmail(formData.email)) {
-      newErrors.email = t('auth.emailInvalid');
+      newErrors.email = 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
     }
     if (formData.phone && !isValidSwissPhone(formData.phone)) {
-      newErrors.phone = t('auth.phoneInvalid');
+      newErrors.phone = 'Bitte geben Sie eine gültige Schweizer Telefonnummer ein';
     }
     if (!formData.password) {
-      newErrors.password = t('auth.passwordRequired');
+      newErrors.password = 'Passwort ist erforderlich';
     } else if (formData.password.length < 8) {
-      newErrors.password = t('auth.passwordMinLength');
+      newErrors.password = 'Passwort muss mindestens 8 Zeichen lang sein';
     }
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = t('auth.passwordsMismatch');
+      newErrors.confirmPassword = 'Passwörter stimmen nicht überein';
     }
 
     setErrors(newErrors);
@@ -90,21 +84,16 @@ export default function RegisterPage() {
         password: formData.password,
         name: formData.name.trim(),
         phone: formData.phone || undefined,
-        role: accountType, // 'host' or 'customer' — host profile is created separately during onboarding
+        role: 'customer',
       });
 
       if (result.success) {
-        // Redirect based on account type
-        if (accountType === 'host') {
-          router.push('/host/onboarding');
-        } else {
-          router.push('/account');
-        }
+        router.push('/account');
       } else {
-        setGeneralError(result.error || t('auth.registerFailed'));
+        setGeneralError(result.error || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
       }
     } catch (err) {
-      setGeneralError(t('auth.unexpectedError'));
+      setGeneralError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -122,186 +111,112 @@ export default function RegisterPage() {
       {/* Main content */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          {step === 'type' ? (
-            <Card padding="lg" className="animate-fade-in">
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">{t('auth.registerTitle')}</h1>
-                <p className="text-gray-500 mt-2">{t('auth.chooseType')}</p>
-              </div>
+          <Card padding="lg" className="animate-fade-in">
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-gray-900">Konto erstellen</h1>
+              <p className="text-gray-500 mt-2">Geben Sie Ihre Daten ein, um zu starten</p>
+            </div>
 
-              <div className="space-y-4">
-                {/* Customer option */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccountType('customer');
-                    setStep('details');
-                  }}
-                  className="w-full p-6 rounded-xl border-2 border-gray-200 hover:border-baby-blue-500 
-                           hover:bg-baby-blue-50 transition-all duration-200 text-left group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-xl bg-baby-blue-100 text-baby-blue-600 group-hover:bg-baby-blue-200">
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{t('auth.imTraveler')}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {t('auth.travelDesc')}
-                      </p>
-                    </div>
-                  </div>
-                </button>
+            {generalError && (
+              <Alert variant="error" className="mb-6" onClose={() => setGeneralError('')}>
+                {generalError}
+              </Alert>
+            )}
 
-                {/* Host option */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAccountType('host');
-                    setStep('details');
-                  }}
-                  className="w-full p-6 rounded-xl border-2 border-gray-200 hover:border-baby-blue-500 
-                           hover:bg-baby-blue-50 transition-all duration-200 text-left group"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 rounded-xl bg-baby-blue-100 text-baby-blue-600 group-hover:bg-baby-blue-200">
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{t('auth.imCompany')}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {t('auth.companyDesc')}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <Input
+                label="Vollständiger Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Doe"
+                error={errors.name}
+                required
+                leftIcon={
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                }
+              />
 
-              <div className="mt-8 text-center">
-                <p className="text-sm text-gray-500">
-                  {t('auth.hasAccount')}{' '}
-                  <Link href="/login" className="text-baby-blue-600 hover:text-baby-blue-700 font-medium">
-                    {t('common.signIn')}
-                  </Link>
-                </p>
-              </div>
-            </Card>
-          ) : (
-            <Card padding="lg" className="animate-fade-in">
-              <button
-                type="button"
-                onClick={() => setStep('type')}
-                className="flex items-center text-sm text-gray-500 hover:text-gray-700 mb-6"
+              <Input
+                label="E-Mail-Adresse"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                error={errors.email}
+                autoComplete="email"
+                required
+              />
+
+              <Input
+                label="Telefonnummer"
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="+41 XX XXX XX XX"
+                error={errors.phone}
+                helperText="Optional, aber empfohlen für Buchungs-Updates"
+              />
+
+              <Input
+                label="Passwort"
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.password}
+                helperText="Mindestens 8 Zeichen"
+                autoComplete="new-password"
+                required
+              />
+
+              <Input
+                label="Passwort bestätigen"
+                type="password"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                placeholder="••••••••"
+                error={errors.confirmPassword}
+                autoComplete="new-password"
+                required
+              />
+
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                isLoading={isLoading}
               >
-                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back
-              </button>
+                Konto erstellen
+              </Button>
+            </form>
 
-              <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {accountType === 'host' ? t('auth.createHostAccount') : t('auth.registerTitle')}
-                </h1>
-                <p className="text-gray-500 mt-2">{t('auth.fillDetails')}</p>
-              </div>
-
-              {generalError && (
-                <Alert variant="error" className="mb-6" onClose={() => setGeneralError('')}>
-                  {generalError}
-                </Alert>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <Input
-                  label={t('auth.name')}
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  placeholder="John Doe"
-                  error={errors.name}
-                  required
-                  leftIcon={
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  }
-                />
-
-                <Input
-                  label={t('auth.email')}
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  placeholder="you@example.com"
-                  error={errors.email}
-                  autoComplete="email"
-                  required
-                />
-
-                <Input
-                  label={t('auth.phone')}
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  placeholder="+41 XX XXX XX XX"
-                  error={errors.phone}
-                  helperText={t('auth.phoneHelper')}
-                />
-
-                <Input
-                  label={t('auth.password')}
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  error={errors.password}
-                  helperText={t('auth.passwordHelper')}
-                  autoComplete="new-password"
-                  required
-                />
-
-                <Input
-                  label={t('auth.confirmPassword')}
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  placeholder="••••••••"
-                  error={errors.confirmPassword}
-                  autoComplete="new-password"
-                  required
-                />
-
-                <Button
-                  type="submit"
-                  className="w-full"
-                  size="lg"
-                  isLoading={isLoading}
-                >
-                  {t('auth.createAccount')}
-                </Button>
-              </form>
-
-              <p className="text-center text-sm text-gray-500 mt-6">
-                {t('auth.byCreating')}{' '}
-                <Link href="/terms" className="text-baby-blue-600 hover:text-baby-blue-700">
-                  {t('booking.termsOfService')}
-                </Link>{' '}
-                {t('auth.and')}{' '}
-                <Link href="/privacy" className="text-baby-blue-600 hover:text-baby-blue-700">
-                  {t('booking.privacyPolicy')}
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-500">
+                Bereits ein Konto?{' '}
+                <Link href="/login" className="text-baby-blue-600 hover:text-baby-blue-700 font-medium">
+                  Anmelden
                 </Link>
               </p>
-            </Card>
-          )}
+            </div>
+
+            <p className="text-center text-sm text-gray-500 mt-6">
+              Mit der Kontoerstellung akzeptieren Sie unsere{' '}
+              <Link href="/terms" className="text-baby-blue-600 hover:text-baby-blue-700">
+                AGB
+              </Link>{' '}
+              und{' '}
+              <Link href="/privacy" className="text-baby-blue-600 hover:text-baby-blue-700">
+                Datenschutzrichtlinie
+              </Link>
+            </p>
+          </Card>
         </div>
       </main>
     </div>

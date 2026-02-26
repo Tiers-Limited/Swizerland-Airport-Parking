@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Alert } from '@/components/ui';
+import { apiCall } from '@/lib/api';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -24,48 +25,61 @@ export default function ProfilePage() {
     confirmPassword: '',
   });
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
     try {
-      // TODO: API call to update profile
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSuccess('Profile updated successfully.');
+      const res = await apiCall('PATCH', `/users/${user?.id}`, {
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+      });
+      if (res.success) {
+        setSuccess('Profil erfolgreich aktualisiert.');
+      } else {
+        setError(res.error?.message || 'Profil konnte nicht aktualisiert werden.');
+      }
     } catch {
-      setError('Failed to update profile. Please try again.');
+      setError('Profil konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
     if (passwords.newPassword !== passwords.confirmPassword) {
-      setError('New passwords do not match.');
+      setError('Die neuen Passwörter stimmen nicht überein.');
       setLoading(false);
       return;
     }
 
     if (passwords.newPassword.length < 8) {
-      setError('Password must be at least 8 characters.');
+      setError('Das Passwort muss mindestens 8 Zeichen lang sein.');
       setLoading(false);
       return;
     }
 
     try {
-      // TODO: API call to change password
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSuccess('Password changed successfully.');
-      setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      const res = await apiCall('POST', '/auth/change-password', {
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+      });
+      if (res.success) {
+        setSuccess('Passwort erfolgreich geändert.');
+        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setError(res.error?.message || 'Passwort konnte nicht geändert werden.');
+      }
     } catch {
-      setError('Failed to change password. Please try again.');
+      setError('Passwort konnte nicht geändert werden. Bitte versuchen Sie es erneut.');
     } finally {
       setLoading(false);
     }
@@ -74,8 +88,8 @@ export default function ProfilePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Profile Settings</h1>
-        <p className="text-gray-500">Manage your account information and security settings.</p>
+        <h1 className="text-2xl font-bold text-gray-900">Profileinstellungen</h1>
+        <p className="text-gray-500">Verwalten Sie Ihre Kontodaten und Sicherheitseinstellungen.</p>
       </div>
 
       {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
@@ -84,35 +98,35 @@ export default function ProfilePage() {
       {/* Profile Information */}
       <Card>
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle>Persönliche Informationen</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             <Input
-              label="Full Name"
+              label="Vollständiger Name"
               value={profile.name}
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
               required
             />
             <Input
-              label="Email Address"
+              label="E-Mail-Adresse"
               type="email"
               value={profile.email}
               onChange={(e) => setProfile({ ...profile, email: e.target.value })}
               required
-              helperText="Changing your email will require verification."
+              helperText="Eine Änderung Ihrer E-Mail-Adresse erfordert eine erneute Verifizierung."
             />
             <Input
-              label="Phone Number"
+              label="Telefonnummer"
               type="tel"
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               placeholder="+41 79 123 45 67"
-              helperText="We'll use this for booking confirmations and shuttle updates."
+              helperText="Wird für Buchungsbestätigungen und Shuttle-Updates verwendet."
             />
             <div className="flex justify-end">
               <Button type="submit" loading={loading}>
-                Save Changes
+                Änderungen speichern
               </Button>
             </div>
           </form>
@@ -122,12 +136,12 @@ export default function ProfilePage() {
       {/* Password Change */}
       <Card>
         <CardHeader>
-          <CardTitle>Change Password</CardTitle>
+          <CardTitle>Passwort ändern</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <Input
-              label="Current Password"
+              label="Aktuelles Passwort"
               type="password"
               value={passwords.currentPassword}
               onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
@@ -135,15 +149,15 @@ export default function ProfilePage() {
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
-                label="New Password"
+                label="Neues Passwort"
                 type="password"
                 value={passwords.newPassword}
                 onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
                 required
-                helperText="At least 8 characters."
+                helperText="Mindestens 8 Zeichen."
               />
               <Input
-                label="Confirm New Password"
+                label="Neues Passwort bestätigen"
                 type="password"
                 value={passwords.confirmPassword}
                 onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
@@ -152,7 +166,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex justify-end">
               <Button type="submit" loading={loading}>
-                Change Password
+                Passwort ändern
               </Button>
             </div>
           </form>
@@ -162,40 +176,40 @@ export default function ProfilePage() {
       {/* Notification Preferences */}
       <Card>
         <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
+          <CardTitle>Benachrichtigungseinstellungen</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <label className="flex items-center gap-3">
+            <label className="flex items-center gap-3" aria-label="Buchungsbestätigungen">
               <input
                 type="checkbox"
                 defaultChecked
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <div>
-                <p className="font-medium text-gray-900">Booking Confirmations</p>
-                <p className="text-sm text-gray-500">Receive email confirmations for your bookings.</p>
+                <p className="font-medium text-gray-900">Buchungsbestätigungen</p>
+                <p className="text-sm text-gray-500">E-Mail-Bestätigungen für Ihre Buchungen erhalten.</p>
               </div>
             </label>
-            <label className="flex items-center gap-3">
+            <label className="flex items-center gap-3" aria-label="Shuttle-Updates">
               <input
                 type="checkbox"
                 defaultChecked
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <div>
-                <p className="font-medium text-gray-900">Shuttle Updates</p>
-                <p className="text-sm text-gray-500">Get real-time notifications about your shuttle status.</p>
+                <p className="font-medium text-gray-900">Shuttle-Updates</p>
+                <p className="text-sm text-gray-500">Echtzeit-Benachrichtigungen über Ihren Shuttle-Status erhalten.</p>
               </div>
             </label>
-            <label className="flex items-center gap-3">
+            <label className="flex items-center gap-3" aria-label="Werbe-E-Mails">
               <input
                 type="checkbox"
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <div>
-                <p className="font-medium text-gray-900">Promotional Emails</p>
-                <p className="text-sm text-gray-500">Receive special offers and discounts.</p>
+                <p className="font-medium text-gray-900">Werbe-E-Mails</p>
+                <p className="text-sm text-gray-500">Sonderangebote und Rabatte erhalten.</p>
               </div>
             </label>
           </div>
@@ -205,17 +219,17 @@ export default function ProfilePage() {
       {/* Delete Account */}
       <Card className="border-error-200">
         <CardHeader>
-          <CardTitle className="text-error-600">Danger Zone</CardTitle>
+          <CardTitle className="text-error-600">Gefahrenzone</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">Delete Account</p>
+              <p className="font-medium text-gray-900">Konto löschen</p>
               <p className="text-sm text-gray-500">
-                Permanently delete your account and all associated data.
+                Ihr Konto und alle zugehörigen Daten dauerhaft löschen.
               </p>
             </div>
-            <Button variant="danger">Delete Account</Button>
+            <Button variant="danger">Konto löschen</Button>
           </div>
         </CardContent>
       </Card>

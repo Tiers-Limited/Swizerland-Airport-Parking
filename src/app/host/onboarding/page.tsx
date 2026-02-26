@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Button, Input, Select, Alert } from '@/components/ui';
 import { Header, Footer } from '@/components/layout';
@@ -10,7 +9,6 @@ import { FadeIn } from '@/components/animations';
 import type { HostRegisterData } from '@/types';
 
 export default function HostOnboardingPage() {
-  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +43,7 @@ export default function HostOnboardingPage() {
     if (res.success) {
       router.push('/host');
     } else {
-      setError(res.error?.message || t('common.error'));
+      setError(res.error?.message || 'Fehler');
     }
     setLoading(false);
   }
@@ -64,8 +62,8 @@ export default function HostOnboardingPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">{t('host.becomeHost')}</h1>
-              <p className="text-gray-500 mt-2">{t('host.onboardingSubtitle')}</p>
+              <h1 className="text-2xl font-bold text-gray-900">Host werden</h1>
+              <p className="text-gray-500 mt-2">Bieten Sie Parkplätze an und verdienen Sie Geld.</p>
             </div>
 
             {/* Stepper */}
@@ -86,7 +84,7 @@ export default function HostOnboardingPage() {
               <form onSubmit={handleSubmit}>
                 {step === 1 && (
                   <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('host.accountType')}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Kontotyp</h2>
 
                     {/* Host type selection */}
                     <div className="grid grid-cols-2 gap-3">
@@ -105,7 +103,7 @@ export default function HostOnboardingPage() {
                             {type === 'operator' ? '🏢' : '👤'}
                           </div>
                           <p className={`text-sm font-medium ${form.hostType === type ? 'text-baby-blue-700' : 'text-gray-700'}`}>
-                            {t(`host.type.${type}`)}
+                            {{ operator: 'Betreiber', private: 'Privat' }[type]}
                           </p>
                         </button>
                       ))}
@@ -113,7 +111,7 @@ export default function HostOnboardingPage() {
 
                     {form.hostType === 'operator' && (
                       <Input
-                        label={t('host.companyName')}
+                        label="Firmenname"
                         value={form.companyName || ''}
                         onChange={(e) => updateField('companyName', e.target.value)}
                         placeholder="Parking AG"
@@ -123,7 +121,7 @@ export default function HostOnboardingPage() {
 
                     <div className="pt-2">
                       <Button type="button" className="w-full" onClick={() => setStep(2)}>
-                        {t('common.continue')}
+                        Weiter
                       </Button>
                     </div>
                   </div>
@@ -131,22 +129,22 @@ export default function HostOnboardingPage() {
 
                 {step === 2 && (
                   <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('host.businessDetails')}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Geschäftsdetails</h2>
 
                     <Input
-                      label={t('host.taxId')}
+                      label="Steuernummer"
                       value={form.taxId || ''}
                       onChange={(e) => updateField('taxId', e.target.value)}
                       placeholder="CHE-123.456.789"
                     />
                     <Input
-                      label={t('host.address')}
+                      label="Adresse"
                       value={form.address}
                       onChange={(e) => updateField('address', e.target.value)}
                       placeholder="Musterstrasse 1, 8000 Zürich"
                     />
                     <Input
-                      label={t('host.website')}
+                      label="Website"
                       value={form.website}
                       onChange={(e) => updateField('website', e.target.value)}
                       placeholder="https://www.example.ch"
@@ -154,10 +152,10 @@ export default function HostOnboardingPage() {
 
                     <div className="flex gap-3 pt-2">
                       <Button type="button" variant="secondary" className="flex-1" onClick={() => setStep(1)}>
-                        {t('common.back')}
+                        Zurück
                       </Button>
                       <Button type="submit" className="flex-1" loading={loading}>
-                        {t('host.completeRegistration')}
+                        Registrierung abschliessen
                       </Button>
                     </div>
                   </div>
@@ -169,15 +167,15 @@ export default function HostOnboardingPage() {
             <div className="mt-8 grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl mb-1">💰</div>
-                <p className="text-xs text-gray-500">{t('host.benefit1')}</p>
+                <p className="text-xs text-gray-500">Zusätzliches Einkommen</p>
               </div>
               <div>
                 <div className="text-2xl mb-1">📊</div>
-                <p className="text-xs text-gray-500">{t('host.benefit2')}</p>
+                <p className="text-xs text-gray-500">Einfache Verwaltung</p>
               </div>
               <div>
                 <div className="text-2xl mb-1">🛡️</div>
-                <p className="text-xs text-gray-500">{t('host.benefit3')}</p>
+                <p className="text-xs text-gray-500">Voller Support</p>
               </div>
             </div>
           </div>

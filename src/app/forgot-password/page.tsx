@@ -17,12 +17,12 @@ export default function ForgotPasswordPage() {
     setError('');
 
     if (!email.trim()) {
-      setError('Please enter your email address');
+      setError('Bitte geben Sie Ihre E-Mail-Adresse ein');
       return;
     }
 
     if (!isValidEmail(email)) {
-      setError('Please enter a valid email address');
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
       return;
     }
 
@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
         setIsSubmitted(true);
       }
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      setError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -66,7 +66,7 @@ export default function ForgotPasswordPage() {
                   <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Back to login
+                  Zurück zur Anmeldung
                 </Link>
 
                 <div className="text-center mb-8">
@@ -75,9 +75,9 @@ export default function ForgotPasswordPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
                   </div>
-                  <h1 className="text-2xl font-bold text-gray-900">Forgot password?</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">Passwort vergessen?</h1>
                   <p className="text-gray-500 mt-2">
-                    No worries, we'll send you reset instructions.
+                    Kein Problem, wir senden Ihnen einen Link zum Zurücksetzen Ihres Passworts.
                   </p>
                 </div>
 
@@ -89,14 +89,14 @@ export default function ForgotPasswordPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <Input
-                    label="Email address"
+                    label="E-Mail-Adresse"
                     type="email"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
                       setError('');
                     }}
-                    placeholder="you@example.com"
+                    placeholder="sie@beispiel.com"
                     autoComplete="email"
                     required
                     leftIcon={
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
                     size="lg"
                     isLoading={isLoading}
                   >
-                    Send reset link
+                    Link senden
                   </Button>
                 </form>
               </>
@@ -123,24 +123,24 @@ export default function ForgotPasswordPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Prüfen Sie Ihre E-Mails</h2>
                 <p className="text-gray-500 mb-6">
-                  We've sent a password reset link to<br />
+                  Wir haben einen Link zum Zurücksetzen des Passworts gesendet an<br />
                   <span className="font-medium text-gray-700">{email}</span>
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
-                  Didn't receive the email? Check your spam folder or{' '}
+                  E-Mail nicht erhalten? Überprüfen Sie Ihren Spam-Ordner oder{' '}
                   <button
                     type="button"
                     onClick={() => setIsSubmitted(false)}
                     className="text-baby-blue-600 hover:text-baby-blue-700"
                   >
-                    try again
+                    versuchen Sie es erneut
                   </button>
                 </p>
                 <Link href="/login">
                   <Button variant="secondary" className="w-full">
-                    Back to login
+                    Zurück zur Anmeldung
                   </Button>
                 </Link>
               </div>

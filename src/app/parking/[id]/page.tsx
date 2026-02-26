@@ -8,8 +8,7 @@ import { Header, Footer } from '@/components/layout';
 import { Button, Card, Badge, Alert, Spinner } from '@/components/ui';
 import { formatCurrency, calculateDays, formatDate } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
-import { useI18n } from '@/i18n';
-import type { ParkingListing, SpecialRequests } from '@/types';
+import type { ParkingListing, SpecialRequests, LocationAddon } from '@/types';
 
 // Map backend response to ParkingListing
 function mapBackendListing(raw: Record<string, unknown>): ParkingListing {
@@ -49,6 +48,18 @@ function mapBackendListing(raw: Record<string, unknown>): ParkingListing {
     isApproved: raw.status === 'active',
     rating: (raw.rating as number) || undefined,
     reviewCount: (raw.review_count as number) || 0,
+    addons: ((raw.addons as Array<Record<string, unknown>>) || []).map((a) => ({
+      id: a.id as string,
+      locationId: a.location_id as string,
+      name: a.name as string,
+      description: (a.description as string) || '',
+      price: a.price as number,
+      currency: (a.currency as string) || 'CHF',
+      maxQuantity: (a.max_quantity as number) || 1,
+      icon: (a.icon as string) || '',
+      isActive: a.is_active as boolean,
+      sortOrder: (a.sort_order as number) || 0,
+    })) as LocationAddon[],
     createdAt: (raw.created_at as string) || '',
     updatedAt: (raw.updated_at as string) || '',
   };
@@ -62,7 +73,6 @@ export default function ParkingDetailPage({ params }: PageParams) {
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useI18n();
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
 
@@ -115,10 +125,10 @@ export default function ParkingDetailPage({ params }: PageParams) {
         <Header />
         <main className="flex-1 flex items-center justify-center">
           <Card padding="lg" className="text-center">
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">{t('listing.parkingNotFound')}</h1>
-            <p className="text-gray-500 mb-4">{t('listing.parkingNotFoundDesc')}</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Parkplatz nicht gefunden</h1>
+            <p className="text-gray-500 mb-4">Der gesuchte Parkplatz existiert nicht.</p>
             <Link href="/zurich">
-              <Button>{t('listing.browseAll')}</Button>
+              <Button>Alle Parkplätze durchsuchen</Button>
             </Link>
           </Card>
         </main>
@@ -149,20 +159,20 @@ export default function ParkingDetailPage({ params }: PageParams) {
   const totalPrice = basePrice - discountAmount + serviceFee;
 
   const amenityList = [
-    { key: 'covered', label: t('listing.covered'), icon: '🏠' },
-    { key: 'evCharging', label: t('listing.evCharging'), icon: '⚡' },
-    { key: 'security247', label: t('listing.security247'), icon: '🛡️' },
-    { key: 'cctv', label: t('listing.cctv'), icon: '📹' },
-    { key: 'fenced', label: t('listing.fenced'), icon: '🔒' },
-    { key: 'lit', label: t('listing.lit'), icon: '💡' },
-    { key: 'accessible', label: t('listing.accessible'), icon: '♿' },
-    { key: 'carWash', label: t('listing.carWash'), icon: '🚿' },
-    { key: 'valetParking', label: t('listing.valetParking'), icon: '🎩' },
+    { key: 'covered', label: 'Überdacht', icon: '🏠' },
+    { key: 'evCharging', label: 'E-Ladestation', icon: '⚡' },
+    { key: 'security247', label: '24/7 Sicherheit', icon: '🛡️' },
+    { key: 'cctv', label: 'CCTV', icon: '📹' },
+    { key: 'fenced', label: 'Eingezäunt', icon: '🔒' },
+    { key: 'lit', label: 'Beleuchtet', icon: '💡' },
+    { key: 'accessible', label: 'Barrierefrei', icon: '♿' },
+    { key: 'carWash', label: 'Autowaschanlage', icon: '🚿' },
+    { key: 'valetParking', label: 'Valet Parking', icon: '🎩' },
   ];
 
   const handleProceedToBooking = () => {
     if (!startDate || !endDate) {
-      alert(t('listing.selectDates'));
+      alert('Bitte wählen Sie Ihre Reisedaten');
       return;
     }
     setShowBookingForm(true);
@@ -192,7 +202,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                   <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <p>{t('listing.parkingImages')}</p>
+                  <p>Parkplatzbilder</p>
                 </div>
               </div>
             )}
@@ -227,7 +237,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                         <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                       </svg>
                       <span className="font-semibold text-gray-900">{listing.rating}</span>
-                      <span className="text-gray-500">({t('listing.reviews', { count: listing.reviewCount })})</span>
+                      <span className="text-gray-500">({listing.reviewCount} Bewertungen)</span>
                     </div>
                   )}
                 </div>
@@ -235,13 +245,13 @@ export default function ParkingDetailPage({ params }: PageParams) {
 
               {/* Description */}
               <Card padding="md" className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.aboutTitle')}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Über diesen Parkplatz</h2>
                 <p className="text-gray-600">{listing.description}</p>
               </Card>
 
               {/* Shuttle Info */}
               <Card padding="md" className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.shuttleService')}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Shuttleservice</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-baby-blue-100 text-baby-blue-600">
@@ -250,8 +260,8 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{t('listing.freeShuttle')}</p>
-                      <p className="text-xs text-gray-500">{t('listing.every', { min: listing.shuttleSchedule?.frequency || 20 })}</p>
+                      <p className="text-sm font-medium text-gray-900">Gratis Shuttle</p>
+                      <p className="text-xs text-gray-500">{`Alle ${listing.shuttleSchedule?.frequency || 20} Minuten`}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -261,7 +271,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{t('listing.operatingHours')}</p>
+                      <p className="text-sm font-medium text-gray-900">Betriebszeiten</p>
                       <p className="text-xs text-gray-500">
                         {listing.shuttleSchedule?.operatingHours.start} - {listing.shuttleSchedule?.operatingHours.end}
                       </p>
@@ -274,8 +284,8 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       </svg>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{t('listing.transferTime')}</p>
-                      <p className="text-xs text-gray-500">{t('listing.minutesToTerminal', { min: listing.transferTime })}</p>
+                      <p className="text-sm font-medium text-gray-900">Transferzeit</p>
+                      <p className="text-xs text-gray-500">{`${listing.transferTime} Minuten zum Terminal`}</p>
                     </div>
                   </div>
                 </div>
@@ -283,7 +293,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
 
               {/* Amenities */}
               <Card padding="md" className="mb-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.amenities')}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Ausstattung</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                   {amenityList.map((amenity) => {
                     const isAvailable = listing.amenities[amenity.key as keyof typeof listing.amenities];
@@ -307,27 +317,54 @@ export default function ParkingDetailPage({ params }: PageParams) {
                 </div>
               </Card>
 
+              {/* Extra Services / Add-ons */}
+              {listing.addons && listing.addons.length > 0 && (
+                <Card padding="md" className="mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-3">Zusatzleistungen</h2>
+                  <p className="text-sm text-gray-500 mb-4">Folgende Extras können bei der Buchung hinzugefügt werden:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {listing.addons.map((addon) => (
+                      <div
+                        key={addon.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-baby-blue-50 border border-baby-blue-100"
+                      >
+                        {addon.icon && <span className="text-lg">{addon.icon}</span>}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900">{addon.name}</p>
+                          {addon.description && (
+                            <p className="text-xs text-gray-500 truncate">{addon.description}</p>
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold text-baby-blue-700 whitespace-nowrap">
+                          +{formatCurrency(addon.price)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+
               {/* Cancellation Policy */}
               <Card padding="md">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('listing.cancellationPolicy')}</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Stornierungsrichtlinie</h2>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-success-600">
                     <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
-                    <span>{t('listing.cancel24h')}</span>
+                    <span>Kostenlose Stornierung bis 24 Stunden vor Ankunft</span>
                   </div>
                   <div className="flex items-center gap-2 text-warning-600">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>{t('listing.cancel12h')}</span>
+                    <span>50% Erstattung bei Stornierung 12-24 Stunden vorher</span>
                   </div>
                   <div className="flex items-center gap-2 text-error-600">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
-                    <span>{t('listing.cancelLess12h')}</span>
+                    <span>Keine Erstattung bei Stornierung weniger als 12 Stunden vorher</span>
                   </div>
                 </div>
               </Card>
@@ -345,7 +382,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                     <span className="text-gray-500">/day</span>
                   </div>
                   {listing.availableSpaces < 20 && (
-                    <Badge variant="warning">{t('listing.onlyLeft', { count: listing.availableSpaces })}</Badge>
+                    <Badge variant="warning">{`Nur noch ${listing.availableSpaces} frei`}</Badge>
                   )}
                 </div>
 
@@ -353,7 +390,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('listing.dropOff')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Abgabe</label>
                       <input
                         type="date"
                         value={startDate}
@@ -363,7 +400,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('listing.pickUp')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Abholung</label>
                       <input
                         type="date"
                         value={endDate}
@@ -380,23 +417,23 @@ export default function ParkingDetailPage({ params }: PageParams) {
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">
-                        {formatCurrency(listing.pricePerDay)} × {days} {t('common.days')}
+                        {formatCurrency(listing.pricePerDay)} × {days} Tage
                       </span>
                       <span className="text-gray-900">{formatCurrency(basePrice)}</span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-success-600">
-                      <span>{appliedOffer} {t('listing.discount')}</span>
+                      <span>{appliedOffer} Rabatt</span>
                         <span>-{formatCurrency(discountAmount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-500">{t('listing.serviceFee')}</span>
+                      <span className="text-gray-500">Servicegebühr</span>
                       <span className="text-gray-900">{formatCurrency(serviceFee)}</span>
                     </div>
                   </div>
                   <div className="flex justify-between pt-3 mt-3 border-t border-gray-100">
-                    <span className="font-semibold text-gray-900">{t('common.total')}</span>
+                    <span className="font-semibold text-gray-900">Gesamt</span>
                     <span className="font-bold text-gray-900">{formatCurrency(totalPrice)}</span>
                   </div>
                 </div>
@@ -404,7 +441,7 @@ export default function ParkingDetailPage({ params }: PageParams) {
                 {/* Offer Badge */}
                 {listing.offers.length > 0 && (
                   <Alert variant="success" className="mb-4">
-                    <span className="font-medium">{t('listing.specialOffer')}</span> {t('listing.specialOfferDesc')}
+                    <span className="font-medium">Sonderangebot:</span> 7+ Tage buchen und 10% sparen!
                   </Alert>
                 )}
 
@@ -414,11 +451,11 @@ export default function ParkingDetailPage({ params }: PageParams) {
                   size="lg"
                   onClick={handleProceedToBooking}
                 >
-                  {t('listing.reserveNow')}
+                  Jetzt reservieren
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  {t('listing.notChargedYet')}
+                  Noch keine Belastung
                 </p>
               </Card>
             </div>

@@ -19,7 +19,7 @@ const accountNavigation = [
     ),
   },
   {
-    name: 'My Bookings',
+    name: 'Meine Buchungen',
     href: '/account/bookings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -28,7 +28,7 @@ const accountNavigation = [
     ),
   },
   {
-    name: 'Profile',
+    name: 'Profil',
     href: '/account/profile',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -38,12 +38,12 @@ export default function ResetPasswordPage() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Passwort ist erforderlich';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = 'Das Passwort muss mindestens 8 Zeichen lang sein';
     }
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = 'Passwörter stimmen nicht überein';
     }
 
     setErrors(newErrors);
@@ -70,11 +70,11 @@ export default function ResetPasswordPage() {
         if (result.error?.code === 'INVALID_TOKEN' || result.error?.code === 'EXPIRED_TOKEN') {
           setIsValidToken(false);
         } else {
-          setGeneralError(result.error?.message || 'Failed to reset password. Please try again.');
+          setGeneralError(result.error?.message || 'Passwort konnte nicht zurückgesetzt werden. Bitte versuchen Sie es erneut.');
         }
       }
     } catch (err) {
-      setGeneralError('An unexpected error occurred. Please try again.');
+      setGeneralError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -100,12 +100,12 @@ export default function ResetPasswordPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Invalid or expired link</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Ungültiger oder abgelaufener Link</h2>
                 <p className="text-gray-500 mb-6">
-                  This password reset link is invalid or has expired. Please request a new one.
+                  Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.
                 </p>
                 <Link href="/forgot-password">
-                  <Button className="w-full">Request new link</Button>
+                  <Button className="w-full">Neuen Link anfordern</Button>
                 </Link>
               </div>
             ) : isSuccess ? (
@@ -115,12 +115,12 @@ export default function ResetPasswordPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Password reset successful</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Passwort erfolgreich zurückgesetzt</h2>
                 <p className="text-gray-500 mb-6">
-                  Your password has been reset. You can now sign in with your new password.
+                  Ihr Passwort wurde zurückgesetzt. Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
                 </p>
                 <Link href="/login">
-                  <Button className="w-full">Sign in</Button>
+                  <Button className="w-full">Anmelden</Button>
                 </Link>
               </div>
             ) : (
@@ -131,9 +131,9 @@ export default function ResetPasswordPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
                   </div>
-                  <h1 className="text-2xl font-bold text-gray-900">Set new password</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">Neues Passwort festlegen</h1>
                   <p className="text-gray-500 mt-2">
-                    Create a strong password for your account
+                    Erstellen Sie ein sicheres Passwort für Ihr Konto
                   </p>
                 </div>
 
@@ -145,20 +145,20 @@ export default function ResetPasswordPage() {
 
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <Input
-                    label="New password"
+                    label="Neues Passwort"
                     type="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••••"
                     error={errors.password}
-                    helperText="At least 8 characters"
+                    helperText="Mindestens 8 Zeichen"
                     autoComplete="new-password"
                     required
                   />
 
                   <Input
-                    label="Confirm new password"
+                    label="Neues Passwort bestätigen"
                     type="password"
                     name="confirmPassword"
                     value={formData.confirmPassword}
@@ -175,7 +175,7 @@ export default function ResetPasswordPage() {
                     size="lg"
                     isLoading={isLoading}
                   >
-                    Reset password
+                    Passwort zurücksetzen
                   </Button>
                 </form>
               </>

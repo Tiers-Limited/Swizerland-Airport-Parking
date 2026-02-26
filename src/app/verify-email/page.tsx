@@ -17,7 +17,7 @@ export default function VerifyEmailPage() {
     const verifyEmail = async () => {
       if (!token) {
         setStatus('error');
-        setErrorMessage('Invalid verification link. No token provided.');
+        setErrorMessage('Ungültiger Verifizierungslink. Kein Token vorhanden.');
         return;
       }
 
@@ -28,11 +28,11 @@ export default function VerifyEmailPage() {
           setStatus('success');
         } else {
           setStatus('error');
-          setErrorMessage(result.error?.message || 'Failed to verify email. The link may have expired.');
+          setErrorMessage(result.error?.message || 'E-Mail konnte nicht verifiziert werden. Der Link ist möglicherweise abgelaufen.');
         }
       } catch (err) {
         setStatus('error');
-        setErrorMessage('An unexpected error occurred. Please try again.');
+        setErrorMessage('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
       }
     };
 
@@ -57,8 +57,8 @@ export default function VerifyEmailPage() {
                 <div className="flex justify-center mb-6">
                   <Spinner size="lg" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Verifying your email...</h2>
-                <p className="text-gray-500">Please wait while we verify your email address.</p>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Ihre E-Mail wird verifiziert...</h2>
+                <p className="text-gray-500">Bitte warten Sie, während wir Ihre E-Mail-Adresse verifizieren.</p>
               </>
             )}
 
@@ -69,12 +69,12 @@ export default function VerifyEmailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Email verified!</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">E-Mail erfolgreich verifiziert!</h2>
                 <p className="text-gray-500 mb-6">
-                  Your email has been successfully verified. You can now access all features.
+                  Ihre E-Mail wurde erfolgreich verifiziert. Sie können jetzt alle Funktionen nutzen.
                 </p>
                 <Link href="/login">
-                  <Button className="w-full">Sign in to continue</Button>
+                  <Button className="w-full">Anmelden und fortfahren</Button>
                 </Link>
               </>
             )}
@@ -86,14 +86,14 @@ export default function VerifyEmailPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification failed</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Verifizierung fehlgeschlagen</h2>
                 <p className="text-gray-500 mb-6">{errorMessage}</p>
                 <div className="space-y-3">
                   <Link href="/login">
-                    <Button className="w-full">Go to login</Button>
+                    <Button className="w-full">Zur Anmeldung</Button>
                   </Link>
                   <Link href="/">
-                    <Button variant="secondary" className="w-full">Go to home</Button>
+                    <Button variant="secondary" className="w-full">Zur Startseite</Button>
                   </Link>
                 </div>
               </>

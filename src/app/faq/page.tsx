@@ -6,86 +6,86 @@ import { Header, Footer } from '@/components/layout';
 
 const faqCategories = [
   {
-    name: 'Booking',
+    name: 'Buchung',
     faqs: [
       {
-        question: 'How do I make a reservation?',
-        answer: 'Simply enter your travel dates on our homepage or search page, browse available parking options, select your preferred facility, and complete the booking with your vehicle and payment details. You\'ll receive an instant confirmation email with all the details.',
+        question: 'Wie mache ich eine Reservierung?',
+        answer: 'Geben Sie einfach Ihre Reisedaten auf unserer Startseite oder Suchseite ein, durchsuchen Sie die verfügbaren Parkoptionen, wählen Sie Ihre bevorzugte Einrichtung und schliessen Sie die Buchung mit Ihren Fahrzeug- und Zahlungsdaten ab. Sie erhalten sofort eine Bestätigungs-E-Mail mit allen Details.',
       },
       {
-        question: 'Can I modify my booking?',
-        answer: 'Yes, you can modify your booking dates and times up to 24 hours before your scheduled arrival. Log in to your account, go to "My Bookings," and select the booking you want to change. Some changes may affect the total price.',
+        question: 'Kann ich meine Buchung ändern?',
+        answer: 'Ja, Sie können Ihre Buchungsdaten und -zeiten bis 24 Stunden vor Ihrer geplanten Ankunft ändern. Melden Sie sich in Ihrem Konto an, gehen Sie zu „Meine Buchungen" und wählen Sie die Buchung aus, die Sie ändern möchten. Einige Änderungen können den Gesamtpreis beeinflussen.',
       },
       {
-        question: 'What is your cancellation policy?',
-        answer: 'Free cancellation is available up to 24 hours before your scheduled arrival. Cancellations made within 24 hours may be subject to a fee. Refunds are processed within 5-7 business days.',
+        question: 'Wie lautet Ihre Stornierungsrichtlinie?',
+        answer: 'Bis 24 Stunden vor Ihrer geplanten Ankunft ist eine kostenlose Stornierung möglich. Bei Stornierungen innerhalb von 24 Stunden kann eine Gebühr anfallen. Rückerstattungen werden innerhalb von 5–7 Werktagen bearbeitet.',
       },
       {
-        question: 'Do I need to print my booking confirmation?',
-        answer: 'No, you don\'t need to print anything. Simply show your booking confirmation on your smartphone when you arrive at the parking facility. The booking code in your confirmation email is all you need.',
+        question: 'Muss ich meine Buchungsbestätigung ausdrucken?',
+        answer: 'Nein, Sie müssen nichts ausdrucken. Zeigen Sie bei Ihrer Ankunft in der Parkeinrichtung einfach Ihre Buchungsbestätigung auf Ihrem Smartphone vor. Der Buchungscode in Ihrer Bestätigungs-E-Mail genügt.',
       },
     ],
   },
   {
-    name: 'Shuttle Service',
+    name: 'Shuttle-Service',
     faqs: [
       {
-        question: 'How does the shuttle service work?',
-        answer: 'After parking your car, you\'ll board a free shuttle bus that takes you directly to the airport terminal. When you return, follow the signs to the shuttle pickup area, and the shuttle will bring you back to the parking facility.',
+        question: 'Wie funktioniert der Shuttle-Service?',
+        answer: 'Nachdem Sie Ihr Auto geparkt haben, steigen Sie in einen kostenlosen Shuttlebus, der Sie direkt zum Flughafenterminal bringt. Bei Ihrer Rückkehr folgen Sie den Schildern zur Shuttle-Haltestelle, und der Shuttle bringt Sie zurück zur Parkeinrichtung.',
       },
       {
-        question: 'How often do the shuttles run?',
-        answer: 'Shuttle frequency varies by parking facility, but most run every 10-20 minutes during peak hours. Check the specific parking listing for exact shuttle schedules and operating hours.',
+        question: 'Wie oft fahren die Shuttles?',
+        answer: 'Die Shuttle-Frequenz variiert je nach Parkeinrichtung, aber die meisten fahren während der Stosszeiten alle 10–20 Minuten. Überprüfen Sie das jeweilige Parkinserat für genaue Shuttle-Fahrpläne und Betriebszeiten.',
       },
       {
-        question: 'How long does the shuttle take to the airport?',
-        answer: 'Most of our partner facilities are located 5-15 minutes from Zurich Airport. The exact travel time depends on traffic conditions and the specific facility location.',
+        question: 'Wie lange dauert der Shuttle zum Flughafen?',
+        answer: 'Die meisten unserer Partnereinrichtungen befinden sich 5–15 Minuten vom Flughafen Zürich entfernt. Die genaue Fahrzeit hängt von den Verkehrsbedingungen und dem Standort der jeweiligen Einrichtung ab.',
       },
       {
-        question: 'What if my flight is delayed?',
-        answer: 'Don\'t worry! Our shuttle service operates throughout the parking facility\'s opening hours. If your flight is significantly delayed, contact the parking facility directly – their number is in your booking confirmation.',
+        question: 'Was passiert, wenn mein Flug Verspätung hat?',
+        answer: 'Keine Sorge! Unser Shuttle-Service verkehrt während der gesamten Öffnungszeiten der Parkeinrichtung. Bei erheblicher Flugverspätung kontaktieren Sie die Parkeinrichtung direkt – die Telefonnummer finden Sie in Ihrer Buchungsbestätigung.',
       },
     ],
   },
   {
-    name: 'Parking & Security',
+    name: 'Parken & Sicherheit',
     faqs: [
       {
-        question: 'Is my car safe?',
-        answer: 'Absolutely. All our partner facilities feature 24/7 security surveillance, CCTV cameras, secure fencing, and regular patrols. Many also offer covered parking options for additional protection.',
+        question: 'Ist mein Auto sicher?',
+        answer: 'Absolut. Alle unsere Partnereinrichtungen verfügen über 24/7-Sicherheitsüberwachung, Videoüberwachungskameras, sichere Umzäunung und regelmässige Patrouillen. Viele bieten auch überdachte Parkplätze für zusätzlichen Schutz an.',
       },
       {
-        question: 'What happens when I arrive at the parking facility?',
-        answer: 'When you arrive, check in at the reception with your booking confirmation. Staff will guide you to your parking spot, and then you can take the shuttle to the airport.',
+        question: 'Was passiert bei meiner Ankunft in der Parkeinrichtung?',
+        answer: 'Bei Ihrer Ankunft melden Sie sich an der Rezeption mit Ihrer Buchungsbestätigung an. Das Personal weist Ihnen Ihren Parkplatz zu, und anschliessend können Sie den Shuttle zum Flughafen nehmen.',
       },
       {
-        question: 'Can I leave my car keys?',
-        answer: 'This depends on the parking type. "Self-park" means you keep your keys. "Valet" means a professional driver parks your car, which requires leaving keys. Check the listing details for specifics.',
+        question: 'Kann ich meinen Autoschlüssel behalten?',
+        answer: 'Das hängt von der Parkart ab. Bei „Self-Park" behalten Sie Ihren Schlüssel. Bei „Valet" parkt ein professioneller Fahrer Ihr Auto, wofür die Schlüsselübergabe erforderlich ist. Überprüfen Sie die Inseratdetails für weitere Informationen.',
       },
       {
-        question: 'What if my car is damaged while parked?',
-        answer: 'All our partner facilities carry liability insurance. If any damage occurs, report it immediately to the facility staff and document it with photos. Claims are handled by the facility\'s insurance.',
+        question: 'Was passiert, wenn mein Auto während des Parkens beschädigt wird?',
+        answer: 'Alle unsere Partnereinrichtungen verfügen über eine Haftpflichtversicherung. Sollte ein Schaden auftreten, melden Sie diesen sofort dem Personal der Einrichtung und dokumentieren Sie ihn mit Fotos. Schadensfälle werden über die Versicherung der Einrichtung abgewickelt.',
       },
     ],
   },
   {
-    name: 'Payment & Pricing',
+    name: 'Zahlung & Preise',
     faqs: [
       {
-        question: 'What payment methods do you accept?',
-        answer: 'We accept all major credit cards (Visa, Mastercard, American Express), debit cards, and various digital payment methods. Payment is securely processed through our encrypted payment system.',
+        question: 'Welche Zahlungsmethoden akzeptieren Sie?',
+        answer: 'Wir akzeptieren alle gängigen Kreditkarten (Visa, Mastercard, American Express), Debitkarten und verschiedene digitale Zahlungsmethoden. Die Zahlung wird sicher über unser verschlüsseltes Zahlungssystem abgewickelt.',
       },
       {
-        question: 'Is the price final or will there be additional charges?',
-        answer: 'The price shown during booking is the final price, including all taxes and shuttle service. There are no hidden fees. Additional charges only apply if you extend your stay beyond the booked period.',
+        question: 'Ist der Preis endgültig oder kommen zusätzliche Kosten hinzu?',
+        answer: 'Der bei der Buchung angezeigte Preis ist der Endpreis, inklusive aller Steuern und des Shuttle-Service. Es gibt keine versteckten Gebühren. Zusätzliche Kosten fallen nur an, wenn Sie Ihren Aufenthalt über den gebuchten Zeitraum hinaus verlängern.',
       },
       {
-        question: 'How can I get an invoice?',
-        answer: 'An invoice is automatically sent to your email after payment. You can also download invoices anytime from your account under "My Bookings."',
+        question: 'Wie erhalte ich eine Rechnung?',
+        answer: 'Eine Rechnung wird nach der Zahlung automatisch an Ihre E-Mail-Adresse gesendet. Sie können Rechnungen auch jederzeit in Ihrem Konto unter „Meine Buchungen" herunterladen.',
       },
       {
-        question: 'Do you offer discounts for longer stays?',
-        answer: 'Yes! Many of our partner facilities offer weekly discounts. The discounted price is automatically calculated and displayed when you search for dates longer than 7 days.',
+        question: 'Bieten Sie Rabatte für längere Aufenthalte an?',
+        answer: 'Ja! Viele unserer Partnereinrichtungen bieten Wochenrabatte an. Der vergünstigte Preis wird automatisch berechnet und angezeigt, wenn Sie nach Zeiträumen von mehr als 7 Tagen suchen.',
       },
     ],
   },
@@ -107,10 +107,10 @@ export default function FAQPage() {
         <section className="bg-gradient-to-b from-primary-50 to-white py-16">
           <div className="container mx-auto px-4 max-w-4xl text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Frequently Asked Questions
+              Häufig gestellte Fragen
             </h1>
             <p className="text-xl text-gray-600">
-              Find answers to common questions about parking, bookings, and shuttle services.
+              Finden Sie Antworten auf häufige Fragen zu Parken, Buchungen und Shuttle-Services.
             </p>
           </div>
         </section>
@@ -160,20 +160,20 @@ export default function FAQPage() {
           </div>
         </section>
 
-        {/* Still have questions */}
+        {/* Noch Fragen */}
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-4 max-w-4xl text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Still Have Questions?
+              Noch Fragen?
             </h2>
             <p className="text-gray-600 mb-6">
-              Can't find the answer you're looking for? Our support team is here to help.
+              Sie finden die gesuchte Antwort nicht? Unser Support-Team hilft Ihnen gerne.
             </p>
             <a
               href="/contact"
               className="inline-flex items-center gap-2 text-primary-600 font-medium hover:text-primary-700"
             >
-              Contact Support
+              Support kontaktieren
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>

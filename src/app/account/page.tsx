@@ -1,58 +1,86 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@/components/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Spinner } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency, formatDate, getFirstName } from '@/lib/utils';
-import type { Booking } from '@/types';
+import { apiCall } from '@/lib/api';
 
-// Mock data
-const mockUpcomingBookings: (Booking & { listing: { name: string } })[] = [
-  {
-    id: '1',
-    bookingCode: 'ZP-2024-001',
-    customerId: 'c1',
-    listingId: 'l1',
-    listing: { name: 'Zurich Secure Parking' },
-    startDate: '2024-03-15',
-    endDate: '2024-03-22',
-    arrivalTime: '10:00',
-    customerName: 'John Doe',
-    customerEmail: 'john@example.com',
-    customerPhone: '+41 79 123 45 67',
-    vehiclePlate: 'ZH 123456',
-    passengerCount: 2,
-    luggageCount: 3,
-    totalDays: 7,
-    basePrice: 175,
-    discountAmount: 17.50,
-    serviceFee: 4.50,
-    totalPrice: 162,
-    currency: 'CHF',
-    paymentStatus: 'paid',
-    status: 'confirmed',
-    createdAt: '2024-03-01',
-    updatedAt: '2024-03-01',
-  },
-];
+interface BookingRow {
+  id: string;
+  booking_code: string;
+  start_datetime: string;
+  end_datetime: string;
+  total_price: number;
+  currency: string;
+  status: string;
+  location_name?: string;
+}
 
-const mockStats = {
-  totalBookings: 5,
-  upcomingBookings: 1,
-  savedAmount: 52.50,
-};
+interface CustomerStats {
+  totalBookings: number;
+  completedBookings: number;
+  totalSpent: number;
+  upcomingBookings: number;
+}
 
 export default function AccountDashboardPage() {
   const { user } = useAuth();
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [stats, setStats] = useState<CustomerStats>({ totalBookings: 0, completedBookings: 0, totalSpent: 0, upcomingBookings: 0 });
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [bookingsRes, statsRes] = await Promise.all([
+        apiCall<BookingRow[]>('GET', '/bookings/my?limit=5&status=confirmed,checked_in'),
+        apiCall<CustomerStats>('GET', '/bookings/my/stats'),
+      ]);
+
+      if (bookingsRes.success && bookingsRes.data) {
+        setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
+      }
+      if (statsRes.success && statsRes.data) {
+        setStats(statsRes.data);
+      }
+    } catch {
+      // Silently handle – empty state is fine
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const calcDays = (s: string, e: string) => {
+    const diff = new Date(e).getTime() - new Date(s).getTime();
+    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
+  const statusVariant = (s: string) => {
+    if (s === 'confirmed') return 'success' as const;
+    if (s === 'checked_in') return 'primary' as const;
+    if (s === 'pending_payment') return 'warning' as const;
+    return 'gray' as const;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Welcome */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {getFirstName(user?.name)}!
+          Willkommen zurück, {getFirstName(user?.name)}!
         </h1>
-        <p className="text-gray-500">Here's an overview of your parking reservations.</p>
+        <p className="text-gray-500">Hier ist eine Übersicht Ihrer Parkplatzreservierungen.</p>
       </div>
 
       {/* Stats */}
@@ -65,8 +93,8 @@ export default function AccountDashboardPage() {
               </svg>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{mockStats.totalBookings}</p>
-              <p className="text-sm text-gray-500">Total Bookings</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.totalBookings}</p>
+              <p className="text-sm text-gray-500">Gesamte Buchungen</p>
             </div>
           </div>
         </Card>
@@ -78,8 +106,8 @@ export default function AccountDashboardPage() {
               </svg>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{mockStats.upcomingBookings}</p>
-              <p className="text-sm text-gray-500">Upcoming</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.upcomingBookings}</p>
+              <p className="text-sm text-gray-500">Anstehende Buchungen</p>
             </div>
           </div>
         </Card>
@@ -91,8 +119,8 @@ export default function AccountDashboardPage() {
               </svg>
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(mockStats.savedAmount)}</p>
-              <p className="text-sm text-gray-500">Total Saved</p>
+              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalSpent)}</p>
+              <p className="text-sm text-gray-500">Gesamtausgaben</p>
             </div>
           </div>
         </Card>
@@ -102,42 +130,36 @@ export default function AccountDashboardPage() {
       <Card padding="none">
         <CardHeader className="p-6 pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle>Upcoming Bookings</CardTitle>
+            <CardTitle>Anstehende Buchungen</CardTitle>
             <Link href="/account/bookings">
-              <Button variant="ghost" size="sm">View All</Button>
+              <Button variant="ghost" size="sm">Alle anzeigen</Button>
             </Link>
           </div>
         </CardHeader>
         <CardContent className="px-6 pb-6">
-          {mockUpcomingBookings.length === 0 ? (
+          {bookings.length === 0 ? (
             <div className="text-center py-8">
               <svg className="h-12 w-12 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <h3 className="font-medium text-gray-900 mb-1">No upcoming bookings</h3>
-              <p className="text-sm text-gray-500 mb-4">Book your next parking spot!</p>
+              <h3 className="font-medium text-gray-900 mb-1">Keine anstehenden Buchungen</h3>
+              <p className="text-sm text-gray-500 mb-4">Buchen Sie Ihren nächsten Parkplatz!</p>
               <Link href="/zurich">
-                <Button>Find Parking</Button>
+                <Button>Parkplatz suchen</Button>
               </Link>
             </div>
           ) : (
             <div className="space-y-4">
-              {mockUpcomingBookings.map((booking) => (
+              {bookings.map((booking) => (
                 <div
                   key={booking.id}
                   className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-gray-50 rounded-xl gap-4"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-medium text-gray-900">{booking.listing.name}</span>
-                      <Badge
-                        variant={
-                          booking.status === 'confirmed' ? 'success' :
-                          booking.status === 'checked_in' ? 'primary' :
-                          'gray'
-                        }
-                      >
-                        {(booking.status || '').replace('_', ' ')}
+                      <span className="font-medium text-gray-900">{booking.location_name || 'Parkplatz'}</span>
+                      <Badge variant={statusVariant(booking.status)}>
+                        {booking.status.replace('_', ' ')}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
@@ -145,23 +167,23 @@ export default function AccountDashboardPage() {
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                         </svg>
-                        {formatDate(booking.startDate)} - {formatDate(booking.endDate)}
+                        {formatDate(booking.start_datetime)} - {formatDate(booking.end_datetime)}
                       </span>
                       <span className="flex items-center gap-1">
                         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                         </svg>
-                        {booking.bookingCode}
+                        {booking.booking_code}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">{formatCurrency(booking.totalPrice)}</p>
-                      <p className="text-xs text-gray-500">{booking.totalDays} days</p>
+                      <p className="font-semibold text-gray-900">{formatCurrency(booking.total_price)}</p>
+                      <p className="text-xs text-gray-500">{calcDays(booking.start_datetime, booking.end_datetime)} Tage</p>
                     </div>
                     <Link href={`/account/bookings/${booking.id}`}>
-                      <Button variant="secondary" size="sm">View</Button>
+                      <Button variant="secondary" size="sm">Anzeigen</Button>
                     </Link>
                   </div>
                 </div>
@@ -174,7 +196,7 @@ export default function AccountDashboardPage() {
       {/* Quick Actions */}
       <Card padding="md">
         <CardHeader className="pb-4 px-0 pt-0">
-          <CardTitle>Quick Actions</CardTitle>
+          <CardTitle>Schnellaktionen</CardTitle>
         </CardHeader>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link href="/zurich" className="block">
@@ -186,8 +208,8 @@ export default function AccountDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Find Parking</p>
-                  <p className="text-xs text-gray-500">Search near Zurich Airport</p>
+                  <p className="font-medium text-gray-900">Parkplatz suchen</p>
+                  <p className="text-xs text-gray-500">Suche beim Flughafen Zürich</p>
                 </div>
               </div>
             </div>
@@ -201,8 +223,8 @@ export default function AccountDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">View Bookings</p>
-                  <p className="text-xs text-gray-500">Manage your reservations</p>
+                  <p className="font-medium text-gray-900">Buchungen anzeigen</p>
+                  <p className="text-xs text-gray-500">Reservierungen verwalten</p>
                 </div>
               </div>
             </div>
@@ -217,8 +239,8 @@ export default function AccountDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="font-medium text-gray-900">Settings</p>
-                  <p className="text-xs text-gray-500">Update your profile</p>
+                  <p className="font-medium text-gray-900">Einstellungen</p>
+                  <p className="text-xs text-gray-500">Profil bearbeiten</p>
                 </div>
               </div>
             </div>

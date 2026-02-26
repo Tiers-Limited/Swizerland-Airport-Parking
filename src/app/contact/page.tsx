@@ -6,8 +6,8 @@ import { Header, Footer } from '@/components/layout';
 
 const contactMethods = [
   {
-    title: 'Email Support',
-    description: 'Send us an email and we\'ll respond within 24 hours.',
+    title: 'E-Mail-Support',
+    description: 'Senden Sie uns eine E-Mail und wir antworten innerhalb von 24 Stunden.',
     value: 'support@zurichparking.ch',
     icon: (
       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -16,8 +16,8 @@ const contactMethods = [
     ),
   },
   {
-    title: 'Phone',
-    description: 'Available Mon-Fri, 8:00 - 18:00 CET.',
+    title: 'Telefon',
+    description: 'Verfügbar Mo-Fr, 8:00 - 18:00 MEZ.',
     value: '+41 44 123 45 67',
     icon: (
       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,8 +26,8 @@ const contactMethods = [
     ),
   },
   {
-    title: 'Address',
-    description: 'Visit our office.',
+    title: 'Adresse',
+    description: 'Besuchen Sie unser Büro.',
     value: 'Parking Solutions AG\nFlughafenstrasse 123\n8058 Zurich, Switzerland',
     icon: (
       <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -73,10 +73,10 @@ export default function ContactPage() {
         <section className="bg-gradient-to-b from-primary-50 to-white py-16">
           <div className="container mx-auto px-4 max-w-4xl text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              Contact Us
+              Kontaktieren Sie uns
             </h1>
             <p className="text-xl text-gray-600">
-              Have questions or need assistance? We're here to help.
+              Haben Sie Fragen oder benötigen Sie Hilfe? Wir sind für Sie da.
             </p>
           </div>
         </section>
@@ -104,25 +104,25 @@ export default function ContactPage() {
               <Card padding="lg">
                 <CardContent>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                    Send Us a Message
+                    Nachricht senden
                   </h2>
 
                   {success && (
                     <Alert variant="success" className="mb-6" onClose={() => setSuccess(false)}>
-                      Thank you for your message! We'll get back to you within 24 hours.
+                      Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.
                     </Alert>
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
-                        label="Your Name"
+                        label="Ihr Name"
                         value={form.name}
                         onChange={(e) => setForm({ ...form, name: e.target.value })}
                         required
                       />
                       <Input
-                        label="Email Address"
+                        label="E-Mail-Adresse"
                         type="email"
                         value={form.email}
                         onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -130,14 +130,14 @@ export default function ContactPage() {
                       />
                     </div>
                     <Input
-                      label="Subject"
+                      label="Betreff"
                       value={form.subject}
                       onChange={(e) => setForm({ ...form, subject: e.target.value })}
                       required
                     />
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Message
+                        Nachricht
                       </label>
                       <textarea
                         value={form.message}
@@ -145,12 +145,12 @@ export default function ContactPage() {
                         required
                         rows={5}
                         className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
-                        placeholder="How can we help you?"
+                        placeholder="Wie können wir Ihnen helfen?"
                       />
                     </div>
                     <div className="text-center">
                       <Button type="submit" size="lg" loading={loading}>
-                        Send Message
+                        Nachricht senden
                       </Button>
                     </div>
                   </form>
@@ -168,7 +168,7 @@ export default function ContactPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <p>Map will be displayed here</p>
+              <p>Karte wird hier angezeigt</p>
             </div>
           </div>
         </section>

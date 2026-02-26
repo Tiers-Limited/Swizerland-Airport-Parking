@@ -6,12 +6,12 @@ import { usePathname } from 'next/navigation';
 import { Header, Footer } from '@/components/layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
-import { useI18n } from '@/i18n';
 import { cn, getInitials } from '@/lib/utils';
 
 const adminNavItems = [
   {
     key: 'dashboard',
+    label: 'Dashboard',
     href: '/admin',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -21,6 +21,7 @@ const adminNavItems = [
   },
   {
     key: 'users',
+    label: 'Benutzer',
     href: '/admin/users',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -30,6 +31,7 @@ const adminNavItems = [
   },
   {
     key: 'hosts',
+    label: 'Hosts',
     href: '/admin/hosts',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,6 +41,7 @@ const adminNavItems = [
   },
   {
     key: 'listings',
+    label: 'Inserate',
     href: '/admin/listings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -49,6 +52,7 @@ const adminNavItems = [
   },
   {
     key: 'bookings',
+    label: 'Buchungen',
     href: '/admin/bookings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,6 +62,7 @@ const adminNavItems = [
   },
   {
     key: 'payments',
+    label: 'Zahlungen',
     href: '/admin/payments',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -66,7 +71,38 @@ const adminNavItems = [
     ),
   },
   {
+    key: 'payouts',
+    label: 'Auszahlungen',
+    href: '/admin/payouts',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
+    key: 'analytics',
+    label: 'Analytik',
+    href: '/admin/analytics',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+    ),
+  },
+  {
+    key: 'drivers',
+    label: 'Fahrer',
+    href: '/admin/drivers',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+    ),
+  },
+  {
     key: 'settings',
+    label: 'Einstellungen',
     href: '/admin/settings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -77,10 +113,9 @@ const adminNavItems = [
   },
 ];
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { t } = useI18n();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const isActive = (href: string) => {
@@ -117,7 +152,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
-                  <p className="text-xs text-red-600 font-medium">{t('admin.title')}</p>
+                  <p className="text-xs text-red-600 font-medium">Admin Portal</p>
                 </div>
               </div>
             </div>
@@ -136,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   )}
                 >
                   {item.icon}
-                  <span>{t(`admin.nav.${item.key}`)}</span>
+                  <span>{item.label}</span>
                 </Link>
               ))}
             </nav>
@@ -144,9 +179,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           {/* Overlay */}
           {isSidebarOpen && (
-            <div
+            <button
+              type="button"
               className="fixed inset-0 bg-black/50 z-30 lg:hidden"
               onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close sidebar"
             />
           )}
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Button, Input, Select, Spinner, Alert } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -20,7 +19,6 @@ interface BookingRow {
 }
 
 export default function AdminBookingsPage() {
-  const { t } = useI18n();
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -46,10 +44,10 @@ export default function AdminBookingsPage() {
   useEffect(() => { loadBookings(); }, [loadBookings]);
 
   async function handleRefund(id: string) {
-    if (!confirm(t('admin.confirmRefund'))) return;
+    if (!confirm('Möchten Sie diese Buchung wirklich erstatten?')) return;
     const res = await apiCall('PATCH', `/admin/bookings/${id}/refund`);
     if (res.success) {
-      setMessage(t('admin.refundSuccess'));
+      setMessage('Erstattung erfolgreich verarbeitet');
       loadBookings();
     }
   }
@@ -70,7 +68,7 @@ export default function AdminBookingsPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.manageBookings')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Buchungen verwalten</h1>
 
         {message && <Alert variant="success" onClose={() => setMessage('')}>{message}</Alert>}
 
@@ -78,7 +76,7 @@ export default function AdminBookingsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder={t('admin.searchPlaceholder')}
+                placeholder="Suchen..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
@@ -87,13 +85,13 @@ export default function AdminBookingsPage() {
               value={statusFilter}
               onChange={(val) => { setStatusFilter(val); setPage(1); }}
               options={[
-                { value: 'all', label: t('common.all') },
-                { value: 'pending', label: t('common.pending') },
-                { value: 'confirmed', label: t('common.confirmed') },
-                { value: 'active', label: t('common.active') },
-                { value: 'completed', label: t('common.completed') },
-                { value: 'cancelled', label: t('common.cancelled') },
-                { value: 'refunded', label: t('common.refunded') },
+                { value: 'all', label: 'Alle' },
+                { value: 'pending', label: 'Ausstehend' },
+                { value: 'confirmed', label: 'Bestätigt' },
+                { value: 'active', label: 'Aktiv' },
+                { value: 'completed', label: 'Abgeschlossen' },
+                { value: 'cancelled', label: 'Storniert' },
+                { value: 'refunded', label: 'Erstattet' },
               ]}
             />
           </div>
@@ -107,13 +105,13 @@ export default function AdminBookingsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.booking')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.customer')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.listingLabel')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.dates')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.total')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('common.status')}</th>
-                    <th className="text-right py-3 px-4 text-gray-500 font-medium">{t('admin.actions')}</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Buchung</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Kunde</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Inserat</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Daten</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Gesamt</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                    <th className="text-right py-3 px-4 text-gray-500 font-medium">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -139,7 +137,7 @@ export default function AdminBookingsPage() {
                       <td className="py-3 px-4 text-right">
                         {(b.status === 'confirmed' || b.status === 'active') && (
                           <Button size="sm" variant="danger" onClick={() => handleRefund(b.id)}>
-                            {t('admin.refund')}
+                            Erstatten
                           </Button>
                         )}
                       </td>
@@ -147,7 +145,7 @@ export default function AdminBookingsPage() {
                   ))}
                   {bookings.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-gray-400">{t('common.noResults')}</td>
+                      <td colSpan={7} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                     </tr>
                   )}
                 </tbody>
@@ -157,11 +155,11 @@ export default function AdminBookingsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4 border-t border-gray-100">
                 <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  {t('common.previous')}
+                  Zurück
                 </Button>
                 <span className="text-sm text-gray-500">{page} / {totalPages}</span>
                 <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  {t('common.next')}
+                  Weiter
                 </Button>
               </div>
             )}

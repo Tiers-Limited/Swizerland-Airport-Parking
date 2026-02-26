@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
+import { useState, useEffect } from 'react';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Button, Input, Select, Spinner, Alert } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -18,7 +17,6 @@ interface UserRow {
 }
 
 export default function AdminUsersPage() {
-  const { t } = useI18n();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -27,29 +25,31 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '15' });
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-    if (roleFilter !== 'all') params.set('role', roleFilter);
-    if (search) params.set('search', search);
+  useEffect(() => {
+    async function loadUsers() {
+      setLoading(true);
+      const params = new URLSearchParams({ page: String(page), limit: '15' });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+      if (roleFilter !== 'all') params.set('role', roleFilter);
+      if (search) params.set('search', search);
 
-    const res = await apiCall<{ users: UserRow[]; totalPages: number }>('GET', `/admin/users?${params}`);
-    if (res.success && res.data) {
-      setUsers(res.data.users || []);
-      setTotalPages(res.data.totalPages || 1);
+      const res = await apiCall<{ users: UserRow[]; totalPages: number }>('GET', `/admin/users?${params}`);
+      if (res.success && res.data) {
+        setUsers(res.data.users || []);
+        setTotalPages(res.data.totalPages || 1);
+      }
+      setLoading(false);
     }
-    setLoading(false);
-  }, [page, statusFilter, roleFilter, search]);
-
-  useEffect(() => { loadUsers(); }, [loadUsers]);
+    loadUsers();
+  }, [page, statusFilter, roleFilter, search, refreshKey]);
 
   async function handleStatusChange(id: string, status: string) {
     const res = await apiCall('PATCH', `/admin/users/${id}/status`, { status });
     if (res.success) {
-      setMessage(t('admin.statusUpdated'));
-      loadUsers();
+      setMessage('Status erfolgreich aktualisiert');
+      setRefreshKey(k => k + 1);
     }
   }
 
@@ -70,7 +70,7 @@ export default function AdminUsersPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.manageUsers')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Benutzer verwalten</h1>
 
         {message && <Alert variant="success" onClose={() => setMessage('')}>{message}</Alert>}
 
@@ -78,7 +78,7 @@ export default function AdminUsersPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder={t('admin.searchPlaceholder')}
+                placeholder="Suchen..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
               value={roleFilter}
               onChange={(val) => { setRoleFilter(val); setPage(1); }}
               options={[
-                { value: 'all', label: t('admin.allRoles') },
+                { value: 'all', label: 'Alle Rollen' },
                 { value: 'admin', label: 'Admin' },
                 { value: 'host', label: 'Host' },
                 { value: 'customer', label: 'Customer' },
@@ -97,10 +97,10 @@ export default function AdminUsersPage() {
               value={statusFilter}
               onChange={(val) => { setStatusFilter(val); setPage(1); }}
               options={[
-                { value: 'all', label: t('common.all') },
-                { value: 'active', label: t('common.active') },
-                { value: 'suspended', label: t('common.suspended') },
-                { value: 'inactive', label: t('common.inactive') },
+                { value: 'all', label: 'Alle' },
+                { value: 'active', label: 'Aktiv' },
+                { value: 'suspended', label: 'Gesperrt' },
+                { value: 'inactive', label: 'Inaktiv' },
               ]}
             />
           </div>
@@ -114,12 +114,12 @@ export default function AdminUsersPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.user')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.role')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.emailVerified')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('common.status')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.joined')}</th>
-                    <th className="text-right py-3 px-4 text-gray-500 font-medium">{t('admin.actions')}</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Benutzer</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Rolle</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">E-Mail verifiziert</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Beigetreten</th>
+                    <th className="text-right py-3 px-4 text-gray-500 font-medium">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -148,12 +148,12 @@ export default function AdminUsersPage() {
                           <>
                             {u.status === 'active' && (
                               <Button size="sm" variant="danger" onClick={() => handleStatusChange(u.id, 'suspended')}>
-                                {t('admin.suspend')}
+                                Sperren
                               </Button>
                             )}
                             {u.status === 'suspended' && (
                               <Button size="sm" onClick={() => handleStatusChange(u.id, 'active')}>
-                                {t('admin.activate')}
+                                Aktivieren
                               </Button>
                             )}
                           </>
@@ -163,7 +163,7 @@ export default function AdminUsersPage() {
                   ))}
                   {users.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-400">{t('common.noResults')}</td>
+                      <td colSpan={6} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                     </tr>
                   )}
                 </tbody>
@@ -173,11 +173,11 @@ export default function AdminUsersPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4 border-t border-gray-100">
                 <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  {t('common.previous')}
+                  Zurück
                 </Button>
                 <span className="text-sm text-gray-500">{page} / {totalPages}</span>
                 <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  {t('common.next')}
+                  Weiter
                 </Button>
               </div>
             )}

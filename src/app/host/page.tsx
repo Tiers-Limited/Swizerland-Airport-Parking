@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Button, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -29,7 +28,6 @@ interface HostBooking {
 }
 
 export default function HostDashboard() {
-  const { t } = useI18n();
   const [stats, setStats] = useState<HostStats | null>(null);
   const [recentBookings, setRecentBookings] = useState<HostBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +85,7 @@ export default function HostDashboard() {
 
   const statCards = [
     {
-      label: t('host.totalListings'),
+      label: 'Parkplätze gesamt',
       value: stats?.totalListings ?? 0,
       icon: (
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,7 +95,7 @@ export default function HostDashboard() {
       color: 'text-baby-blue-600 bg-baby-blue-50',
     },
     {
-      label: t('host.activeListings'),
+      label: 'Aktive Parkplätze',
       value: stats?.activeListings ?? 0,
       icon: (
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -107,7 +105,7 @@ export default function HostDashboard() {
       color: 'text-success-600 bg-success-50',
     },
     {
-      label: t('host.upcomingBookings'),
+      label: 'Anstehende Buchungen',
       value: stats?.upcomingBookings ?? 0,
       icon: (
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -117,7 +115,7 @@ export default function HostDashboard() {
       color: 'text-warning-600 bg-warning-50',
     },
     {
-      label: t('host.monthlyRevenue'),
+      label: 'Monatlicher Umsatz',
       value: formatCurrency(stats?.monthlyRevenue ?? 0),
       icon: (
         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -133,13 +131,13 @@ export default function HostDashboard() {
       <div className="space-y-6">
         {/* Page title */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{t('host.dashboard')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <Link href="/host/listings/create">
             <Button size="sm">
               <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {t('host.addListing')}
+              Neuer Parkplatz
             </Button>
           </Link>
         </div>
@@ -164,7 +162,7 @@ export default function HostDashboard() {
           <Card className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">{t('host.totalBookings')}</p>
+                <p className="text-sm text-gray-500">Buchungen gesamt</p>
                 <p className="text-xl font-bold text-gray-900 mt-1">{stats?.totalBookings ?? 0}</p>
               </div>
               <div className="p-3 rounded-xl text-baby-blue-600 bg-baby-blue-50">
@@ -177,7 +175,7 @@ export default function HostDashboard() {
           <Card className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">{t('host.totalRevenue')}</p>
+                <p className="text-sm text-gray-500">Gesamtumsatz</p>
                 <p className="text-xl font-bold text-gray-900 mt-1">{formatCurrency(stats?.totalRevenue ?? 0)}</p>
               </div>
               <div className="p-3 rounded-xl text-success-600 bg-success-50">
@@ -192,9 +190,9 @@ export default function HostDashboard() {
         {/* Recent Bookings */}
         <Card className="overflow-hidden">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">{t('host.recentBookings')}</h2>
+            <h2 className="font-semibold text-gray-900">Letzte Buchungen</h2>
             <Link href="/host/bookings">
-              <Button variant="ghost" size="sm">{t('common.viewAll')}</Button>
+              <Button variant="ghost" size="sm">Alle anzeigen</Button>
             </Link>
           </div>
 
@@ -203,18 +201,18 @@ export default function HostDashboard() {
               <svg className="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-gray-500 text-sm">{t('host.noBookingsYet')}</p>
+              <p className="text-gray-500 text-sm">Noch keine Buchungen vorhanden</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <th className="px-5 py-3">{t('host.bookingCode')}</th>
-                    <th className="px-5 py-3">{t('host.customer')}</th>
-                    <th className="px-5 py-3">{t('host.dates')}</th>
-                    <th className="px-5 py-3">{t('common.status')}</th>
-                    <th className="px-5 py-3 text-right">{t('host.amount')}</th>
+                    <th className="px-5 py-3">Buchungscode</th>
+                    <th className="px-5 py-3">Kunde</th>
+                    <th className="px-5 py-3">Daten</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3 text-right">Betrag</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">

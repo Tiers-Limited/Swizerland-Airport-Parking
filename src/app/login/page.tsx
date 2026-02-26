@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Input, Card, Alert, Logo } from '@/components/ui';
-import { useI18n } from '@/i18n';
 import { getDefaultRedirectPath } from '@/lib/rbac';
 
 export default function LoginPage() {
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const returnUrl = searchParams.get('returnUrl');
   
   const { login, isAuthenticated, user } = useAuth();
-  const { t } = useI18n();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -57,10 +55,10 @@ export default function LoginPage() {
         const redirectPath = returnUrl ? decodeURIComponent(returnUrl) : getDefaultRedirectPath(result.user?.role || 'customer');
         router.push(redirectPath);
       } else {
-        setError(result.error || t('auth.loginFailed'));
+        setError(result.error || 'Anmeldung fehlgeschlagen. Bitte überprüfen Sie Ihre Zugangsdaten.');
       }
     } catch (err) {
-      setError(t('auth.unexpectedError'));
+      setError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {
       setIsLoading(false);
     }
@@ -80,8 +78,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <Card padding="lg" className="animate-fade-in">
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900">{t('auth.loginTitle')}</h1>
-              <p className="text-gray-500 mt-2">{t('auth.loginSubtitle')}</p>
+              <h1 className="text-2xl font-bold text-gray-900">Willkommen zurück</h1>
+              <p className="text-gray-500 mt-2">Melden Sie sich bei Ihrem Konto an</p>
             </div>
 
             {error && (
@@ -92,7 +90,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <Input
-                label={t('auth.email')}
+                label="E-Mail-Adresse"
                 type="email"
                 name="email"
                 value={formData.email}
@@ -109,7 +107,7 @@ export default function LoginPage() {
 
               <div>
                 <Input
-                  label={t('auth.password')}
+                  label="Passwort"
                   type="password"
                   name="password"
                   value={formData.password}
@@ -125,7 +123,7 @@ export default function LoginPage() {
                 />
                 <div className="text-right mt-2">
                   <Link href="/forgot-password" className="text-sm text-baby-blue-600 hover:text-baby-blue-700">
-                    {t('auth.forgotPassword')}
+                    Passwort vergessen?
                   </Link>
                 </div>
               </div>
@@ -136,7 +134,7 @@ export default function LoginPage() {
                 size="lg"
                 isLoading={isLoading}
               >
-                {t('common.signIn')}
+                Anmelden
               </Button>
             </form>
 
@@ -146,14 +144,14 @@ export default function LoginPage() {
                   <div className="w-full border-t border-gray-200" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">{t('auth.noAccount')}</span>
+                  <span className="px-4 bg-white text-gray-500">Noch kein Konto?</span>
                 </div>
               </div>
 
               <div className="mt-6">
                 <Link href="/register">
                   <Button variant="secondary" className="w-full" size="lg">
-                    {t('auth.createAccount')}
+                    Registrieren
                   </Button>
                 </Link>
               </div>
@@ -161,13 +159,13 @@ export default function LoginPage() {
           </Card>
 
           <p className="text-center text-sm text-gray-500 mt-6">
-            {t('auth.bySigningIn')}{' '}
+            Mit der Anmeldung akzeptieren Sie unsere{' '}
             <Link href="/terms" className="text-baby-blue-600 hover:text-baby-blue-700">
-              {t('booking.termsOfService')}
+              AGB
             </Link>{' '}
-            {t('auth.and')}{' '}
+            und{' '}
             <Link href="/privacy" className="text-baby-blue-600 hover:text-baby-blue-700">
-              {t('booking.privacyPolicy')}
+              Datenschutzrichtlinie
             </Link>
           </p>
         </div>

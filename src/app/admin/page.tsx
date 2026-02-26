@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -28,7 +27,6 @@ interface DashboardStats {
 }
 
 export default function AdminDashboardPage() {
-  const { t } = useI18n();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -56,21 +54,21 @@ export default function AdminDashboardPage() {
   }
 
   if (!stats) {
-    return <div className="text-center py-20 text-gray-500">{t('common.error')}</div>;
+    return <div className="text-center py-20 text-gray-500">Fehler</div>;
   }
 
   const statCards = [
-    { label: t('admin.totalUsers'), value: stats.totalUsers, icon: '👥', color: 'bg-blue-50 text-blue-600', href: '/admin/users' },
-    { label: t('admin.totalHosts'), value: stats.totalHosts, icon: '🏢', color: 'bg-purple-50 text-purple-600', href: '/admin/hosts' },
-    { label: t('admin.totalListings'), value: stats.totalListings, icon: '📍', color: 'bg-green-50 text-green-600', href: '/admin/listings' },
-    { label: t('admin.totalBookings'), value: stats.totalBookings, icon: '📋', color: 'bg-orange-50 text-orange-600', href: '/admin/bookings' },
-    { label: t('admin.totalRevenue'), value: formatCurrency(stats.totalRevenue), icon: '💰', color: 'bg-emerald-50 text-emerald-600', href: '/admin/payments' },
-    { label: t('admin.activeBookings'), value: stats.activeBookings, icon: '🚗', color: 'bg-cyan-50 text-cyan-600', href: '/admin/bookings' },
+    { label: 'Gesamtbenutzer', value: stats.totalUsers, icon: '👥', color: 'bg-blue-50 text-blue-600', href: '/admin/users' },
+    { label: 'Gesamthosts', value: stats.totalHosts, icon: '🏢', color: 'bg-purple-50 text-purple-600', href: '/admin/hosts' },
+    { label: 'Gesamtinserate', value: stats.totalListings, icon: '📍', color: 'bg-green-50 text-green-600', href: '/admin/listings' },
+    { label: 'Gesamtbuchungen', value: stats.totalBookings, icon: '📋', color: 'bg-orange-50 text-orange-600', href: '/admin/bookings' },
+    { label: 'Gesamtumsatz', value: formatCurrency(stats.totalRevenue), icon: '💰', color: 'bg-emerald-50 text-emerald-600', href: '/admin/payments' },
+    { label: 'Aktive Buchungen', value: stats.activeBookings, icon: '🚗', color: 'bg-cyan-50 text-cyan-600', href: '/admin/bookings' },
   ];
 
   const alertCards = [
-    { label: t('admin.pendingHosts'), value: stats.pendingHosts, href: '/admin/hosts', color: 'text-orange-600 bg-orange-50' },
-    { label: t('admin.pendingListings'), value: stats.pendingListings, href: '/admin/listings', color: 'text-yellow-600 bg-yellow-50' },
+    { label: 'ausstehende Hosts', value: stats.pendingHosts, href: '/admin/hosts', color: 'text-orange-600 bg-orange-50' },
+    { label: 'ausstehende Inserate', value: stats.pendingListings, href: '/admin/listings', color: 'text-yellow-600 bg-yellow-50' },
   ];
 
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray' | 'primary'> = {
@@ -85,7 +83,7 @@ export default function AdminDashboardPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.dashboard')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
 
         {/* Alert badges for pending items */}
         {(stats.pendingHosts > 0 || stats.pendingListings > 0) && (
@@ -126,9 +124,9 @@ export default function AdminDashboardPage() {
         {/* Recent Bookings */}
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">{t('admin.recentBookings')}</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Letzte Buchungen</h2>
             <Link href="/admin/bookings" className="text-sm text-baby-blue-600 hover:text-baby-blue-700 font-medium">
-              {t('common.viewAll')} →
+              Alle anzeigen →
             </Link>
           </div>
 
@@ -136,11 +134,11 @@ export default function AdminDashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100">
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">{t('admin.bookingCode')}</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">{t('admin.customer')}</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">{t('admin.listingLabel')}</th>
-                  <th className="text-left py-3 px-2 text-gray-500 font-medium">{t('common.status')}</th>
-                  <th className="text-right py-3 px-2 text-gray-500 font-medium">{t('admin.amount')}</th>
+                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Buchungscode</th>
+                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Kunde</th>
+                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Inserat</th>
+                  <th className="text-left py-3 px-2 text-gray-500 font-medium">Status</th>
+                  <th className="text-right py-3 px-2 text-gray-500 font-medium">Betrag</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,7 +159,7 @@ export default function AdminDashboardPage() {
                 ))}
                 {(!stats.recentBookings || stats.recentBookings.length === 0) && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400">{t('common.noResults')}</td>
+                    <td colSpan={5} className="py-8 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                   </tr>
                 )}
               </tbody>

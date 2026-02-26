@@ -49,3 +49,4 @@ export { default as Toggle } from './Toggle';
 export type { ToggleProps } from './Toggle';
 
 export { default as LanguageSwitcher } from './LanguageSwitcher';
+export { default as GoogleTranslate } from './GoogleTranslate';

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Input, Select, Spinner, Button } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -19,7 +18,6 @@ interface PaymentRow {
 }
 
 export default function AdminPaymentsPage() {
-  const { t } = useI18n();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -58,13 +56,13 @@ export default function AdminPaymentsPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.managePayments')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Zahlungen verwalten</h1>
 
         <Card className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder={t('admin.searchPlaceholder')}
+                placeholder="Suchen..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
@@ -73,11 +71,11 @@ export default function AdminPaymentsPage() {
               value={statusFilter}
               onChange={(val) => { setStatusFilter(val); setPage(1); }}
               options={[
-                { value: 'all', label: t('common.all') },
-                { value: 'pending', label: t('common.pending') },
-                { value: 'completed', label: t('common.completed') },
-                { value: 'failed', label: t('common.failed') },
-                { value: 'refunded', label: t('common.refunded') },
+                { value: 'all', label: 'Alle' },
+                { value: 'pending', label: 'Ausstehend' },
+                { value: 'completed', label: 'Abgeschlossen' },
+                { value: 'failed', label: 'Fehlgeschlagen' },
+                { value: 'refunded', label: 'Erstattet' },
               ]}
             />
           </div>
@@ -91,13 +89,13 @@ export default function AdminPaymentsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.paymentId')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.customer')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.listingLabel')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.amount')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.method')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('common.status')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.date')}</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Zahlungs-ID</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Kunde</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Inserat</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Betrag</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Methode</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Datum</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -122,7 +120,7 @@ export default function AdminPaymentsPage() {
                   ))}
                   {payments.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-gray-400">{t('common.noResults')}</td>
+                      <td colSpan={7} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                     </tr>
                   )}
                 </tbody>
@@ -132,11 +130,11 @@ export default function AdminPaymentsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4 border-t border-gray-100">
                 <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  {t('common.previous')}
+                  Zurück
                 </Button>
                 <span className="text-sm text-gray-500">{page} / {totalPages}</span>
                 <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  {t('common.next')}
+                  Weiter
                 </Button>
               </div>
             )}

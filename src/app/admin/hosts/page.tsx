@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
-import { Card, Badge, Button, Input, Select, Spinner, Alert } from '@/components/ui';
+import { Card, Badge, Button, Input, Select, Spinner, Alert, Modal } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 
 interface HostRow {
@@ -20,7 +19,6 @@ interface HostRow {
 }
 
 export default function AdminHostsPage() {
-  const { t } = useI18n();
   const [hosts, setHosts] = useState<HostRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -28,6 +26,18 @@ export default function AdminHostsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState('');
+
+  // Create Host modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    companyName: '',
+    hostType: 'operator' as 'operator' | 'private',
+  });
 
   const loadHosts = useCallback(async () => {
     setLoading(true);
@@ -56,6 +66,30 @@ export default function AdminHostsPage() {
     }
   }
 
+  async function handleCreateHost(e: { preventDefault: () => void }) {
+    e.preventDefault();
+    setCreating(true);
+    setCreateError('');
+
+    const res = await apiCall<unknown>('POST', '/admin/hosts', {
+      name: createForm.name,
+      email: createForm.email,
+      phone: createForm.phone || undefined,
+      companyName: createForm.companyName,
+      hostType: createForm.hostType,
+    });
+
+    if (res.success) {
+      setMessage('Host erfolgreich erstellt. Zugangsdaten wurden per E-Mail gesendet.');
+      setShowCreateModal(false);
+      setCreateForm({ name: '', email: '', phone: '', companyName: '', hostType: 'operator' });
+      loadHosts();
+    } else {
+      setCreateError(res.error?.message || 'Fehler beim Erstellen des Hosts');
+    }
+    setCreating(false);
+  }
+
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'gray'> = {
     approved: 'success',
     pending: 'warning',
@@ -67,7 +101,12 @@ export default function AdminHostsPage() {
   return (
     <FadeIn>
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.manageHosts')}</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Hosts verwalten</h1>
+          <Button onClick={() => setShowCreateModal(true)}>
+            + Host erstellen
+          </Button>
+        </div>
 
         {message && <Alert variant="success" onClose={() => setMessage('')}>{message}</Alert>}
 
@@ -76,7 +115,7 @@ export default function AdminHostsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="flex-1">
               <Input
-                placeholder={t('admin.searchPlaceholder')}
+                placeholder="Suchen..."
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
@@ -85,10 +124,10 @@ export default function AdminHostsPage() {
               value={statusFilter}
               onChange={(val) => { setStatusFilter(val); setPage(1); }}
               options={[
-                { value: 'all', label: t('common.all') },
-                { value: 'pending', label: t('common.pending') },
-                { value: 'approved', label: t('common.approved') },
-                { value: 'rejected', label: t('common.rejected') },
+                { value: 'all', label: 'Alle' },
+                { value: 'pending', label: 'Ausstehend' },
+                { value: 'approved', label: 'Genehmigt' },
+                { value: 'rejected', label: 'Abgelehnt' },
               ]}
             />
           </div>
@@ -103,12 +142,12 @@ export default function AdminHostsPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.hostNameLabel')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.company')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.type')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('common.status')}</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">{t('admin.registered')}</th>
-                    <th className="text-right py-3 px-4 text-gray-500 font-medium">{t('admin.actions')}</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Host</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Unternehmen</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Typ</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
+                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Registriert</th>
+                    <th className="text-right py-3 px-4 text-gray-500 font-medium">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -137,21 +176,21 @@ export default function AdminHostsPage() {
                           {host.verification_status === 'pending' && (
                             <>
                               <Button size="sm" onClick={() => handleVerify(host.id, 'approved')}>
-                                {t('admin.approve')}
+                                Genehmigen
                               </Button>
                               <Button size="sm" variant="danger" onClick={() => handleVerify(host.id, 'rejected')}>
-                                {t('admin.reject')}
+                                Ablehnen
                               </Button>
                             </>
                           )}
                           {host.verification_status === 'approved' && (
                             <Button size="sm" variant="secondary" onClick={() => handleVerify(host.id, 'rejected')}>
-                              {t('admin.suspend')}
+                              Sperren
                             </Button>
                           )}
                           {host.verification_status === 'rejected' && (
                             <Button size="sm" onClick={() => handleVerify(host.id, 'approved')}>
-                              {t('admin.reactivate')}
+                              Reaktivieren
                             </Button>
                           )}
                         </div>
@@ -160,7 +199,7 @@ export default function AdminHostsPage() {
                   ))}
                   {hosts.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-12 text-center text-gray-400">{t('common.noResults')}</td>
+                      <td colSpan={6} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                     </tr>
                   )}
                 </tbody>
@@ -171,16 +210,99 @@ export default function AdminHostsPage() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between p-4 border-t border-gray-100">
                 <Button size="sm" variant="secondary" disabled={page <= 1} onClick={() => setPage(page - 1)}>
-                  {t('common.previous')}
+                  Zurück
                 </Button>
                 <span className="text-sm text-gray-500">{page} / {totalPages}</span>
                 <Button size="sm" variant="secondary" disabled={page >= totalPages} onClick={() => setPage(page + 1)}>
-                  {t('common.next')}
+                  Weiter
                 </Button>
               </div>
             )}
           </Card>
         )}
+
+        {/* Create Host Modal */}
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => { setShowCreateModal(false); setCreateError(''); }}
+          title="Neuen Host erstellen"
+          size="lg"
+        >
+          <form onSubmit={handleCreateHost} className="space-y-4">
+            {createError && (
+              <Alert variant="error" onClose={() => setCreateError('')}>{createError}</Alert>
+            )}
+
+            <div>
+              <label htmlFor="host-name" className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              <Input
+                id="host-name"
+                placeholder="Vollständiger Name"
+                value={createForm.name}
+                onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="host-email" className="block text-sm font-medium text-gray-700 mb-1">E-Mail *</label>
+              <Input
+                id="host-email"
+                type="email"
+                placeholder="host@example.com"
+                value={createForm.email}
+                onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="host-phone" className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+              <Input
+                id="host-phone"
+                placeholder="+41 79 123 45 67"
+                value={createForm.phone}
+                onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="host-company" className="block text-sm font-medium text-gray-700 mb-1">Firmenname *</label>
+              <Input
+                id="host-company"
+                placeholder="Firmenname"
+                value={createForm.companyName}
+                onChange={(e) => setCreateForm({ ...createForm, companyName: e.target.value })}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="host-type" className="block text-sm font-medium text-gray-700 mb-1">Host-Typ *</label>
+              <Select
+                value={createForm.hostType}
+                onChange={(val) => setCreateForm({ ...createForm, hostType: val as 'operator' | 'private' })}
+                options={[
+                  { value: 'operator', label: 'Betreiber (Operator)' },
+                  { value: 'private', label: 'Privat (Private)' },
+                ]}
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-100">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => { setShowCreateModal(false); setCreateError(''); }}
+              >
+                Abbrechen
+              </Button>
+              <Button type="submit" disabled={creating}>
+                {creating ? 'Erstellen...' : 'Host erstellen'}
+              </Button>
+            </div>
+          </form>
+        </Modal>
       </div>
     </FadeIn>
   );

@@ -6,7 +6,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Header, Footer } from '@/components/layout';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/contexts/AuthContext';
-import { useI18n } from '@/i18n';
 import { cn, getInitials } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
 import { Spinner } from '@/components/ui';
@@ -49,6 +48,24 @@ const hostNavItems = [
     ),
   },
   {
+    key: 'availability',
+    href: '/host/availability',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
+    key: 'payouts',
+    href: '/host/payouts',
+    icon: (
+      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    ),
+  },
+  {
     key: 'settings',
     href: '/host/settings',
     icon: (
@@ -60,11 +77,10 @@ const hostNavItems = [
   },
 ];
 
-export default function HostLayout({ children }: { children: React.ReactNode }) {
+export default function HostLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { t } = useI18n();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [hasHostProfile, setHasHostProfile] = useState<boolean | null>(null);
   const [checkingProfile, setCheckingProfile] = useState(true);
@@ -105,11 +121,13 @@ export default function HostLayout({ children }: { children: React.ReactNode }) 
   }
 
   const navLabels: Record<string, string> = {
-    dashboard: t('host.dashboard'),
-    listings: t('host.listings'),
-    bookings: t('host.bookings'),
-    vehicles: t('host.vehicles'),
-    settings: t('common.settings'),
+    dashboard: 'Dashboard',
+    listings: 'Parkplätze',
+    bookings: 'Buchungen',
+    vehicles: 'Fahrzeuge',
+    availability: 'Verfügbarkeit',
+    payouts: 'Auszahlungen',
+    settings: 'Einstellungen',
   };
 
   // Show loading while checking profile
@@ -137,12 +155,12 @@ export default function HostLayout({ children }: { children: React.ReactNode }) 
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
-                {t('host.menu')}
+                Menü
               </button>
 
               {/* Sidebar */}
               <aside className={cn(
-                'lg:w-64 flex-shrink-0',
+                'lg:w-64 shrink-0',
                 isSidebarOpen ? 'block' : 'hidden lg:block'
               )}>
                 {/* Host info */}
@@ -154,7 +172,7 @@ export default function HostLayout({ children }: { children: React.ReactNode }) 
                     <div>
                       <p className="font-semibold text-gray-900">{user?.name}</p>
                       <p className="text-xs text-baby-blue-600 font-medium uppercase tracking-wide">
-                        {t('host.portal')}
+                        Host Portal
                       </p>
                     </div>
                   </div>

@@ -63,6 +63,7 @@ export interface ParkingListing {
   shuttleMode: 'scheduled' | 'on_demand' | 'hybrid';
   shuttleSchedule?: ShuttleSchedule;
   offers: PricingOffer[];
+  addons?: LocationAddon[];
   isActive: boolean;
   isApproved: boolean;
   rating?: number;
@@ -164,6 +165,8 @@ export interface Booking {
   basePrice: number;
   discountAmount: number;
   serviceFee: number;
+  addons?: BookingAddon[];
+  addonsTotal?: number;
   totalPrice: number;
   currency: string;
   appliedOffer?: string;
@@ -207,6 +210,7 @@ export interface BookingCreateData {
   returnFlightArrival?: string;
   specialRequests?: SpecialRequests;
   promoCode?: string;
+  addons?: SelectedAddonInput[];
 }
 
 // Search Types
@@ -345,4 +349,77 @@ export interface Review {
   responseAt?: string;
   isPublished: boolean;
   createdAt: string;
+}
+
+// Driver Types
+export interface DriverProfile {
+  id: string;
+  user_id: string;
+  license_number: string;
+  license_expiry: string;
+  verification_status: 'pending' | 'approved' | 'rejected';
+  documents_verified: boolean;
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+// Shift Types
+export interface ShuttleShift {
+  id: string;
+  location_id: string;
+  vehicle_id: string;
+  driver_user_id: string;
+  start_time: string;
+  end_time: string;
+  status: 'planned' | 'active' | 'closed';
+  vehicle_plate?: string;
+  driver_name?: string;
+}
+
+// Blackout Date Types
+export interface BlackoutDate {
+  id: string;
+  location_id: string;
+  start_date: string;
+  end_date: string;
+  reason?: string;
+  created_by?: string;
+  created_at: string;
+}
+
+// Location Add-on / Extra Service Types
+export interface LocationAddon {
+  id: string;
+  location_id: string;
+  name: string;
+  description?: string;
+  price: number;
+  currency: string;
+  max_quantity: number;
+  icon?: string;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BookingAddon {
+  addon_id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
+
+export interface SelectedAddonInput {
+  addonId: string;
+  quantity: number;
+}
+
+// Dispatch Assignment
+export interface DispatchAssignment {
+  booking_id: string;
+  trip_id: string;
+  status: 'assigned' | 'boarded' | 'no_show' | 'cancelled';
 }

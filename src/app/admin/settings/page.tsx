@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Button, Input, Spinner, Alert } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
@@ -20,7 +19,6 @@ interface PlatformSettings {
 }
 
 export default function AdminSettingsPage() {
-  const { t } = useI18n();
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,9 +56,9 @@ export default function AdminSettingsPage() {
     });
 
     if (res.success) {
-      setMessage(t('admin.settingsSaved'));
+      setMessage('Einstellungen erfolgreich gespeichert');
     } else {
-      setError(res.error?.toString() || t('common.error'));
+      setError(res.error?.toString() || 'Fehler');
     }
     setSaving(false);
   }
@@ -75,24 +73,24 @@ export default function AdminSettingsPage() {
   }
 
   if (!settings) {
-    return <Alert variant="error">{t('common.error')}</Alert>;
+    return <Alert variant="error">Fehler</Alert>;
   }
 
   return (
     <FadeIn>
       <div className="space-y-6 max-w-3xl">
-        <h1 className="text-2xl font-bold text-gray-900">{t('admin.platformSettings')}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Plattform-Einstellungen</h1>
 
         {message && <Alert variant="success" onClose={() => setMessage('')}>{message}</Alert>}
         {error && <Alert variant="error" onClose={() => setError('')}>{error}</Alert>}
 
         {/* Commission & Fees */}
         <Card className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">{t('admin.commissionFees')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Provisionen &amp; Gebühren</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.commissionRate')} (%)
+                Provisionssatz (%)
               </label>
               <Input
                 type="number"
@@ -102,11 +100,11 @@ export default function AdminSettingsPage() {
                 value={String(settings.commission_rate)}
                 onChange={(e) => updateField('commission_rate', e.target.value)}
               />
-              <p className="text-xs text-gray-400 mt-1">{t('admin.commissionRateHint')}</p>
+              <p className="text-xs text-gray-400 mt-1">Prozentsatz, der den Hosts pro Buchung berechnet wird</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.serviceFeeRate')} (%)
+                Servicegebühr (%)
               </label>
               <Input
                 type="number"
@@ -116,18 +114,18 @@ export default function AdminSettingsPage() {
                 value={String(settings.service_fee_rate)}
                 onChange={(e) => updateField('service_fee_rate', e.target.value)}
               />
-              <p className="text-xs text-gray-400 mt-1">{t('admin.serviceFeeRateHint')}</p>
+              <p className="text-xs text-gray-400 mt-1">Prozentsatz, der den Kunden pro Buchung berechnet wird</p>
             </div>
           </div>
         </Card>
 
         {/* Booking Rules */}
         <Card className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">{t('admin.bookingRules')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Buchungsregeln</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.minBookingHours')}
+                Min. Buchungsstunden
               </label>
               <Input
                 type="number"
@@ -138,7 +136,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.maxBookingDays')}
+                Max. Buchungstage
               </label>
               <Input
                 type="number"
@@ -149,7 +147,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.cancellationWindow')}
+                Stornierungsfenster (Stunden)
               </label>
               <Input
                 type="number"
@@ -157,18 +155,18 @@ export default function AdminSettingsPage() {
                 value={String(settings.cancellation_window_hours)}
                 onChange={(e) => updateField('cancellation_window_hours', Number.parseInt(e.target.value) || 0)}
               />
-              <p className="text-xs text-gray-400 mt-1">{t('admin.cancellationWindowHint')}</p>
+              <p className="text-xs text-gray-400 mt-1">Stunden vor Check-in, in denen kostenlose Stornierung möglich ist</p>
             </div>
           </div>
         </Card>
 
         {/* Support / Contact */}
         <Card className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">{t('admin.supportContact')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Support &amp; Kontakt</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.supportEmail')}
+                Support-E-Mail
               </label>
               <Input
                 type="email"
@@ -178,7 +176,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.supportPhone')}
+                Support-Telefon
               </label>
               <Input
                 type="tel"
@@ -191,11 +189,11 @@ export default function AdminSettingsPage() {
 
         {/* Versions & Maintenance */}
         <Card className="p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">{t('admin.systemSettings')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Systemeinstellungen</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.termsVersion')}
+                AGB-Version
               </label>
               <Input
                 value={settings.terms_version}
@@ -204,7 +202,7 @@ export default function AdminSettingsPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('admin.privacyVersion')}
+                Datenschutz-Version
               </label>
               <Input
                 value={settings.privacy_version}
@@ -226,8 +224,8 @@ export default function AdminSettingsPage() {
               }`} />
             </button>
             <div>
-              <p className="font-medium text-gray-900">{t('admin.maintenanceMode')}</p>
-              <p className="text-xs text-gray-500">{t('admin.maintenanceModeHint')}</p>
+              <p className="font-medium text-gray-900">Wartungsmodus</p>
+              <p className="text-xs text-gray-500">Wenn aktiviert, ist die Plattform für Benutzer nicht zugänglich</p>
             </div>
           </div>
         </Card>
@@ -235,7 +233,7 @@ export default function AdminSettingsPage() {
         {/* Save */}
         <div className="flex justify-end">
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? t('common.saving') : t('common.save')}
+            {saving ? 'Speichern...' : 'Speichern'}
           </Button>
         </div>
       </div>

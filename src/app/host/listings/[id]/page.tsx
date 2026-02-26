@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useI18n } from '@/i18n';
 import { apiCall } from '@/lib/api';
 import { Card, Button, Input, Select, Alert, Spinner } from '@/components/ui';
 import { ImageUpload } from '@/components/ui/ImageUpload';
+import AddonsManager from '@/components/ui/AddonsManager';
 import { FadeIn } from '@/components/animations';
 
 const amenityKeys = [
@@ -15,7 +15,6 @@ const amenityKeys = [
 const shuttleModes = ['scheduled', 'on_demand', 'hybrid'] as const;
 
 export default function EditListingPage() {
-  const { t } = useI18n();
   const router = useRouter();
   const params = useParams();
   const listingId = params.id as string;
@@ -120,23 +119,23 @@ export default function EditListingPage() {
 
     const res = await apiCall('PATCH', `/listings/${listingId}`, payload);
     if (res.success) {
-      setSuccess(t('host.listingSaved'));
+      setSuccess('Parkplatz erfolgreich gespeichert');
     } else {
-      setError(res.error?.message || t('common.error'));
+      setError(res.error?.message || 'Fehler');
     }
     setSaving(false);
   }
 
   const amenityLabels: Record<string, string> = {
-    covered: t('listing.amenity.covered'),
-    evCharging: t('listing.amenity.evCharging'),
-    security247: t('listing.amenity.security'),
-    cctv: t('listing.amenity.cctv'),
-    fenced: t('listing.amenity.fenced'),
-    lit: t('listing.amenity.lit'),
-    accessible: t('listing.amenity.accessible'),
-    carWash: t('listing.amenity.carWash'),
-    valetParking: t('listing.amenity.valetParking'),
+    covered: 'Überdacht',
+    evCharging: 'E-Ladestation',
+    security247: '24/7 Sicherheit',
+    cctv: 'Videoüberwachung',
+    fenced: 'Eingezäunt',
+    lit: 'Beleuchtet',
+    accessible: 'Barrierefrei',
+    carWash: 'Autowaschanlage',
+    valetParking: 'Valet Parking',
   };
 
   if (loading) {
@@ -151,7 +150,7 @@ export default function EditListingPage() {
     <FadeIn>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">{t('host.editListing')}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Parkplatz bearbeiten</h1>
           <span className={`text-xs font-medium px-3 py-1 rounded-full ${
             form.status === 'active' ? 'bg-success-50 text-success-700' :
             form.status === 'pending_review' ? 'bg-warning-50 text-warning-700' :
@@ -166,11 +165,11 @@ export default function EditListingPage() {
 
         {/* Basic Info */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.basicInfo')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Grundinformationen</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
               <Input
-                label={t('host.listingName')}
+                label="Name des Parkplatzes"
                 value={form.name}
                 onChange={(e) => updateField('name', e.target.value)}
                 required
@@ -178,33 +177,33 @@ export default function EditListingPage() {
             </div>
             <div className="md:col-span-2">
               <Input
-                label={t('host.address')}
+                label="Adresse"
                 value={form.address}
                 onChange={(e) => updateField('address', e.target.value)}
                 required
               />
             </div>
             <Input
-              label={t('host.city')}
+              label="Stadt"
               value={form.city}
               onChange={(e) => updateField('city', e.target.value)}
               required
             />
             <Input
-              label={t('host.postalCode')}
+              label="Postleitzahl"
               value={form.postalCode}
               onChange={(e) => updateField('postalCode', e.target.value)}
               required
             />
             <Input
-              label={t('host.latitude')}
+              label="Breitengrad"
               type="number"
               step="any"
               value={form.latitude}
               onChange={(e) => updateField('latitude', parseFloat(e.target.value))}
             />
             <Input
-              label={t('host.longitude')}
+              label="Längengrad"
               type="number"
               step="any"
               value={form.longitude}
@@ -215,17 +214,17 @@ export default function EditListingPage() {
 
         {/* Capacity & Pricing */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.capacityPricing')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Kapazität & Preisgestaltung</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label={t('host.totalCapacity')}
+              label="Gesamtkapazität"
               type="number"
               value={form.capacityTotal}
               onChange={(e) => updateField('capacityTotal', e.target.value)}
               required
             />
             <Input
-              label={t('host.pricePerDay')}
+              label="Preis pro Tag"
               type="number"
               step="0.01"
               value={form.basePricePerDay}
@@ -233,19 +232,19 @@ export default function EditListingPage() {
               required
             />
             <Input
-              label={t('host.distanceToAirport')}
+              label="Entfernung zum Flughafen (Min.)"
               type="number"
               value={form.distanceToAirportMin}
               onChange={(e) => updateField('distanceToAirportMin', e.target.value)}
             />
             <Select
-              label={t('host.cancellationPolicy')}
+              label="Stornierungsrichtlinie"
               value={form.cancellationPolicy}
               onChange={(val) => updateField('cancellationPolicy', val)}
               options={[
-                { value: 'flexible', label: t('host.policyFlexible') },
-                { value: 'moderate', label: t('host.policyModerate') },
-                { value: 'strict', label: t('host.policyStrict') },
+                { value: 'flexible', label: 'Flexibel' },
+                { value: 'moderate', label: 'Moderat' },
+                { value: 'strict', label: 'Streng' },
               ]}
             />
           </div>
@@ -253,22 +252,22 @@ export default function EditListingPage() {
 
         {/* Shuttle Settings */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.shuttleSettings')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shuttle-Einstellungen</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Select
-              label={t('host.shuttleMode')}
+              label="Shuttle-Modus"
               value={form.shuttleMode}
               onChange={(val) => updateField('shuttleMode', val)}
-              options={shuttleModes.map((m) => ({ value: m, label: t(`host.shuttle.${m}`) }))}
+              options={shuttleModes.map((m) => ({ value: m, label: { scheduled: 'Planmässig', on_demand: 'Auf Anfrage', hybrid: 'Hybrid' }[m] }))}
             />
             <Input
-              label={t('host.shuttleStart')}
+              label="Shuttle Beginn"
               type="time"
               value={form.shuttleHours.start}
               onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, start: e.target.value } }))}
             />
             <Input
-              label={t('host.shuttleEnd')}
+              label="Shuttle Ende"
               type="time"
               value={form.shuttleHours.end}
               onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, end: e.target.value } }))}
@@ -278,7 +277,7 @@ export default function EditListingPage() {
 
         {/* Amenities */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.amenities')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ausstattung</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {amenityKeys.map((key) => (
               <label
@@ -314,10 +313,10 @@ export default function EditListingPage() {
 
         {/* Description */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.descriptionSection')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Beschreibung & Anweisungen</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('host.description')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Beschreibung</label>
               <textarea
                 rows={4}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-baby-blue-500 focus:border-transparent resize-none"
@@ -326,7 +325,7 @@ export default function EditListingPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{t('host.checkInInstructions')}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">Check-in Anweisungen</label>
               <textarea
                 rows={3}
                 className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-baby-blue-500 focus:border-transparent resize-none"
@@ -339,22 +338,25 @@ export default function EditListingPage() {
 
         {/* Images */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{t('host.images')}</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Bilder</h2>
           <ImageUpload
             images={form.images}
             onChange={(images) => setForm((prev) => ({ ...prev, images }))}
             maxImages={8}
-            label={t('host.uploadImages')}
+            label="Bilder hochladen"
           />
         </Card>
+
+        {/* Extra Services / Add-ons */}
+        <AddonsManager locationId={listingId} />
 
         {/* Submit */}
         <div className="flex items-center justify-end gap-3">
           <Button variant="secondary" type="button" onClick={() => router.push('/host/listings')}>
-            {t('common.cancel')}
+            Abbrechen
           </Button>
           <Button type="submit" loading={saving}>
-            {t('common.save')}
+            Speichern
           </Button>
         </div>
       </form>

@@ -7,7 +7,6 @@ import { Header, Footer } from '@/components/layout';
 import { Button, Card, Badge, Spinner } from '@/components/ui';
 import { formatCurrency, calculateDays, cn } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
-import { useI18n } from '@/i18n';
 import { 
   PageTransition, 
   FadeIn, 
@@ -64,7 +63,6 @@ type SortOption = 'price' | 'rating' | 'distance';
 
 export default function ZurichSearchPage() {
   const searchParams = useSearchParams();
-  const { t } = useI18n();
   const [listings, setListings] = useState<ParkingListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('price');
@@ -126,10 +124,10 @@ export default function ZurichSearchPage() {
 
   const getAmenityBadges = (amenities: ParkingListing['amenities']) => {
     const badges = [];
-    if (amenities.covered) badges.push({ label: t('listing.amenity.covered'), icon: '🏠' });
-    if (amenities.evCharging) badges.push({ label: t('listing.amenity.evCharging'), icon: '⚡' });
-    if (amenities.security247) badges.push({ label: t('listing.amenity.security'), icon: '🛡️' });
-    if (amenities.valetParking) badges.push({ label: t('listing.amenity.valetParking'), icon: '🎩' });
+    if (amenities.covered) badges.push({ label: 'Überdacht', icon: '🏠' });
+    if (amenities.evCharging) badges.push({ label: 'E-Ladestation', icon: '⚡' });
+    if (amenities.security247) badges.push({ label: '24/7 Sicherheit', icon: '🛡️' });
+    if (amenities.valetParking) badges.push({ label: 'Valet Parking', icon: '🎩' });
     return badges;
   };
 
@@ -144,19 +142,19 @@ export default function ZurichSearchPage() {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                  {t('search.title')}
+                  Parkplätze am Flughafen Zürich
                 </h1>
               <p className="text-gray-500 mt-1">
-                {filteredListings.length} {t('search.optionsAvailable')}
+                {filteredListings.length} Optionen verfügbar
                 {startDate && endDate && (
-                  <> {t('search.forDays', { days: String(days) })}</>
+                  <> {`für ${days} Tage`}</>
                 )}
               </p>
             </div>
             {/* Date modifier */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">{t('search.from')}:</span>
+                <span className="text-gray-500">Von:</span>
                 <input
                   type="date"
                   defaultValue={startDate}
@@ -164,7 +162,7 @@ export default function ZurichSearchPage() {
                 />
               </div>
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-gray-500">{t('search.to')}:</span>
+                <span className="text-gray-500">Bis:</span>
                 <input
                   type="date"
                   defaultValue={endDate}
@@ -182,25 +180,25 @@ export default function ZurichSearchPage() {
           {/* Filters Sidebar */}
           <aside className="lg:w-64 flex-shrink-0">
             <Card padding="md" className="sticky top-24">
-              <h2 className="font-semibold text-gray-900 mb-4">{t('search.filters')}</h2>
+              <h2 className="font-semibold text-gray-900 mb-4">Filter</h2>
               
               {/* Sort */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('search.sortBy')}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sortieren nach</label>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as SortOption)}
                   className="select w-full"
                 >
-                  <option value="price">{t('search.sortPrice')}</option>
-                  <option value="rating">{t('search.sortRating')}</option>
-                  <option value="distance">{t('search.sortDistance')}</option>
+                  <option value="price">Preis</option>
+                  <option value="rating">Bewertung</option>
+                  <option value="distance">Entfernung</option>
                 </select>
               </div>
 
               {/* Amenities */}
               <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">{t('search.amenities')}</h3>
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Ausstattung</h3>
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -209,7 +207,7 @@ export default function ZurichSearchPage() {
                       onChange={(e) => setFilters({ ...filters, covered: e.target.checked })}
                       className="checkbox"
                     />
-                    <span className="text-sm text-gray-600">{t('listing.amenity.covered')}</span>
+                    <span className="text-sm text-gray-600">Überdacht</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -218,7 +216,7 @@ export default function ZurichSearchPage() {
                       onChange={(e) => setFilters({ ...filters, evCharging: e.target.checked })}
                       className="checkbox"
                     />
-                    <span className="text-sm text-gray-600">{t('listing.amenity.evCharging')}</span>
+                    <span className="text-sm text-gray-600">E-Ladestation</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -227,7 +225,7 @@ export default function ZurichSearchPage() {
                       onChange={(e) => setFilters({ ...filters, security247: e.target.checked })}
                       className="checkbox"
                     />
-                    <span className="text-sm text-gray-600">{t('listing.amenity.security')}</span>
+                    <span className="text-sm text-gray-600">24/7 Sicherheit</span>
                   </label>
                 </div>
               </div>
@@ -235,7 +233,7 @@ export default function ZurichSearchPage() {
               {/* Price Range */}
               <div>
                 <h3 className="text-sm font-medium text-gray-700 mb-2">
-                  {t('search.pricePerDay')}: {formatCurrency(filters.priceMin)} - {formatCurrency(filters.priceMax)}
+                  Preis pro Tag: {formatCurrency(filters.priceMin)} - {formatCurrency(filters.priceMax)}
                 </h3>
                 <input
                   type="range"
@@ -261,8 +259,8 @@ export default function ZurichSearchPage() {
                   <svg className="h-12 w-12 mx-auto text-gray-300 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">{t('search.noResults')}</h3>
-                  <p className="text-gray-500">{t('search.tryAdjusting')}</p>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Keine Parkplätze gefunden</h3>
+                  <p className="text-gray-500">Versuchen Sie, Ihre Filter oder Daten anzupassen.</p>
                 </div>
               </Card>
             ) : (
@@ -295,7 +293,7 @@ export default function ZurichSearchPage() {
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="text-lg font-semibold text-gray-900">{listing.name}</h3>
                               {listing.offers.length > 0 && (
-                                <Badge variant="success" size="sm">{t('search.offer')}</Badge>
+                                <Badge variant="success" size="sm">Angebot</Badge>
                               )}
                             </div>
                             <p className="text-sm text-gray-500 mb-3 line-clamp-2">{listing.description}</p>
@@ -322,7 +320,7 @@ export default function ZurichSearchPage() {
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                                 </svg>
-                                {t('search.shuttleEvery', { min: String(listing.shuttleSchedule?.frequency || 20) })}
+                                {`Shuttle alle ${listing.shuttleSchedule?.frequency || 20} Min.`}
                               </div>
                               {listing.rating && (
                                 <div className="flex items-center gap-1">
@@ -344,7 +342,7 @@ export default function ZurichSearchPage() {
                               {formatCurrency(listing.pricePerDay)}/day × {days} days
                             </p>
                             <Link href={`/parking/${listing.id}?startDate=${startDate}&endDate=${endDate}`}>
-                              <Button>{t('search.viewDetails')}</Button>
+                              <Button>Details anzeigen</Button>
                             </Link>
                           </div>
                         </div>
