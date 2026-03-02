@@ -1,4 +1,4 @@
-import { UserRole, UserStatus, HostType, VerificationStatus } from './roles';
+import { UserRole, UserStatus, VerificationStatus } from './roles';
 
 // Base entity with common fields
 export interface BaseEntity {
@@ -44,35 +44,19 @@ export interface UserPublic {
   created_at: Date;
 }
 
-// Host (Parking Provider) entity
+// Host (Parking Provider) entity — single type, no operator/private distinction
 export interface Host extends BaseEntity {
   user_id: string;
   company_name?: string;
-  host_type: HostType;
   payout_account_id?: string;
   verification_status: VerificationStatus;
   documents_verified: boolean;
-  commission_rate: number; // % platform takes (default 19%)
-  service_fee: number; // Optional CHF fee per booking
+  commission_rate: number; // % platform takes (default 18%)
+  service_fee: number; // CHF fee per booking (default 5)
   tax_id?: string;
   address?: string;
+  phone_number?: string;
   website?: string;
-}
-
-// Driver Profile - extra info for shuttle drivers
-export interface DriverProfile extends BaseEntity {
-  user_id: string;
-  license_number: string;
-  license_expiry: Date;
-  verification_status: VerificationStatus;
-  documents_verified: boolean;
-}
-
-// Dispatcher Profile
-export interface DispatcherProfile extends BaseEntity {
-  user_id: string;
-  location_ids: string[]; // Can manage shuttles for these parking locations
-  shift_preference?: string;
 }
 
 // Refresh Token entity for session management
@@ -118,43 +102,34 @@ export interface AuditLog extends BaseEntity {
 // CORE BUSINESS ENTITIES
 // ============================================
 
-// Shuttle Hours configuration
-export interface ShuttleHours {
-  start: string; // "05:00"
-  end: string; // "23:00"
-  frequency_min?: number;
-}
-
-// Buffer Settings for parking operations
-export interface BufferSettings {
-  lot_processing_min: number;
-  transfer_time_min: number;
-  pickup_buffer_min: number;
-}
-
 // Location Status
 export type LocationStatus = 'pending' | 'active' | 'inactive' | 'rejected';
 
-// Shuttle Mode
-export type ShuttleMode = 'scheduled' | 'on_demand' | 'hybrid';
+// Pricing Tier (stored on parking_locations.pricing_tiers JSONB)
+// Each tier represents a bookable date range with a flat total price
+export interface PricingTier {
+  start_date: string;   // ISO date, e.g. '2025-01-01'
+  end_date: string;     // ISO date, e.g. '2025-01-15'
+  total_price: number;  // flat total price for the entire date range (NOT per-day)
+  label?: string;       // optional display label, e.g. '2 Wochen Januar'
+}
 
 // Parking Location entity
 export interface ParkingLocation extends BaseEntity {
   host_id: string;
   name: string;
-  address: string;
+  address: string; // exact address sent to customer after booking
+  phone_number: string; // host phone sent to customer after booking
   location?: { latitude: number; longitude: number };
   airport_code: string; // Default 'ZRH'
   capacity_total: number;
-  amenities?: Record<string, boolean>; // e.g., {"covered": true, "ev_charging": true}
-  shuttle_mode: ShuttleMode;
-  shuttle_hours?: ShuttleHours;
-  buffer_settings?: BufferSettings;
+  amenities?: Record<string, boolean>;
   distance_to_airport_min?: number;
   description?: string;
   images?: string[];
   photos?: string[];
   base_price_per_day?: number;
+  pricing_tiers?: PricingTier[];
   cancellation_policy?: string;
   check_in_instructions?: string;
   status: LocationStatus;
@@ -176,22 +151,16 @@ export interface PricingRule extends BaseEntity {
   currency: string;
 }
 
-// Booking Status
+// Booking Status — simplified (no shuttle statuses)
 export type BookingStatus =
   | 'draft'
   | 'pending_payment'
   | 'confirmed'
   | 'checked_in'
-  | 'shuttle_to_airport_completed'
-  | 'awaiting_pickup'
-  | 'shuttle_pickup_completed'
-  | 'checked_out'
+  | 'completed'
   | 'cancelled'
   | 'no_show'
   | 'refunded';
-
-// Return Pickup Preference
-export type ReturnPickupPreference = 'flight' | 'time';
 
 // Booking entity
 export interface Booking extends BaseEntity {
@@ -199,18 +168,17 @@ export interface Booking extends BaseEntity {
   location_id: string;
   start_datetime: Date;
   end_datetime: Date;
-  arrival_lot_datetime: Date;
-  return_pickup_preference: ReturnPickupPreference;
-  outbound_flight_no?: string;
-  return_flight_no?: string;
-  passengers: number;
-  luggage: number;
   car_plate: string;
   car_model?: string;
+  passengers: number;
+  luggage: number;
+  outbound_flight_no?: string;
+  return_flight_no?: string;
   status: BookingStatus;
   base_price?: number;
   discount_applied: number;
   service_fee: number;
+  platform_service_fee: number;
   total_price: number;
   platform_commission?: number;
   host_payout?: number;
@@ -219,71 +187,7 @@ export interface Booking extends BaseEntity {
   currency: string;
   payment_id?: string;
   special_notes?: string;
-  child_seat_required: boolean;
-  wheelchair_assistance: boolean;
   booking_code: string;
-}
-
-// Shuttle Vehicle entity
-export interface ShuttleVehicle extends BaseEntity {
-  location_id?: string;
-  plate: string;
-  capacity_passengers: number;
-  capacity_luggage: number;
-  vehicle_type?: string;
-  make?: string;
-  model?: string;
-  year?: number;
-  active: boolean;
-  maintenance_notes?: string;
-}
-
-// Shift Status
-export type ShiftStatus = 'planned' | 'active' | 'closed' | 'cancelled';
-
-// Shuttle Shift entity
-export interface ShuttleShift extends BaseEntity {
-  vehicle_id: string;
-  driver_user_id: string;
-  start_time: Date;
-  end_time: Date;
-  status: ShiftStatus;
-  notes?: string;
-}
-
-// Trip Direction
-export type TripDirection = 'lot_to_airport' | 'airport_to_lot';
-
-// Trip Status
-export type TripStatus = 'planned' | 'boarding' | 'en_route' | 'completed' | 'cancelled' | 'delayed';
-
-// Shuttle Trip entity
-export interface ShuttleTrip extends BaseEntity {
-  shift_id: string;
-  direction: TripDirection;
-  scheduled_departure: Date;
-  actual_departure?: Date;
-  actual_arrival?: Date;
-  status: TripStatus;
-  current_passengers: number;
-  current_luggage: number;
-  max_capacity_passengers: number;
-  max_capacity_luggage?: number;
-  notes?: string;
-}
-
-// Trip Booking Status
-export type TripBookingStatus = 'assigned' | 'boarded' | 'no_show' | 'cancelled';
-
-// Shuttle Trip Booking (junction table)
-export interface ShuttleTripBooking {
-  trip_id: string;
-  booking_id: string;
-  seat_count: number;
-  luggage_count: number;
-  status: TripBookingStatus;
-  assigned_at: Date;
-  boarded_at?: Date;
 }
 
 // Payment Status

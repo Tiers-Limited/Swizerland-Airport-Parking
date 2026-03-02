@@ -23,8 +23,6 @@ router.post('/', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.c
 router.get('/my', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getMyListings);
 router.get('/my/bookings', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getMyBookings);
 router.get('/my/stats', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getMyStats);
-router.get('/my/vehicles', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getMyVehicles);
-
 router.get('/my/:id', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getMyListing);
 router.patch('/:id', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.update);
 router.delete('/:id', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.delete);
@@ -32,11 +30,6 @@ router.delete('/:id', validateParams(z.object({ id: uuidSchema })), requireRole(
 // Pricing rules
 router.post('/:id/pricing', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.setPricingRule);
 router.get('/:id/pricing', validateParams(z.object({ id: uuidSchema })), listingController.getPricingRule);
-
-// Shuttle vehicles
-router.post('/:id/vehicles', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.createVehicle);
-router.patch('/vehicles/:vehicleId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.updateVehicle);
-router.delete('/vehicles/:vehicleId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.deleteVehicle);
 
 // Add-on / Extra services management (host + admin)
 router.get('/:id/addons', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getAddons);

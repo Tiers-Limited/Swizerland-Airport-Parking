@@ -10,7 +10,6 @@ export interface CreateHostInput {
   email: string;
   phone?: string;
   companyName: string;
-  hostType: 'operator' | 'private';
 }
 
 // ─── Dashboard Stats ─────────────────────────────────────────────────
@@ -123,12 +122,11 @@ export class AdminService {
   // ── Hosts ──────────────────────────────────────────────────────────
   async listHosts(filters: {
     status?: string;
-    hostType?: string;
     search?: string;
     page?: number;
     limit?: number;
   }) {
-    const { status, hostType, search, page = 1, limit = 20 } = filters;
+    const { status, search, page = 1, limit = 20 } = filters;
     const offset = (page - 1) * limit;
 
     let query = db('hosts')
@@ -142,7 +140,6 @@ export class AdminService {
       );
 
     if (status) query = query.where('hosts.verification_status', status);
-    if (hostType) query = query.where('hosts.host_type', hostType);
     if (search) {
       query = query.where(function () {
         this.where('users.name', 'ilike', `%${search}%`)
@@ -218,7 +215,7 @@ export class AdminService {
       .insert({
         user_id: user.id,
         company_name: data.companyName,
-        host_type: data.hostType,
+        host_type: 'operator',
         verification_status: VerificationStatus.APPROVED,
         documents_verified: true,
       })
@@ -422,57 +419,6 @@ export class AdminService {
       total: Number(count),
       totalPages: Math.ceil(Number(count) / limit),
     };
-  }
-
-  // ── Vehicles ───────────────────────────────────────────────────────
-  async listVehicles(filters: {
-    active?: boolean;
-    search?: string;
-    page?: number;
-    limit?: number;
-  }) {
-    const { active, search, page = 1, limit = 20 } = filters;
-    const offset = (page - 1) * limit;
-
-    let query = db('shuttle_vehicles')
-      .leftJoin('parking_locations', 'parking_locations.id', 'shuttle_vehicles.location_id')
-      .select(
-        'shuttle_vehicles.*',
-        'parking_locations.name as location_name'
-      );
-
-    if (active !== undefined) query = query.where('shuttle_vehicles.active', active);
-    if (search) {
-      query = query.where(function () {
-        this.where('shuttle_vehicles.plate', 'ilike', `%${search}%`)
-          .orWhere('shuttle_vehicles.make', 'ilike', `%${search}%`)
-          .orWhere('shuttle_vehicles.model', 'ilike', `%${search}%`);
-      });
-    }
-
-    const [{ count }] = await query.clone().clearSelect().count('* as count');
-    const vehicles = await query
-      .orderBy('shuttle_vehicles.created_at', 'desc')
-      .limit(limit)
-      .offset(offset);
-
-    return {
-      vehicles,
-      total: Number(count),
-      totalPages: Math.ceil(Number(count) / limit),
-    };
-  }
-
-  async updateVehicleStatus(vehicleId: string, active: boolean) {
-    const vehicle = await db('shuttle_vehicles').where('id', vehicleId).first();
-    if (!vehicle) throw new NotFoundError('Vehicle');
-
-    const [updated] = await db('shuttle_vehicles')
-      .where('id', vehicleId)
-      .update({ active, updated_at: new Date() })
-      .returning('*');
-
-    return updated;
   }
 
   // ── Platform Settings ──────────────────────────────────────────────

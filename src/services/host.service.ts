@@ -1,6 +1,6 @@
 import { db } from '../database';
 import { userService } from './user.service';
-import { Host, UserRole, VerificationStatus, HostType } from '../types';
+import { Host, UserRole, VerificationStatus } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
 import { RegisterHostInput } from '../validators/auth.validators';
@@ -12,8 +12,6 @@ export class HostService {
    * Register as a host (requires existing customer account)
    */
   async registerHost(userId: string, data: RegisterHostInput): Promise<Host> {
-    // const user = await userService.findByIdOrFail(userId);
-
     // Check if already a host
     const existingHost = await this.findByUserId(userId);
     if (existingHost) {
@@ -25,7 +23,7 @@ export class HostService {
       .insert({
         user_id: userId,
         company_name: data.companyName,
-        host_type: data.hostType,
+        host_type: 'operator',
         tax_id: data.taxId,
         address: data.address,
         website: data.website,
@@ -76,7 +74,6 @@ export class HostService {
     // Map camelCase input to snake_case DB columns
     const updateData: Record<string, unknown> = { updated_at: new Date() };
     if (data.companyName !== undefined) updateData.company_name = data.companyName;
-    if (data.hostType !== undefined) updateData.host_type = data.hostType;
     if (data.taxId !== undefined) updateData.tax_id = data.taxId;
     if (data.address !== undefined) updateData.address = data.address;
     if (data.website !== undefined) updateData.website = data.website;
@@ -138,20 +135,16 @@ export class HostService {
    */
   async list(filters: {
     status?: VerificationStatus;
-    hostType?: HostType;
     page?: number;
     limit?: number;
   }): Promise<{ hosts: Host[]; total: number }> {
-    const { status, hostType, page = 1, limit = 20 } = filters;
+    const { status, page = 1, limit = 20 } = filters;
     const offset = (page - 1) * limit;
 
     let query = db(this.tableName);
 
     if (status) {
       query = query.where('verification_status', status);
-    }
-    if (hostType) {
-      query = query.where('host_type', hostType);
     }
 
     const [{ count }] = await query.clone().count('* as count');

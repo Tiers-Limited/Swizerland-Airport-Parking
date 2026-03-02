@@ -13,7 +13,7 @@ export const requireRole = (...allowedRoles: UserRole[]) => {
         throw new AuthenticationError();
       }
 
-      if (!allowedRoles.includes(req.user.role as UserRole)) {
+      if (!allowedRoles.includes(req.user.role)) {
         throw new ForbiddenError(
           `Access denied. Required roles: ${allowedRoles.join(', ')}`
         );
@@ -37,7 +37,7 @@ export const requirePermission = (resource: Resource, action: Action) => {
         throw new AuthenticationError();
       }
 
-      const userRole = req.user.role as UserRole;
+      const userRole = req.user.role;
       const hasPermission = checkPermission(userRole, resource, action);
 
       if (!hasPermission) {
@@ -150,9 +150,6 @@ function getResourceFromPath(path: string): Resource | undefined {
     '/bookings': Resource.BOOKINGS,
     '/listings': Resource.LISTINGS,
     '/hosts': Resource.HOSTS,
-    '/vehicles': Resource.VEHICLES,
-    '/shifts': Resource.SHIFTS,
-    '/trips': Resource.TRIPS,
     '/payments': Resource.PAYMENTS,
     '/payouts': Resource.PAYOUTS,
   };

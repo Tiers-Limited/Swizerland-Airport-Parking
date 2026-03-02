@@ -11,6 +11,9 @@ router.get('/calculate-price', bookingController.calculatePrice);
 // Lookup booking by code (for check-in kiosks, etc.)
 router.get('/code/:code', bookingController.getBookingByCode);
 
+// Guest booking (creates customer account automatically)
+router.post('/guest', bookingController.guestBooking);
+
 // ── Authenticated Routes ──────────────────────────────────────────
 router.use(authenticate);
 

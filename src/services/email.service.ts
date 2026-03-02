@@ -31,6 +31,35 @@ export interface HostCredentialsEmailData {
   tempPassword: string;
 }
 
+export interface BookingConfirmationEmailData {
+  email: string;
+  firstName: string;
+  bookingCode: string;
+  startDate: string;
+  endDate: string;
+  locationName: string;
+  locationAddress: string;
+  hostPhone: string;
+  totalPaid: string;
+  currency: string;
+  checkInInstructions?: string;
+}
+
+export interface BookingNotificationToHostData {
+  email: string;
+  hostName: string;
+  bookingCode: string;
+  startDate: string;
+  endDate: string;
+  locationName: string;
+  customerName: string;
+  customerPhone: string;
+  carPlate: string;
+  carModel?: string;
+  amount: string;
+  currency: string;
+}
+
 class EmailService {
   private transporter: Transporter | null = null;
   private isConfigured: boolean = false;
@@ -275,7 +304,7 @@ Welcome to Airport Parking! Your email has been verified and your account is now
 
 You can now:
 - Browse available parking spots near Zurich Airport
-- Book parking with shuttle service
+- Book parking near Zurich Airport
 - Manage your reservations
 
 Login to your account: ${loginUrl}
@@ -305,7 +334,7 @@ The Airport Parking Team
     <h3 style="color: #667eea;">What you can do now:</h3>
     <ul>
       <li>Browse available parking spots near Zurich Airport</li>
-      <li>Book parking with shuttle service</li>
+      <li>Book parking near Zurich Airport</li>
       <li>Manage your reservations</li>
       <li>Track your booking history</li>
     </ul>
@@ -410,6 +439,229 @@ Das Airport Parking Team
       text,
       html,
     });
+  }
+
+  /**
+   * Send guest account credentials email to customer
+   */
+  async sendGuestCredentialsEmail(data: HostCredentialsEmailData): Promise<boolean> {
+    const loginUrl = `${config.frontendUrl}/login`;
+
+    const subject = 'Ihr Kundenkonto – Airport Parking';
+
+    const text = `
+Hallo ${data.firstName},
+
+Vielen Dank für Ihre Buchung bei Airport Parking!
+
+Wir haben für Sie automatisch ein Kundenkonto erstellt, damit Sie Ihre Buchungen verwalten können.
+
+Ihre Zugangsdaten:
+
+E-Mail: ${data.email}
+Passwort: ${data.tempPassword}
+
+Bitte melden Sie sich an und ändern Sie Ihr Passwort: ${loginUrl}
+
+Mit freundlichen Grüssen,
+Das Airport Parking Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ihr Kundenkonto</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #3B9AFF 0%, #667eea 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Airport Parking</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.firstName}!</h2>
+
+    <p>Vielen Dank für Ihre Buchung bei Airport Parking!</p>
+    <p>Wir haben für Sie automatisch ein Kundenkonto erstellt, damit Sie Ihre Buchungen jederzeit einsehen und verwalten können.</p>
+
+    <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>E-Mail:</strong> ${data.email}</p>
+      <p style="margin: 5px 0;"><strong>Passwort:</strong> ${data.tempPassword}</p>
+    </div>
+
+    <p style="color: #e74c3c; font-weight: bold;">Bitte ändern Sie Ihr Passwort nach der ersten Anmeldung.</p>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${loginUrl}"
+         style="display: inline-block; background: linear-gradient(135deg, #3B9AFF 0%, #667eea 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+        Jetzt anmelden
+      </a>
+    </div>
+
+    <p style="color: #666; font-size: 14px;">Falls Sie den Button nicht anklicken können, kopieren Sie diesen Link in Ihren Browser:</p>
+    <p style="word-break: break-all; font-size: 12px; color: #888;">${loginUrl}</p>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.sendEmail({
+      to: data.email,
+      subject,
+      text,
+      html,
+    });
+  }
+
+  /**
+   * Send booking confirmation email to customer
+   */
+  async sendBookingConfirmationToCustomer(data: BookingConfirmationEmailData): Promise<boolean> {
+    const subject = `Buchungsbestätigung ${data.bookingCode} – Airport Parking`;
+
+    const text = `
+Hallo ${data.firstName},
+
+Vielen Dank für Ihre Buchung bei Airport Parking!
+
+Buchungscode: ${data.bookingCode}
+Parkplatz: ${data.locationName}
+Zeitraum: ${data.startDate} – ${data.endDate}
+Bezahlter Betrag: ${data.currency} ${data.totalPaid}
+
+Adresse des Parkplatzes:
+${data.locationAddress}
+
+Telefon des Hosts: ${data.hostPhone}
+${data.checkInInstructions ? `\nCheck-in Anweisungen:\n${data.checkInInstructions}` : ''}
+
+Bitte bewahren Sie diese E-Mail als Referenz auf.
+
+Mit freundlichen Grüssen,
+Das Airport Parking Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Buchungsbestätigung</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #3B9AFF 0%, #1a6fd4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Buchungsbestätigung</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.firstName}!</h2>
+
+    <p>Vielen Dank für Ihre Buchung bei Airport Parking. Hier sind Ihre Buchungsdetails:</p>
+
+    <div style="background: #f0f7ff; border: 1px solid #3B9AFF; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>Buchungscode:</strong> ${data.bookingCode}</p>
+      <p style="margin: 5px 0;"><strong>Parkplatz:</strong> ${data.locationName}</p>
+      <p style="margin: 5px 0;"><strong>Zeitraum:</strong> ${data.startDate} – ${data.endDate}</p>
+      <p style="margin: 5px 0;"><strong>Bezahlter Betrag:</strong> ${data.currency} ${data.totalPaid}</p>
+    </div>
+
+    <h3 style="color: #3B9AFF;">Anfahrt &amp; Kontakt</h3>
+    <p><strong>Adresse:</strong> ${data.locationAddress}</p>
+    <p><strong>Telefon des Hosts:</strong> ${data.hostPhone}</p>
+    ${data.checkInInstructions ? `<h3 style="color: #3B9AFF;">Check-in Anweisungen</h3><p>${data.checkInInstructions}</p>` : ''}
+
+    <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+
+    <p style="color: #888; font-size: 12px;">
+      Bitte bewahren Sie diese E-Mail als Referenz auf. Bei Fragen kontaktieren Sie uns oder den Host direkt.
+    </p>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.sendEmail({ to: data.email, subject, text, html });
+  }
+
+  /**
+   * Send booking notification email to host
+   */
+  async sendBookingNotificationToHost(data: BookingNotificationToHostData): Promise<boolean> {
+    const subject = `Neue Buchung ${data.bookingCode} – ${data.locationName}`;
+
+    const text = `
+Hallo ${data.hostName},
+
+Sie haben eine neue Buchung erhalten!
+
+Buchungscode: ${data.bookingCode}
+Parkplatz: ${data.locationName}
+Zeitraum: ${data.startDate} – ${data.endDate}
+
+Kundendetails:
+Name: ${data.customerName}
+Telefon: ${data.customerPhone}
+Kennzeichen: ${data.carPlate}
+${data.carModel ? `Fahrzeug: ${data.carModel}` : ''}
+
+Betrag: ${data.currency} ${data.amount}
+
+Mit freundlichen Grüssen,
+Das Airport Parking Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neue Buchung</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #3B9AFF 0%, #1a6fd4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Neue Buchung</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.hostName}!</h2>
+
+    <p>Sie haben eine neue Buchung für <strong>${data.locationName}</strong> erhalten.</p>
+
+    <div style="background: #f0f7ff; border: 1px solid #3B9AFF; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>Buchungscode:</strong> ${data.bookingCode}</p>
+      <p style="margin: 5px 0;"><strong>Zeitraum:</strong> ${data.startDate} – ${data.endDate}</p>
+      <p style="margin: 5px 0;"><strong>Betrag:</strong> ${data.currency} ${data.amount}</p>
+    </div>
+
+    <h3 style="color: #3B9AFF;">Kundendetails</h3>
+    <div style="background: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+      <p style="margin: 5px 0;"><strong>Name:</strong> ${data.customerName}</p>
+      <p style="margin: 5px 0;"><strong>Telefon:</strong> ${data.customerPhone}</p>
+      <p style="margin: 5px 0;"><strong>Kennzeichen:</strong> ${data.carPlate}</p>
+      ${data.carModel ? `<p style="margin: 5px 0;"><strong>Fahrzeug:</strong> ${data.carModel}</p>` : ''}
+    </div>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.sendEmail({ to: data.email, subject, text, html });
   }
 
   /**

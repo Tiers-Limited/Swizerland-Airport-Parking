@@ -38,7 +38,7 @@ export class PayoutService {
       .leftJoin('hosts', 'hosts.id', 'parking_locations.host_id')
       .leftJoin('users as host_users', 'host_users.id', 'hosts.user_id')
       .leftJoin('payments', 'payments.id', 'bookings.payment_id')
-      .whereIn('bookings.status', ['confirmed', 'checked_in', 'checked_out', 'shuttle_to_airport_completed', 'awaiting_pickup', 'shuttle_pickup_completed'])
+      .whereIn('bookings.status', ['confirmed', 'checked_in', 'completed'])
       .where('payments.status', 'succeeded')
       .whereNull('bookings.payout_id');
 
@@ -316,7 +316,7 @@ export class PayoutService {
       .leftJoin('parking_locations', 'parking_locations.id', 'bookings.location_id')
       .leftJoin('payments', 'payments.id', 'bookings.payment_id')
       .where('parking_locations.host_id', hostId)
-      .whereIn('bookings.status', ['confirmed', 'checked_in', 'checked_out', 'shuttle_to_airport_completed', 'awaiting_pickup', 'shuttle_pickup_completed'])
+      .whereIn('bookings.status', ['confirmed', 'checked_in', 'completed'])
       .where('payments.status', 'succeeded')
       .whereNull('bookings.payout_id')
       .sum('bookings.host_payout as pending_payout')

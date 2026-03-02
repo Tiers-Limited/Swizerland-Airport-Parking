@@ -6,5 +6,3 @@ export * from './listing.service';
 export * from './booking.service';
 export * from './payment.service';
 export * from './payout.service';
-export * from './shuttle.service';
-export * from './driver.service';

@@ -32,10 +32,6 @@ router.patch('/bookings/:id/refund', adminController.refundBooking);
 // Payments
 router.get('/payments', adminController.listPayments);
 
-// Vehicles
-router.get('/vehicles', adminController.listVehicles);
-router.patch('/vehicles/:id/status', adminController.updateVehicleStatus);
-
 // Settings
 router.get('/settings', adminController.getSettings);
 router.patch('/settings', adminController.updateSettings);

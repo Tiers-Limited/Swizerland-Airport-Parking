@@ -97,23 +97,12 @@ export interface UpdateUserRoleRequest {
   role: UserRole;
 }
 
-// Host Registration
+// Host Registration (admin creates host — single type, no operator/private)
 export interface RegisterHostRequest {
   companyName?: string;
-  hostType: 'operator' | 'private';
   taxId?: string;
   address?: string;
   website?: string;
-}
-
-// Driver Registration (by admin)
-export interface RegisterDriverRequest {
-  email: string;
-  password: string;
-  name: string;
-  phone: string;
-  licenseNumber: string;
-  licenseExpiry: string;
 }
 
 // JWT Payload

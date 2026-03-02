@@ -14,6 +14,8 @@ export interface CreatePaymentInput {
   amount: number;
   currency: string;
   paymentMethod?: string;
+  hostStripeAccountId?: string; // Stripe Connect destination account
+  platformFeeAmount?: number;  // application_fee_amount in currency units
 }
 
 export interface PaymentResult {
@@ -53,7 +55,7 @@ export class PaymentService {
         // Dynamic import to avoid errors when Stripe isn't installed
         const stripe = require('stripe')(config.stripe.secretKey);
         
-        const paymentIntent = await stripe.paymentIntents.create({
+        const paymentIntentParams: Record<string, unknown> = {
           amount: Math.round(input.amount * 100), // Stripe uses cents
           currency: input.currency.toLowerCase(),
           metadata: {
@@ -63,7 +65,19 @@ export class PaymentService {
           automatic_payment_methods: {
             enabled: true,
           },
-        });
+        };
+
+        // Stripe Connect: destination charge to host's connected account
+        if (input.hostStripeAccountId) {
+          paymentIntentParams.transfer_data = {
+            destination: input.hostStripeAccountId,
+          };
+          if (input.platformFeeAmount && input.platformFeeAmount > 0) {
+            paymentIntentParams.application_fee_amount = Math.round(input.platformFeeAmount * 100);
+          }
+        }
+
+        const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
 
         stripePaymentIntentId = paymentIntent.id;
         clientSecret = paymentIntent.client_secret;

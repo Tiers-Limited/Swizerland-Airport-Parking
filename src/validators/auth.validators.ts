@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserRole, HostType } from '../types/roles';
+import { UserRole } from '../types/roles';
 
 // Base schemas
 const emailSchema = z.email('Invalid email address').max(255);
@@ -73,20 +73,9 @@ export const updateUserRoleSchema = z.object({
 // Host Registration Schema
 export const registerHostSchema = z.object({
   companyName: z.string().max(255).optional(),
-  hostType: z.enum(HostType),
   taxId: z.string().max(50).optional(),
   address: z.string().max(500).optional(),
   website: z.url().max(255).optional().or(z.literal('')),
-});
-
-// Driver Registration Schema (Admin only)
-export const registerDriverSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-  name: nameSchema,
-  phone: z.string().regex(/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'),
-  licenseNumber: z.string().min(1, 'License number is required').max(50),
-  licenseExpiry: z.iso.datetime().or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)),
 });
 
 // Pagination Schema
@@ -119,6 +108,5 @@ export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type UpdateUserStatusInput = z.infer<typeof updateUserStatusSchema>;
 export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
 export type RegisterHostInput = z.infer<typeof registerHostSchema>;
-export type RegisterDriverInput = z.infer<typeof registerDriverSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
 export type UserListFiltersInput = z.infer<typeof userListFiltersSchema>;

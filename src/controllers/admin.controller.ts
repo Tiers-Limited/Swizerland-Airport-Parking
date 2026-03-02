@@ -47,10 +47,9 @@ export const adminController = {
 
   // ── Hosts ──────────────────────────────────────────────────────────
   listHosts: asyncHandler(async (req: Request, res: Response) => {
-    const { status, hostType, search, page, limit } = req.query;
+    const { status, search, page, limit } = req.query;
     const result = await adminService.listHosts({
       status: status as string,
-      hostType: hostType as string,
       search: search as string,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
@@ -59,24 +58,24 @@ export const adminController = {
   }),
 
   createHost: asyncHandler(async (req: Request, res: Response) => {
-    const { name, email, phone, companyName, hostType } = req.body;
+    const { name, email, phone, companyName } = req.body;
 
-    if (!name || !email || !companyName || !hostType) {
+    if (!name || !email || !companyName) {
       res.status(400).json({
         success: false,
-        message: 'Name, E-Mail, Firmenname und Host-Typ sind erforderlich',
+        message: 'Name, E-Mail und Firmenname sind erforderlich',
       });
       return;
     }
 
-    const result = await adminService.createHost({ name, email, phone, companyName, hostType });
+    const result = await adminService.createHost({ name, email, phone, companyName });
 
     await auditService.log({
       userId: req.user?.userId,
       action: 'admin.host.create',
       resource: 'hosts',
       resourceId: result.host.id,
-      newValues: { name, email, companyName, hostType },
+      newValues: { name, email, companyName },
       ipAddress: getIp(req),
     });
 
@@ -175,35 +174,6 @@ export const adminController = {
       limit: limit ? Number(limit) : 20,
     });
     res.json({ success: true, data: result });
-  }),
-
-  // ── Vehicles ───────────────────────────────────────────────────────
-  listVehicles: asyncHandler(async (req: Request, res: Response) => {
-    const { active, search, page, limit } = req.query;
-    const result = await adminService.listVehicles({
-      active: active !== undefined ? active === 'true' : undefined,
-      search: search as string,
-      page: page ? Number(page) : 1,
-      limit: limit ? Number(limit) : 20,
-    });
-    res.json({ success: true, data: result });
-  }),
-
-  updateVehicleStatus: asyncHandler(async (req: Request, res: Response) => {
-    const id = req.params.id as string;
-    const { active } = req.body;
-    const updated = await adminService.updateVehicleStatus(id, active);
-
-    await auditService.log({
-      userId: req.user?.userId,
-      action: 'admin.vehicle.status',
-      resource: 'vehicles',
-      resourceId: id,
-      newValues: { active },
-      ipAddress: getIp(req),
-    });
-
-    res.json({ success: true, data: updated, message: `Vehicle ${active ? 'activated' : 'deactivated'}` });
   }),
 
   // ── Settings ───────────────────────────────────────────────────────

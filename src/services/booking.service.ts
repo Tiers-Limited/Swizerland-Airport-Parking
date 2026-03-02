@@ -40,6 +40,8 @@ export interface BookingPriceBreakdown {
   days: number;
   baseRatePerDay: number;
   basePrice: number;
+  tierMatched: boolean;       // true if a pricing_tier covered the dates
+  tierLabel?: string;         // label of the matched tier (if any)
   discountPercent: number;
   discountApplied: number;
   addons: AddonBreakdownItem[];
@@ -63,11 +65,8 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['pending_payment', 'cancelled'],
   pending_payment: ['confirmed', 'cancelled'],
   confirmed: ['checked_in', 'cancelled', 'no_show'],
-  checked_in: ['shuttle_to_airport_completed', 'cancelled'],
-  shuttle_to_airport_completed: ['awaiting_pickup'],
-  awaiting_pickup: ['shuttle_pickup_completed'],
-  shuttle_pickup_completed: ['checked_out'],
-  checked_out: [],
+  checked_in: ['completed', 'cancelled'],
+  completed: [],
   cancelled: ['refunded'],
   no_show: [],
   refunded: [],
@@ -84,28 +83,35 @@ function calcDays(startDatetime: string, endDatetime: string): number {
   return Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
 }
 
-/** Validate min/max stay against pricing rule. */
-function validateStay(days: number, pricingRule: Record<string, unknown> | undefined): void {
-  if (!pricingRule) return;
-  const minDays = (pricingRule.min_stay_days as number) || 1;
-  const maxDays = (pricingRule.max_stay_days as number) || 30;
-  if (days < minDays) throw new ValidationError(`Minimum stay is ${minDays} day(s)`);
-  if (days > maxDays) throw new ValidationError(`Maximum stay is ${maxDays} day(s)`);
-}
+/**
+ * Find the best matching pricing tier for the given booking dates.
+ * A tier matches when the booking's start_date >= tier.start_date AND booking's end_date <= tier.end_date.
+ * If multiple tiers match, pick the cheapest.
+ */
+function findMatchingTier(
+  tiers: Array<{ start_date: string; end_date: string; total_price: number; label?: string }> | undefined,
+  bookingStart: string,
+  bookingEnd: string
+): { total_price: number; label?: string } | null {
+  if (!tiers || !Array.isArray(tiers) || tiers.length === 0) return null;
 
-/** Find best applicable discount percent from offers. */
-function bestDiscountPercent(pricingRule: Record<string, unknown> | undefined, days: number): number {
-  if (!pricingRule?.offers) return 0;
-  const offers = typeof pricingRule.offers === 'string'
-    ? JSON.parse(pricingRule.offers)
-    : pricingRule.offers;
-  if (!Array.isArray(offers)) return 0;
-  let best = 0;
-  for (const offer of offers) {
-    if (days >= (offer.min_days || 0) && offer.discount_percent > best) {
-      best = offer.discount_percent;
+  const bStart = new Date(bookingStart).getTime();
+  const bEnd = new Date(bookingEnd).getTime();
+
+  let best: { total_price: number; label?: string } | null = null;
+
+  for (const tier of tiers) {
+    const tStart = new Date(tier.start_date).getTime();
+    const tEnd = new Date(tier.end_date).getTime();
+
+    // Booking must fall within (or equal) the tier's date range
+    if (bStart >= tStart && bEnd <= tEnd) {
+      if (!best || tier.total_price < best.total_price) {
+        best = { total_price: tier.total_price, label: tier.label };
+      }
     }
   }
+
   return best;
 }
 
@@ -122,19 +128,33 @@ export class BookingService {
     const location = await db('parking_locations').where('id', locationId).first();
     if (!location) throw new NotFoundError('Parking location');
 
-    const pricingRule = await db('pricing_rules').where('location_id', locationId).first();
-
-    const baseRatePerDay = pricingRule
-      ? Number(pricingRule.base_rate_per_day)
-      : Number(location.base_price_per_day || 15);
-
     const days = calcDays(startDatetime, endDatetime);
-    validateStay(days, pricingRule);
 
-    const basePrice = days * baseRatePerDay;
-    const discountPercent = bestDiscountPercent(pricingRule, days);
-    const discountApplied = round2(basePrice * discountPercent / 100);
-    const priceAfterDiscount = basePrice - discountApplied;
+    // ── Pricing: prefer pricing_tiers (date-range flat price), fall back to per-day ──
+    const rawTiers = typeof location.pricing_tiers === 'string'
+      ? JSON.parse(location.pricing_tiers)
+      : location.pricing_tiers;
+
+    const matchedTier = findMatchingTier(rawTiers, startDatetime, endDatetime);
+
+    let basePrice: number;
+    let baseRatePerDay: number;
+
+    if (matchedTier) {
+      // Date-range flat pricing — the tier's total_price IS the base price
+      basePrice = round2(matchedTier.total_price);
+      baseRatePerDay = round2(basePrice / days);
+    } else {
+      // Fallback: legacy per-day pricing
+      const fallbackRate = Number(location.base_price_per_day || 15);
+      baseRatePerDay = fallbackRate;
+      basePrice = round2(days * fallbackRate);
+    }
+
+    // No duration discount — the date-range model already contains the full price
+    const discountPercent = 0;
+    const discountApplied = 0;
+    const priceAfterDiscount = basePrice;
 
     // Resolve add-ons
     const addonBreakdown: AddonBreakdownItem[] = [];
@@ -165,6 +185,7 @@ export class BookingService {
 
     // Platform settings
     const settings = await db('platform_settings').first();
+    
     const serviceFeeRate = settings ? Number(settings.service_fee_rate || 5) : 5;
     const commissionRate = settings ? Number(settings.commission_rate || 19) : 19;
 
@@ -180,6 +201,8 @@ export class BookingService {
       days,
       baseRatePerDay,
       basePrice: round2(basePrice),
+      tierMatched: !!matchedTier,
+      tierLabel: matchedTier?.label,
       discountPercent,
       discountApplied,
       addons: addonBreakdown,
@@ -188,7 +211,7 @@ export class BookingService {
       totalPrice,
       platformCommission,
       hostPayout,
-      currency: pricingRule?.currency || 'CHF',
+      currency: 'CHF',
     };
   }
 
@@ -377,8 +400,7 @@ export class BookingService {
         'parking_locations.name as location_name',
         'parking_locations.address as location_address',
         'parking_locations.images as location_images',
-        'parking_locations.shuttle_mode',
-        'parking_locations.shuttle_hours',
+        'parking_locations.phone_number as location_phone',
         'parking_locations.check_in_instructions',
         'parking_locations.host_id',
         'users.name as customer_name',
@@ -402,7 +424,7 @@ export class BookingService {
         'bookings.*',
         'parking_locations.name as location_name',
         'parking_locations.address as location_address',
-        'parking_locations.shuttle_mode',
+        'parking_locations.phone_number as location_phone',
         'parking_locations.check_in_instructions'
       )
       .where('bookings.booking_code', bookingCode)
@@ -427,9 +449,9 @@ export class BookingService {
 
     if (status) {
       if (status === 'active') {
-        query = query.whereIn('bookings.status', ['confirmed', 'checked_in', 'shuttle_to_airport_completed', 'awaiting_pickup']);
+        query = query.whereIn('bookings.status', ['confirmed', 'checked_in']);
       } else if (status === 'past') {
-        query = query.whereIn('bookings.status', ['checked_out', 'shuttle_pickup_completed', 'cancelled', 'refunded', 'no_show']);
+        query = query.whereIn('bookings.status', ['completed', 'cancelled', 'refunded', 'no_show']);
       } else {
         query = query.where('bookings.status', status);
       }
@@ -464,7 +486,7 @@ export class BookingService {
 
     const [activeBookings] = await db('bookings')
       .where('customer_id', customerId)
-      .whereIn('status', ['confirmed', 'checked_in', 'shuttle_to_airport_completed', 'awaiting_pickup'])
+      .whereIn('status', ['confirmed', 'checked_in'])
       .count('* as count');
 
     const [totalSpent] = await db('bookings')

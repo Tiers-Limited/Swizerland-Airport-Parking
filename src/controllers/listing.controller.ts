@@ -29,7 +29,6 @@ export const listingController = {
       covered: req.query.covered === 'true',
       evCharging: req.query.evCharging === 'true',
       security247: req.query.security247 === 'true',
-      shuttleMode: req.query.shuttleMode as string,
       sortBy: (req.query.sortBy as string) || 'price',
       sortOrder: (req.query.sortOrder as 'asc' | 'desc') || 'asc',
       page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
@@ -40,7 +39,7 @@ export const listingController = {
 
     res.json({
       success: true,
-      data: result.listings,
+      data: {listings:result.listings},
       pagination: {
         page: filters.page,
         limit: filters.limit,
@@ -257,86 +256,6 @@ export const listingController = {
 
     const stats = await listingService.getHostStats(host.id);
     res.json({ success: true, data: stats });
-  }),
-
-  // Shuttle vehicles
-  getMyVehicles: asyncHandler(async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const host = await hostService.findByUserId(req.user.userId);
-    if (!host) {
-      return res.status(404).json({ success: false, message: 'Host profile not found' });
-    }
-
-    const vehicles = await listingService.getHostVehicles(host.id);
-    res.json({ success: true, data: vehicles });
-  }),
-
-  createVehicle: asyncHandler(async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const locationId = getId(req);
-    const listing = await listingService.findByIdOrFail(locationId);
-    const host = await hostService.findByUserId(req.user.userId);
-
-    if (!host || listing.host_id !== host.id) {
-      throw new ForbiddenError('You can only add vehicles to your own locations');
-    }
-
-    const vehicle = await listingService.createVehicle(locationId, req.body);
-
-    await auditService.log({
-      userId: req.user.userId,
-      action: 'vehicle.create',
-      resource: 'vehicles',
-      newValues: req.body,
-      ipAddress: getIp(req),
-    });
-
-    res.status(201).json({ success: true, data: vehicle, message: 'Vehicle added successfully' });
-  }),
-
-  updateVehicle: asyncHandler(async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const vehicleId = req.params.vehicleId as string;
-    const updated = await listingService.updateVehicle(vehicleId, req.body);
-
-    await auditService.log({
-      userId: req.user.userId,
-      action: 'vehicle.update',
-      resource: 'vehicles',
-      resourceId: vehicleId,
-      newValues: req.body,
-      ipAddress: getIp(req),
-    });
-
-    res.json({ success: true, data: updated, message: 'Vehicle updated successfully' });
-  }),
-
-  deleteVehicle: asyncHandler(async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({ success: false, message: 'Not authenticated' });
-    }
-
-    const vehicleId = req.params.vehicleId as string;
-    await listingService.deleteVehicle(vehicleId);
-
-    await auditService.log({
-      userId: req.user.userId,
-      action: 'vehicle.delete',
-      resource: 'vehicles',
-      resourceId: vehicleId,
-      ipAddress: getIp(req),
-    });
-
-    res.json({ success: true, message: 'Vehicle deleted successfully' });
   }),
 
   // ===== ADD-ON / EXTRA SERVICES ENDPOINTS =====

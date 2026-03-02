@@ -3,7 +3,7 @@ import { hostService } from '../services/host.service';
 import { auditService } from '../services/audit.service';
 import { asyncHandler } from '../middleware/error.middleware';
 import { RegisterHostInput } from '../validators/auth.validators';
-import { VerificationStatus, HostType, UserRole } from '../types/roles';
+import { VerificationStatus, UserRole } from '../types/roles';
 import { ForbiddenError } from '../utils/errors';
 
 // Helper to get IP as string
@@ -61,11 +61,10 @@ export const hostController = {
    * List all hosts (admin only)
    */
   list: asyncHandler(async (req: Request, res: Response) => {
-    const { status, hostType, page, limit } = req.query;
+    const { status, page, limit } = req.query;
     
     const result = await hostService.list({
       status: status as VerificationStatus,
-      hostType: hostType as HostType,
       page: page ? Number.parseInt(page as string, 10) : 1,
       limit: limit ? Number.parseInt(limit as string, 10) : 20,
     });

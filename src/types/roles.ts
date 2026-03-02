@@ -2,8 +2,6 @@
 export enum UserRole {
   CUSTOMER = 'customer',
   HOST = 'host',
-  DISPATCHER = 'dispatcher',
-  DRIVER = 'driver',
   ADMIN = 'admin',
 }
 
@@ -15,17 +13,17 @@ export enum UserStatus {
   PENDING_VERIFICATION = 'pending_verification',
 }
 
-// Host Types
-export enum HostType {
-  OPERATOR = 'operator', // Owns parking lot + provides own shuttle service
-  PRIVATE = 'private',   // Provides parking space; platform/operator provides shuttle
-}
-
 // Verification Status
 export enum VerificationStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+}
+
+// Host Type (kept for DB compatibility — single-type hosts in UI)
+export enum HostType {
+  OPERATOR = 'operator',
+  PRIVATE = 'private',
 }
 
 // Permission Resources
@@ -34,9 +32,6 @@ export enum Resource {
   BOOKINGS = 'bookings',
   LISTINGS = 'listings',
   HOSTS = 'hosts',
-  VEHICLES = 'vehicles',
-  SHIFTS = 'shifts',
-  TRIPS = 'trips',
   PAYMENTS = 'payments',
   PAYOUTS = 'payouts',
   REPORTS = 'reports',
@@ -79,22 +74,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: Resource.BOOKINGS, actions: [Action.READ], conditions: { ownOnly: true } },
     { resource: Resource.PAYOUTS, actions: [Action.READ], conditions: { ownOnly: true } },
     { resource: Resource.USERS, actions: [Action.READ, Action.UPDATE], conditions: { ownOnly: true } },
-    { resource: Resource.VEHICLES, actions: [Action.CREATE, Action.READ, Action.UPDATE, Action.DELETE], conditions: { ownOnly: true } },
-  ],
-  
-  [UserRole.DISPATCHER]: [
-    { resource: Resource.BOOKINGS, actions: [Action.READ, Action.UPDATE] },
-    { resource: Resource.TRIPS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
-    { resource: Resource.SHIFTS, actions: [Action.CREATE, Action.READ, Action.UPDATE] },
-    { resource: Resource.VEHICLES, actions: [Action.READ] },
-    { resource: Resource.USERS, actions: [Action.READ], conditions: { ownOnly: true } },
-  ],
-  
-  [UserRole.DRIVER]: [
-    { resource: Resource.TRIPS, actions: [Action.READ, Action.UPDATE], conditions: { ownOnly: true } },
-    { resource: Resource.SHIFTS, actions: [Action.READ], conditions: { ownOnly: true } },
-    { resource: Resource.BOOKINGS, actions: [Action.READ] },
-    { resource: Resource.USERS, actions: [Action.READ, Action.UPDATE], conditions: { ownOnly: true } },
   ],
   
   [UserRole.ADMIN]: [
@@ -102,9 +81,6 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     { resource: Resource.BOOKINGS, actions: [Action.MANAGE] },
     { resource: Resource.LISTINGS, actions: [Action.MANAGE] },
     { resource: Resource.HOSTS, actions: [Action.MANAGE] },
-    { resource: Resource.VEHICLES, actions: [Action.MANAGE] },
-    { resource: Resource.SHIFTS, actions: [Action.MANAGE] },
-    { resource: Resource.TRIPS, actions: [Action.MANAGE] },
     { resource: Resource.PAYMENTS, actions: [Action.MANAGE] },
     { resource: Resource.PAYOUTS, actions: [Action.MANAGE] },
     { resource: Resource.REPORTS, actions: [Action.MANAGE] },
