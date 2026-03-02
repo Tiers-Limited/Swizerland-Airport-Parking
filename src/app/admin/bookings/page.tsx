@@ -8,13 +8,13 @@ import { FadeIn } from '@/components/animations';
 interface BookingRow {
   id: string;
   status: string;
-  check_in: string;
-  check_out: string;
+  start_datetime: string;
+  end_datetime: string;
   total_price: string | number;
-  vehicle_plate: string;
+  car_plate?: string;
   listing_name: string;
-  user_name: string;
-  user_email: string;
+  customer_name?: string;
+  customer_email?: string;
   created_at: string;
 }
 
@@ -63,7 +63,9 @@ export default function AdminBookingsPage() {
 
   const formatCurrency = (val: string | number) =>
     new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(Number(val || 0));
-  const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('de-CH') : '—';
+    const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('de-CH') : '—';
+
+    const formatDateTime = (d?: string) => d ? new Date(d).toLocaleString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
   return (
     <FadeIn>
@@ -81,19 +83,21 @@ export default function AdminBookingsPage() {
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
-            <Select
-              value={statusFilter}
-              onChange={(val) => { setStatusFilter(val); setPage(1); }}
-              options={[
-                { value: 'all', label: 'Alle' },
-                { value: 'pending', label: 'Ausstehend' },
-                { value: 'confirmed', label: 'Bestätigt' },
-                { value: 'active', label: 'Aktiv' },
-                { value: 'completed', label: 'Abgeschlossen' },
-                { value: 'cancelled', label: 'Storniert' },
-                { value: 'refunded', label: 'Erstattet' },
-              ]}
-            />
+            <div className="flex-1">
+              <Select
+                value={statusFilter}
+                onChange={(val) => { setStatusFilter(val); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'Alle' },
+                  { value: 'pending', label: 'Ausstehend' },
+                  { value: 'confirmed', label: 'Bestätigt' },
+                  { value: 'active', label: 'Aktiv' },
+                  { value: 'completed', label: 'Abgeschlossen' },
+                  { value: 'cancelled', label: 'Storniert' },
+                  { value: 'refunded', label: 'Erstattet' },
+                ]}
+              />
+            </div>
           </div>
         </Card>
 
@@ -122,15 +126,16 @@ export default function AdminBookingsPage() {
                         <p className="text-xs text-gray-400">{formatDate(b.created_at)}</p>
                       </td>
                       <td className="py-3 px-4">
-                        <p className="text-gray-900">{b.user_name || '—'}</p>
-                        <p className="text-xs text-gray-400">{b.user_email || ''}</p>
+                        <p className="text-gray-900">{b.customer_name || '—'}</p>
+                        <p className="text-xs text-gray-400">{b.customer_email || ''}</p>
                       </td>
                       <td className="py-3 px-4 text-gray-600">{b.listing_name || '—'}</td>
                       <td className="py-3 px-4 text-gray-600 text-xs">
-                        <p>{formatDate(b.check_in)}</p>
-                        <p>{formatDate(b.check_out)}</p>
+                        <p>{formatDate(b.start_datetime as unknown as string)}</p>
+                        <p>{formatDate(b.end_datetime as unknown as string)}</p>
                       </td>
                       <td className="py-3 px-4 font-medium">{formatCurrency(b.total_price)}</td>
+                                            <td className="py-3 px-4 font-medium">{formatCurrency(b.total_price)}</td>
                       <td className="py-3 px-4">
                         <Badge variant={statusColors[b.status] || 'gray'}>{b.status}</Badge>
                       </td>

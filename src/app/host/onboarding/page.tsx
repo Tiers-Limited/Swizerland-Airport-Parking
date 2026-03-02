@@ -1,53 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { apiCall } from '@/lib/api';
-import { Card, Button, Input, Select, Alert } from '@/components/ui';
+import Link from 'next/link';
+import { Card, Button } from '@/components/ui';
 import { Header, Footer } from '@/components/layout';
 import { FadeIn } from '@/components/animations';
-import type { HostRegisterData } from '@/types';
 
 export default function HostOnboardingPage() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [step, setStep] = useState(1);
-
-  const [form, setForm] = useState<HostRegisterData & { address: string; website: string }>({
-    hostType: 'operator',
-    companyName: '',
-    taxId: '',
-    address: '',
-    website: '',
-  });
-
-  const updateField = (field: string, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    const payload: HostRegisterData = {
-      hostType: form.hostType,
-      companyName: form.hostType === 'operator' ? form.companyName : undefined,
-      taxId: form.taxId || undefined,
-      address: form.address || undefined,
-      website: form.website || undefined,
-    };
-
-    const res = await apiCall('POST', '/hosts/register', payload);
-    if (res.success) {
-      router.push('/host');
-    } else {
-      setError(res.error?.message || 'Fehler');
-    }
-    setLoading(false);
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header />
@@ -63,104 +21,25 @@ export default function HostOnboardingPage() {
                 </svg>
               </div>
               <h1 className="text-2xl font-bold text-gray-900">Host werden</h1>
-              <p className="text-gray-500 mt-2">Bieten Sie Parkplätze an und verdienen Sie Geld.</p>
+              <p className="text-gray-500 mt-2">Parkplätze anbieten und verdienen.</p>
             </div>
 
-            {/* Stepper */}
-            <div className="flex items-center justify-center gap-2 mb-8">
-              {[1, 2].map((s) => (
-                <div
-                  key={s}
-                  className={`h-1.5 w-12 rounded-full transition-colors ${
-                    s <= step ? 'bg-baby-blue-500' : 'bg-gray-200'
-                  }`}
-                />
-              ))}
-            </div>
+            <Card className="p-8 text-center">
+              <div className="text-5xl mb-4">📋</div>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Registrierung nur über den Administrator</h2>
+              <p className="text-gray-600 mb-6">
+                Host-Konten werden ausschliesslich durch den Administrator erstellt.
+                Bitte kontaktieren Sie uns, um ein Host-Konto zu erhalten.
+              </p>
 
-            <Card className="p-6">
-              {error && <Alert variant="error" className="mb-4">{error}</Alert>}
-
-              <form onSubmit={handleSubmit}>
-                {step === 1 && (
-                  <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Kontotyp</h2>
-
-                    {/* Host type selection */}
-                    <div className="grid grid-cols-2 gap-3">
-                      {(['operator', 'private'] as const).map((type) => (
-                        <button
-                          key={type}
-                          type="button"
-                          onClick={() => updateField('hostType', type)}
-                          className={`p-4 rounded-xl border-2 text-left transition-colors ${
-                            form.hostType === type
-                              ? 'border-baby-blue-500 bg-baby-blue-50'
-                              : 'border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                          <div className={`text-2xl mb-2 ${form.hostType === type ? 'text-baby-blue-600' : 'text-gray-400'}`}>
-                            {type === 'operator' ? '🏢' : '👤'}
-                          </div>
-                          <p className={`text-sm font-medium ${form.hostType === type ? 'text-baby-blue-700' : 'text-gray-700'}`}>
-                            {{ operator: 'Betreiber', private: 'Privat' }[type]}
-                          </p>
-                        </button>
-                      ))}
-                    </div>
-
-                    {form.hostType === 'operator' && (
-                      <Input
-                        label="Firmenname"
-                        value={form.companyName || ''}
-                        onChange={(e) => updateField('companyName', e.target.value)}
-                        placeholder="Parking AG"
-                        required
-                      />
-                    )}
-
-                    <div className="pt-2">
-                      <Button type="button" className="w-full" onClick={() => setStep(2)}>
-                        Weiter
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {step === 2 && (
-                  <div className="space-y-4">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Geschäftsdetails</h2>
-
-                    <Input
-                      label="Steuernummer"
-                      value={form.taxId || ''}
-                      onChange={(e) => updateField('taxId', e.target.value)}
-                      placeholder="CHE-123.456.789"
-                    />
-                    <Input
-                      label="Adresse"
-                      value={form.address}
-                      onChange={(e) => updateField('address', e.target.value)}
-                      placeholder="Musterstrasse 1, 8000 Zürich"
-                    />
-                    <Input
-                      label="Website"
-                      value={form.website}
-                      onChange={(e) => updateField('website', e.target.value)}
-                      placeholder="https://www.example.ch"
-                    />
-
-                    <div className="flex gap-3 pt-2">
-                      <Button type="button" variant="secondary" className="flex-1" onClick={() => setStep(1)}>
-                        Zurück
-                      </Button>
-                      <Button type="submit" className="flex-1" loading={loading}>
-                        Registrierung abschliessen
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </form>
+              <div className="space-y-3">
+                <Link href="/contact">
+                  <Button className="w-full">Kontakt aufnehmen</Button>
+                </Link>
+                <Link href="/">
+                  <Button variant="secondary" className="w-full">Zurück zur Startseite</Button>
+                </Link>
+              </div>
             </Card>
 
             {/* Benefits */}

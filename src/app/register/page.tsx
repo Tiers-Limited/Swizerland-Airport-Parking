@@ -70,7 +70,7 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -93,6 +93,7 @@ export default function RegisterPage() {
         setGeneralError(result.error || 'Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.');
       }
     } catch (err) {
+      console.error('Registration error:', err);
       setGeneralError('Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {
       setIsLoading(false);
@@ -100,7 +101,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-baby-blue-50 flex flex-col">
+    <div className="min-h-screen bg-linear-to-b from-white to-baby-blue-50 flex flex-col">
       {/* Header */}
       <header className="py-6 px-4">
         <div className="max-w-7xl mx-auto">

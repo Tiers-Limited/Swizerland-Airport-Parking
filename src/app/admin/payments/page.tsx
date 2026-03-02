@@ -67,17 +67,19 @@ export default function AdminPaymentsPage() {
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
-            <Select
-              value={statusFilter}
-              onChange={(val) => { setStatusFilter(val); setPage(1); }}
-              options={[
-                { value: 'all', label: 'Alle' },
-                { value: 'pending', label: 'Ausstehend' },
-                { value: 'completed', label: 'Abgeschlossen' },
-                { value: 'failed', label: 'Fehlgeschlagen' },
-                { value: 'refunded', label: 'Erstattet' },
-              ]}
-            />
+            <div className="flex-1">
+              <Select
+                value={statusFilter}
+                onChange={(val) => { setStatusFilter(val); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'Alle' },
+                  { value: 'pending', label: 'Ausstehend' },
+                  { value: 'completed', label: 'Abgeschlossen' },
+                  { value: 'failed', label: 'Fehlgeschlagen' },
+                  { value: 'refunded', label: 'Erstattet' },
+                ]}
+              />
+            </div>
           </div>
         </Card>
 

@@ -52,7 +52,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             type={type}
             className={cn(
-              `w-full px-4 py-2.5 text-sm bg-white border rounded-xl
+              `w-full px-4 py-3.5 text-sm bg-white border rounded-xl
               placeholder:text-gray-400 focus:outline-none transition-all duration-200`,
               error
                 ? 'border-error-500 focus:border-error-500 focus:ring-2 focus:ring-error-100'

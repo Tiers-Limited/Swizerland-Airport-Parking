@@ -9,7 +9,6 @@ interface HostRow {
   id: string;
   user_id: string;
   company_name: string;
-  host_type: string;
   verification_status: string;
   documents_verified: boolean;
   user_name: string;
@@ -36,7 +35,6 @@ export default function AdminHostsPage() {
     email: '',
     phone: '',
     companyName: '',
-    hostType: 'operator' as 'operator' | 'private',
   });
 
   const loadHosts = useCallback(async () => {
@@ -76,13 +74,12 @@ export default function AdminHostsPage() {
       email: createForm.email,
       phone: createForm.phone || undefined,
       companyName: createForm.companyName,
-      hostType: createForm.hostType,
     });
 
     if (res.success) {
       setMessage('Host erfolgreich erstellt. Zugangsdaten wurden per E-Mail gesendet.');
       setShowCreateModal(false);
-      setCreateForm({ name: '', email: '', phone: '', companyName: '', hostType: 'operator' });
+      setCreateForm({ name: '', email: '', phone: '', companyName: '' });
       loadHosts();
     } else {
       setCreateError(res.error?.message || 'Fehler beim Erstellen des Hosts');
@@ -120,16 +117,18 @@ export default function AdminHostsPage() {
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
-            <Select
-              value={statusFilter}
-              onChange={(val) => { setStatusFilter(val); setPage(1); }}
-              options={[
-                { value: 'all', label: 'Alle' },
-                { value: 'pending', label: 'Ausstehend' },
-                { value: 'approved', label: 'Genehmigt' },
-                { value: 'rejected', label: 'Abgelehnt' },
-              ]}
-            />
+            <div className="flex-1">
+              <Select
+                value={statusFilter}
+                onChange={(val) => { setStatusFilter(val); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'Alle' },
+                  { value: 'pending', label: 'Ausstehend' },
+                  { value: 'approved', label: 'Genehmigt' },
+                  { value: 'rejected', label: 'Abgelehnt' },
+                ]}
+              />
+            </div>
           </div>
         </Card>
 
@@ -144,7 +143,6 @@ export default function AdminHostsPage() {
                   <tr>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Host</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Unternehmen</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Typ</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Registriert</th>
                     <th className="text-right py-3 px-4 text-gray-500 font-medium">Aktionen</th>
@@ -160,11 +158,6 @@ export default function AdminHostsPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-gray-600">{host.company_name || '—'}</td>
-                      <td className="py-3 px-4">
-                        <Badge variant={host.host_type === 'operator' ? 'primary' : 'gray'}>
-                          {host.host_type}
-                        </Badge>
-                      </td>
                       <td className="py-3 px-4">
                         <Badge variant={statusColors[host.verification_status] || 'gray'}>
                           {host.verification_status}
@@ -234,9 +227,10 @@ export default function AdminHostsPage() {
             )}
 
             <div>
-              <label htmlFor="host-name" className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+              {/* <label htmlFor="host-name" className="block text-sm font-medium text-gray-700 mb-1">Name *</label> */}
               <Input
                 id="host-name"
+                label="Vollständiger Name"
                 placeholder="Vollständiger Name"
                 value={createForm.name}
                 onChange={(e) => setCreateForm({ ...createForm, name: e.target.value })}
@@ -245,9 +239,10 @@ export default function AdminHostsPage() {
             </div>
 
             <div>
-              <label htmlFor="host-email" className="block text-sm font-medium text-gray-700 mb-1">E-Mail *</label>
+              {/* <label htmlFor="host-email" className="block text-sm font-medium text-gray-700 mb-1">E-Mail *</label> */}
               <Input
                 id="host-email"
+                label="Email"
                 type="email"
                 placeholder="host@example.com"
                 value={createForm.email}
@@ -257,9 +252,10 @@ export default function AdminHostsPage() {
             </div>
 
             <div>
-              <label htmlFor="host-phone" className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+              {/* <label htmlFor="host-phone" className="block text-sm font-medium text-gray-700 mb-1">Telefon</label> */}
               <Input
                 id="host-phone"
+                label="Telefonnummer"
                 placeholder="+41 79 123 45 67"
                 value={createForm.phone}
                 onChange={(e) => setCreateForm({ ...createForm, phone: e.target.value })}
@@ -267,25 +263,14 @@ export default function AdminHostsPage() {
             </div>
 
             <div>
-              <label htmlFor="host-company" className="block text-sm font-medium text-gray-700 mb-1">Firmenname *</label>
+              {/* <label htmlFor="host-company" className="block text-sm font-medium text-gray-700 mb-1">Firmenname *</label> */}
               <Input
                 id="host-company"
+                label="Firmenname"
                 placeholder="Firmenname"
                 value={createForm.companyName}
                 onChange={(e) => setCreateForm({ ...createForm, companyName: e.target.value })}
                 required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="host-type" className="block text-sm font-medium text-gray-700 mb-1">Host-Typ *</label>
-              <Select
-                value={createForm.hostType}
-                onChange={(val) => setCreateForm({ ...createForm, hostType: val as 'operator' | 'private' })}
-                options={[
-                  { value: 'operator', label: 'Betreiber (Operator)' },
-                  { value: 'private', label: 'Privat (Private)' },
-                ]}
               />
             </div>
 

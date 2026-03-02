@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { api, apiCall } from '@/lib/api';
 import type { User, LoginCredentials, RegisterData } from '@/types';
 
@@ -24,7 +24,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, [refreshUser]);
 
-  const login = async (credentials: LoginCredentials) => {
+  const login = useCallback(async (credentials: LoginCredentials) => {
     try {
       const response = await apiCall<AuthResponse>(
         'POST',
@@ -79,14 +79,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: response.error?.message || 'Login failed' 
       };
     } catch (error) {
+      console.error('Login failed:', error);
       return { 
         success: false, 
         error: 'An unexpected error occurred' 
       };
     }
-  };
+  }, []);
 
-  const register = async (data: RegisterData) => {
+  const register = useCallback(async (data: RegisterData) => {
     try {
       const response = await apiCall<AuthResponse>(
         'POST',
@@ -107,14 +108,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error: response.error?.message || 'Registration failed' 
       };
     } catch (error) {
+      console.error('Registration failed:', error);
       return { 
         success: false, 
         error: 'An unexpected error occurred' 
       };
     }
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken) {
@@ -127,20 +129,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('refreshToken');
       setUser(null);
     }
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    login,
+    register,
+    logout,
+    refreshUser,
+  }), [user, isLoading, login, register, logout, refreshUser]);
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        isAuthenticated: !!user,
-        login,
-        register,
-        logout,
-        refreshUser,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

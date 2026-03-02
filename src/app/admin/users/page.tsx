@@ -74,8 +74,8 @@ export default function AdminUsersPage() {
 
         {message && <Alert variant="success" onClose={() => setMessage('')}>{message}</Alert>}
 
-        <Card className="p-4">
-          <div className="flex flex-col sm:flex-row gap-3">
+        <Card className="p-4 w-full ">
+          <div className="flex flex-col sm:flex-row gap-3 w-full">
             <div className="flex-1">
               <Input
                 placeholder="Suchen..."
@@ -83,26 +83,30 @@ export default function AdminUsersPage() {
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
-            <Select
-              value={roleFilter}
-              onChange={(val) => { setRoleFilter(val); setPage(1); }}
-              options={[
-                { value: 'all', label: 'Alle Rollen' },
-                { value: 'admin', label: 'Admin' },
-                { value: 'host', label: 'Host' },
-                { value: 'customer', label: 'Customer' },
-              ]}
-            />
-            <Select
-              value={statusFilter}
-              onChange={(val) => { setStatusFilter(val); setPage(1); }}
-              options={[
-                { value: 'all', label: 'Alle' },
-                { value: 'active', label: 'Aktiv' },
-                { value: 'suspended', label: 'Gesperrt' },
-                { value: 'inactive', label: 'Inaktiv' },
-              ]}
-            />
+            <div className="flex-1">
+              <Select
+                value={roleFilter}
+                onChange={(val) => { setRoleFilter(val); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'Alle Rollen' },
+                  { value: 'admin', label: 'Admin' },
+                  { value: 'host', label: 'Host' },
+                  { value: 'customer', label: 'Customer' },
+                ]}
+              />
+            </div>
+            <div className="flex-1">
+              <Select
+                value={statusFilter}
+                onChange={(val) => { setStatusFilter(val); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'Alle' },
+                  { value: 'active', label: 'Aktiv' },
+                  { value: 'suspended', label: 'Gesperrt' },
+                  { value: 'inactive', label: 'Inaktiv' },
+                ]}
+              />
+            </div>
           </div>
         </Card>
 

@@ -22,6 +22,16 @@ export default function HostSettingsPage() {
     website: '',
   });
 
+  // Password change state
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwError, setPwError] = useState('');
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+
   useEffect(() => {
     loadProfile();
   }, []);
@@ -41,7 +51,7 @@ export default function HostSettingsPage() {
     setLoading(false);
   }
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
     setError('');
@@ -54,6 +64,39 @@ export default function HostSettingsPage() {
       setError(res.error?.message || 'Fehler');
     }
     setSaving(false);
+  }
+
+  async function handlePasswordChange(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess('');
+
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      setPwError('Die neuen Passwörter stimmen nicht überein.');
+      return;
+    }
+    if (passwords.newPassword.length < 8) {
+      setPwError('Das Passwort muss mindestens 8 Zeichen lang sein.');
+      return;
+    }
+
+    setPwSaving(true);
+    try {
+      const res = await apiCall('POST', '/auth/change-password', {
+        currentPassword: passwords.currentPassword,
+        newPassword: passwords.newPassword,
+      });
+      if (res.success) {
+        setPwSuccess('Passwort erfolgreich geändert.');
+        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        setPwError(res.error?.message || 'Passwort konnte nicht geändert werden.');
+      }
+    } catch {
+      setPwError('Passwort konnte nicht geändert werden. Bitte versuchen Sie es erneut.');
+    } finally {
+      setPwSaving(false);
+    }
   }
 
   if (loading) {
@@ -90,10 +133,6 @@ export default function HostSettingsPage() {
             <div>
               <span className="text-gray-500">Provisionsrate:</span>
               <span className="font-medium text-gray-900 ml-1">{profile?.commission_rate}%</span>
-            </div>
-            <div>
-              <span className="text-gray-500">Anbietertyp:</span>
-              <span className="font-medium text-gray-900 ml-1 capitalize">{profile?.host_type}</span>
             </div>
           </div>
         </Card>
@@ -149,6 +188,42 @@ export default function HostSettingsPage() {
               </p>
             </div>
           </div>
+        </Card>
+
+        {/* Password change */}
+        <Card className="p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Passwort ändern</h2>
+          {pwError && <Alert variant="error" className="mb-4">{pwError}</Alert>}
+          {pwSuccess && <Alert variant="success" className="mb-4">{pwSuccess}</Alert>}
+          <form onSubmit={handlePasswordChange} className="space-y-4">
+            <Input
+              label="Aktuelles Passwort"
+              type="password"
+              value={passwords.currentPassword}
+              onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+              required
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Neues Passwort"
+                type="password"
+                value={passwords.newPassword}
+                onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                required
+              />
+              <Input
+                label="Neues Passwort bestätigen"
+                type="password"
+                value={passwords.confirmPassword}
+                onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                required
+              />
+            </div>
+            <p className="text-xs text-gray-500">Mindestens 8 Zeichen.</p>
+            <div className="flex justify-end">
+              <Button type="submit" loading={pwSaving}>Passwort ändern</Button>
+            </div>
+          </form>
         </Card>
       </div>
     </FadeIn>

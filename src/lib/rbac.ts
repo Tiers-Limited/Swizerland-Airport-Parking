@@ -19,25 +19,9 @@ export const rolePermissions: Record<UserRole, string[]> = {
     'booking:read:own',
     'booking:checkin',
     'booking:checkout',
-    'shuttle:manage:own',
     'payout:read:own',
     'profile:read:own',
     'profile:update:own',
-    'driver:manage:own',
-    'vehicle:manage:own',
-  ],
-  dispatcher: [
-    'shuttle:read:own',
-    'shuttle:assign',
-    'shuttle:update:status',
-    'booking:read:own',
-    'driver:read:own',
-    'vehicle:read:own',
-  ],
-  driver: [
-    'shuttle:read:assigned',
-    'shuttle:update:status',
-    'booking:read:assigned',
   ],
   admin: [
     'user:read',
@@ -63,11 +47,9 @@ export const rolePermissions: Record<UserRole, string[]> = {
 // Role hierarchy for access control
 export const roleHierarchy: Record<UserRole, number> = {
   customer: 1,
-  driver: 2,
-  dispatcher: 3,
-  host: 4,
-  admin: 5,
-  super_admin: 6,
+  host: 2,
+  admin: 3,
+  super_admin: 4,
 };
 
 // Check if user has a specific permission
@@ -118,21 +100,7 @@ export function getAllowedRoutes(role: UserRole): string[] {
       '/host/listings',
       '/host/bookings',
       '/host/payouts',
-      '/host/shuttles',
-      '/host/drivers',
       '/host/settings',
-    ],
-    dispatcher: [
-      '/dispatch',
-      '/dispatch/dashboard',
-      '/dispatch/trips',
-      '/dispatch/drivers',
-      '/dispatch/vehicles',
-    ],
-    driver: [
-      '/driver',
-      '/driver/trips',
-      '/driver/current',
     ],
     admin: [
       '/admin',
@@ -173,8 +141,6 @@ export function getDefaultRedirectPath(role: UserRole): string {
   const redirectPaths: Record<UserRole, string> = {
     customer: '/account',
     host: '/host',
-    dispatcher: '/dispatch',
-    driver: '/driver/trips',
     admin: '/admin',
     super_admin: '/admin',
   };
@@ -187,8 +153,6 @@ export function getRoleDisplayName(role: UserRole): string {
   const displayNames: Record<UserRole, string> = {
     customer: 'Customer',
     host: 'Parking Host',
-    dispatcher: 'Dispatcher',
-    driver: 'Driver',
     admin: 'Administrator',
     super_admin: 'Super Administrator',
   };

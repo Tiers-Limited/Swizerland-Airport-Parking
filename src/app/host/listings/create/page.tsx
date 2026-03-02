@@ -6,12 +6,11 @@ import { apiCall } from '@/lib/api';
 import { Card, Button, Input, Select, Alert } from '@/components/ui';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { FadeIn } from '@/components/animations';
+import type { PricingTier } from '@/types';
 
 const amenityKeys = [
   'covered', 'evCharging', 'security247', 'cctv', 'fenced', 'lit', 'accessible', 'carWash', 'valetParking',
 ] as const;
-
-const shuttleModes = ['scheduled', 'on_demand', 'hybrid'] as const;
 
 export default function CreateListingPage() {
   const router = useRouter();
@@ -21,6 +20,7 @@ export default function CreateListingPage() {
   const [form, setForm] = useState({
     name: '',
     address: '',
+    phoneNumber: '',
     city: 'Zürich',
     postalCode: '',
     country: 'CH',
@@ -29,15 +29,13 @@ export default function CreateListingPage() {
     longitude: 8.5492,
     capacityTotal: '',
     basePricePerDay: '',
-    shuttleMode: 'scheduled' as typeof shuttleModes[number],
     description: '',
     distanceToAirportMin: '',
     checkInInstructions: '',
     cancellationPolicy: 'moderate',
     amenities: Object.fromEntries(amenityKeys.map((k) => [k, false])) as Record<string, boolean>,
-    shuttleHours: { start: '04:00', end: '23:00' },
-    shuttleFrequency: '15',
     images: [] as string[],
+    pricingTiers: [] as PricingTier[],
   });
 
   const updateField = (field: string, value: string | number | boolean) => {
@@ -59,6 +57,7 @@ export default function CreateListingPage() {
     const payload = {
       name: form.name,
       address: form.address,
+      phoneNumber: form.phoneNumber || undefined,
       city: form.city,
       postalCode: form.postalCode,
       country: form.country,
@@ -67,14 +66,12 @@ export default function CreateListingPage() {
       longitude: form.longitude,
       capacityTotal: parseInt(form.capacityTotal) || 0,
       basePricePerDay: parseFloat(form.basePricePerDay) || 0,
-      shuttleMode: form.shuttleMode,
       description: form.description,
       distanceToAirportMin: parseInt(form.distanceToAirportMin) || 0,
       checkInInstructions: form.checkInInstructions,
       cancellationPolicy: form.cancellationPolicy,
       amenities: form.amenities,
-      shuttleHours: form.shuttleHours,
-      bufferSettings: { beforePickup: 15, afterDropoff: 10 },
+      pricingTiers: form.pricingTiers.length > 0 ? form.pricingTiers : undefined,
       images: form.images,
     };
 
@@ -157,6 +154,14 @@ export default function CreateListingPage() {
               value={form.longitude}
               onChange={(e) => updateField('longitude', parseFloat(e.target.value))}
             />
+            <div className="md:col-span-2">
+              <Input
+                label="Telefonnummer (für Kunden nach Buchung sichtbar)"
+                value={form.phoneNumber}
+                onChange={(e) => updateField('phoneNumber', e.target.value)}
+                placeholder="+41 44 123 45 67"
+              />
+            </div>
           </div>
         </Card>
 
@@ -201,28 +206,103 @@ export default function CreateListingPage() {
           </div>
         </Card>
 
-        {/* Shuttle Settings */}
+        {/* Pricing Tiers — date-range based */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shuttle-Einstellungen</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select
-              label="Shuttle-Modus"
-              value={form.shuttleMode}
-              onChange={(val) => updateField('shuttleMode', val)}
-              options={shuttleModes.map((m) => ({ value: m, label: { scheduled: 'Planmässig', on_demand: 'Auf Anfrage', hybrid: 'Hybrid' }[m] }))}
-            />
-            <Input
-              label="Shuttle Beginn"
-              type="time"
-              value={form.shuttleHours.start}
-              onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, start: e.target.value } }))}
-            />
-            <Input
-              label="Shuttle Ende"
-              type="time"
-              value={form.shuttleHours.end}
-              onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, end: e.target.value } }))}
-            />
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Preiszeiträume</h2>
+          <p className="text-sm text-gray-500 mb-4">
+            Definieren Sie Zeiträume mit einem Gesamtpreis. Falls leer, wird der Standardpreis pro Tag × Anzahl Tage verwendet.
+          </p>
+          {form.pricingTiers.map((tier, i) => (
+            <div key={i} className="border border-gray-200 rounded-xl p-4 mb-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Zeitraum {i + 1}</span>
+                <button
+                  type="button"
+                  className="text-red-500 hover:text-red-700 text-sm"
+                  onClick={() => {
+                    const updated = form.pricingTiers.filter((_, idx) => idx !== i);
+                    setForm((prev) => ({ ...prev, pricingTiers: updated }));
+                  }}
+                >
+                  Entfernen
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <Input
+                  label="Startdatum"
+                  type="date"
+                  value={tier.start_date}
+                  onChange={(e) => {
+                    const updated = [...form.pricingTiers];
+                    updated[i] = { ...updated[i], start_date: e.target.value };
+                    setForm((prev) => ({ ...prev, pricingTiers: updated }));
+                  }}
+                  required
+                />
+                <Input
+                  label="Enddatum"
+                  type="date"
+                  value={tier.end_date}
+                  onChange={(e) => {
+                    const updated = [...form.pricingTiers];
+                    updated[i] = { ...updated[i], end_date: e.target.value };
+                    setForm((prev) => ({ ...prev, pricingTiers: updated }));
+                  }}
+                  required
+                />
+                <Input
+                  label="Gesamtpreis (CHF)"
+                  type="number"
+                  step="0.01"
+                  value={tier.total_price}
+                  onChange={(e) => {
+                    const updated = [...form.pricingTiers];
+                    updated[i] = { ...updated[i], total_price: parseFloat(e.target.value) || 0 };
+                    setForm((prev) => ({ ...prev, pricingTiers: updated }));
+                  }}
+                  placeholder="149.00"
+                  required
+                />
+                <Input
+                  label="Bezeichnung (optional)"
+                  value={tier.label ?? ''}
+                  onChange={(e) => {
+                    const updated = [...form.pricingTiers];
+                    updated[i] = { ...updated[i], label: e.target.value || undefined };
+                    setForm((prev) => ({ ...prev, pricingTiers: updated }));
+                  }}
+                  placeholder="z.B. Sommerangebot"
+                />
+              </div>
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              setForm((prev) => ({
+                ...prev,
+                pricingTiers: [...prev.pricingTiers, { start_date: '', end_date: '', total_price: 0 }],
+              }));
+            }}
+          >
+            + Preiszeitraum hinzufügen
+          </Button>
+        </Card>
+
+        {/* Add-ons hint */}
+        <Card className="p-6 border-l-4 border-l-baby-blue-400 bg-baby-blue-50/30">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 text-baby-blue-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div>
+              <h2 className="text-sm font-semibold text-gray-900">Zusatzleistungen / Extras</h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Zusatzleistungen (z.B. Autowäsche, Reifenwechsel) können nach der Erstellung des Parkplatzes auf der Bearbeitungsseite hinzugefügt werden.
+              </p>
+            </div>
           </div>
         </Card>
 

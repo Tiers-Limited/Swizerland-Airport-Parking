@@ -40,7 +40,6 @@ interface BookingDetail {
   location_name?: string;
   location_address?: string;
   location_phone?: string;
-  shuttle_frequency_min?: number;
   customer_email?: string;
 }
 
@@ -183,13 +182,6 @@ export default function BookingConfirmationPage() {
                       <h3 className="font-medium text-gray-900">{booking.location_name}</h3>
                       {booking.location_address && <p className="text-sm text-gray-600">{booking.location_address}</p>}
                       {booking.location_phone && <p className="text-sm text-gray-600">Telefon: {booking.location_phone}</p>}
-                      {booking.shuttle_frequency_min && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="primary" size="sm">
-                            Shuttle: Alle {booking.shuttle_frequency_min} Minuten
-                          </Badge>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -283,9 +275,9 @@ export default function BookingConfirmationPage() {
                 <li className="flex gap-4">
                   <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-semibold shrink-0">3</div>
                   <div>
-                    <p className="font-medium text-gray-900">Shuttle zum Terminal nehmen</p>
+                    <p className="font-medium text-gray-900">Zum Flughafen fahren</p>
                     <p className="text-sm text-gray-600">
-                      Kostenlose Shuttles bringen Sie direkt zum Terminal.
+                      Nutzen Sie den öffentlichen Nahverkehr oder den Transfer des Parkplatzbetreibers zum Terminal.
                     </p>
                   </div>
                 </li>
@@ -294,7 +286,7 @@ export default function BookingConfirmationPage() {
                   <div>
                     <p className="font-medium text-gray-900">Rückkehr und Auto abholen</p>
                     <p className="text-sm text-gray-600">
-                      Nach der Landung nehmen Sie den Shuttle zurück zur Parkanlage. Ihr Auto steht bereit!
+                      Nach der Landung kehren Sie zum Parkplatz zurück und holen Ihr Auto ab.
                     </p>
                   </div>
                 </li>

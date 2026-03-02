@@ -6,7 +6,7 @@ const steps = [
   {
     number: '01',
     title: 'Suchen & Vergleichen',
-    description: 'Geben Sie Ihre Reisedaten ein und vergleichen Sie Parkoptionen in der Nähe des Flughafens Zürich. Filtern Sie nach Preis, Entfernung, Ausstattung und Shuttle-Frequenz.',
+    description: 'Geben Sie Ihre Reisedaten ein und vergleichen Sie Parkoptionen in der Nähe des Flughafens Zürich. Filtern Sie nach Preis, Entfernung und Ausstattung.',
     icon: (
       <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -25,8 +25,8 @@ const steps = [
   },
   {
     number: '03',
-    title: 'Parken & Shuttle',
-    description: 'Fahren Sie zur Parkanlage, übergeben Sie Ihr Fahrzeug in sichere Hände und nehmen Sie den kostenlosen Shuttle direkt zum Flughafenterminal.',
+    title: 'Parken & Transfer',
+    description: 'Fahren Sie zur Parkanlage, übergeben Sie Ihr Fahrzeug in sichere Hände und nutzen Sie den bequemen Transfer zum Flughafenterminal.',
     icon: (
       <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -36,7 +36,7 @@ const steps = [
   {
     number: '04',
     title: 'Rückkehr & Abholung',
-    description: 'Nach der Landung bringt der Shuttle Sie zurück zu Ihrem Fahrzeug. So einfach – kein Stress, kein Aufwand.',
+    description: 'Nach der Landung holen Sie Ihr Fahrzeug bequem ab. So einfach – kein Stress, kein Aufwand.',
     icon: (
       <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" />
@@ -47,9 +47,9 @@ const steps = [
 
 const benefits = [
   { title: 'Bis zu 70% sparen', description: 'Im Vergleich zu offiziellen Flughafenparkgebühren' },
-  { title: 'Gratis Shuttle', description: 'Bei jeder Buchung inklusive, regelmässig verkehrend' },
+  { title: 'Bequemer Transfer', description: 'Einfache Anbindung zum Flughafenterminal' },
   { title: 'Sicheres Parken', description: '24/7 Überwachung, eingezäunte Anlagen, Videoüberwachung' },
-  { title: 'Echtzeit-Updates', description: 'Verfolgen Sie Ihren Shuttle und erhalten Sie Benachrichtigungen' },
+  { title: 'Echtzeit-Updates', description: 'Verfolgen Sie Ihre Buchung und erhalten Sie Benachrichtigungen' },
   { title: 'Flexible Stornierung', description: 'Kostenlose Stornierung bis zu 24 Stunden vorher' },
   { title: 'Sofortige Bestätigung', description: 'Erhalten Sie Ihre Buchungsdetails sofort' },
 ];

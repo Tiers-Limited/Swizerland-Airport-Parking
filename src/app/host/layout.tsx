@@ -13,6 +13,7 @@ import { Spinner } from '@/components/ui';
 const hostNavItems = [
   {
     key: 'dashboard',
+    label: 'Dashboard',
     href: '/host',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -22,33 +23,28 @@ const hostNavItems = [
   },
   {
     key: 'listings',
+    label: 'Parkplätze',
     href: '/host/listings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
     ),
   },
   {
     key: 'bookings',
+    label: 'Buchungen',
     href: '/host/bookings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
-  },
-  {
-    key: 'vehicles',
-    href: '/host/vehicles',
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 17h.01M12 17h.01M16 17h.01M3 9l2.5-5h13L21 9M3 9h18M3 9v8a1 1 0 001 1h1m0 0a2 2 0 104 0m-4 0h4m6 0a2 2 0 104 0m-4 0h4a1 1 0 001-1V9" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
       </svg>
     ),
   },
   {
     key: 'availability',
+    label: 'Verfügbarkeit',
     href: '/host/availability',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,6 +54,7 @@ const hostNavItems = [
   },
   {
     key: 'payouts',
+    label: 'Auszahlungen',
     href: '/host/payouts',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,6 +64,7 @@ const hostNavItems = [
   },
   {
     key: 'settings',
+    label: 'Einstellungen',
     href: '/host/settings',
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -87,7 +85,6 @@ export default function HostLayout({ children }: Readonly<{ children: React.Reac
 
   const isOnboarding = pathname === '/host/onboarding';
 
-  // Check if user has a host profile (only for non-onboarding routes)
   useEffect(() => {
     if (authLoading || !isAuthenticated || isOnboarding) {
       setCheckingProfile(false);
@@ -108,29 +105,21 @@ export default function HostLayout({ children }: Readonly<{ children: React.Reac
     checkHostProfile();
   }, [authLoading, isAuthenticated, isOnboarding]);
 
-  // Redirect to onboarding if no host profile and not already on onboarding
   useEffect(() => {
     if (!checkingProfile && hasHostProfile === false && !isOnboarding && isAuthenticated) {
       router.push('/host/onboarding');
     }
   }, [checkingProfile, hasHostProfile, isOnboarding, isAuthenticated, router]);
 
-  // For the onboarding page, render children directly (it has its own layout)
   if (isOnboarding) {
     return <>{children}</>;
   }
 
-  const navLabels: Record<string, string> = {
-    dashboard: 'Dashboard',
-    listings: 'Parkplätze',
-    bookings: 'Buchungen',
-    vehicles: 'Fahrzeuge',
-    availability: 'Verfügbarkeit',
-    payouts: 'Auszahlungen',
-    settings: 'Einstellungen',
+  const isActive = (href: string) => {
+    if (href === '/host') return pathname === '/host';
+    return pathname.startsWith(href);
   };
 
-  // Show loading while checking profile
   if (checkingProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -141,74 +130,73 @@ export default function HostLayout({ children }: Readonly<{ children: React.Reac
 
   return (
     <ProtectedRoute requiredRole="host">
-      <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
 
-        <main className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col lg:flex-row gap-8">
-              {/* Mobile sidebar toggle */}
-              <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                className="lg:hidden flex items-center gap-2 text-sm font-medium text-gray-600 bg-white rounded-xl px-4 py-3 shadow-soft border border-gray-100"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-                Menü
-              </button>
+        <div className="flex-1 flex">
+          {/* Mobile sidebar toggle */}
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="lg:hidden fixed bottom-4 right-4 z-50 p-3 bg-baby-blue-600 text-white rounded-full shadow-lg"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
 
-              {/* Sidebar */}
-              <aside className={cn(
-                'lg:w-64 shrink-0',
-                isSidebarOpen ? 'block' : 'hidden lg:block'
-              )}>
-                {/* Host info */}
-                <div className="bg-white rounded-2xl shadow-soft border border-gray-100 p-6 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-baby-blue-100 flex items-center justify-center text-baby-blue-600 font-bold text-lg">
-                      {getInitials(user?.name)}
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900">{user?.name}</p>
-                      <p className="text-xs text-baby-blue-600 font-medium uppercase tracking-wide">
-                        Host Portal
-                      </p>
-                    </div>
-                  </div>
+          {/* Sidebar — CMS style matching admin */}
+          <aside className={cn(
+            'fixed lg:sticky top-0 lg:top-20 left-0 z-40 w-64 h-screen lg:h-[calc(100vh-5rem)] bg-white border-r border-gray-200 transition-transform lg:translate-x-0 overflow-y-auto',
+            isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          )}>
+            <div className="p-5 border-b border-gray-100 lg:mt-0 mt-16">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-baby-blue-100 flex items-center justify-center text-baby-blue-600 font-bold text-sm">
+                  {getInitials(user?.name)}
                 </div>
-
-                {/* Navigation */}
-                <nav className="bg-white rounded-2xl shadow-soft border border-gray-100 p-2">
-                  {hostNavItems.map((item) => {
-                    const isActive = item.href === '/host'
-                      ? pathname === '/host'
-                      : pathname.startsWith(item.href);
-                    return (
-                      <Link
-                        key={item.key}
-                        href={item.href}
-                        onClick={() => setIsSidebarOpen(false)}
-                        className={cn(
-                          'flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors',
-                          isActive
-                            ? 'bg-baby-blue-50 text-baby-blue-600'
-                            : 'text-gray-600 hover:bg-gray-50'
-                        )}
-                      >
-                        {item.icon}
-                        {navLabels[item.key]}
-                      </Link>
-                    );
-                  })}
-                </nav>
-              </aside>
-
-              {/* Main content */}
-              <div className="flex-1 min-w-0">{children}</div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
+                  <p className="text-xs text-baby-blue-600 font-medium">Host Portal</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </main>
+
+            <nav className="p-3 space-y-1">
+              {hostNavItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  onClick={() => setIsSidebarOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2.5 capitalize rounded-xl text-sm font-medium transition-colors',
+                    isActive(item.href)
+                      ? 'bg-baby-blue-50 text-baby-blue-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  )}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </nav>
+          </aside>
+
+          {/* Overlay */}
+          {isSidebarOpen && (
+            <button
+              type="button"
+              className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close sidebar"
+            />
+          )}
+
+          {/* Main content */}
+          <main className="flex-1 min-w-0 p-4 lg:p-8">
+            {children}
+          </main>
+        </div>
 
         <Footer />
       </div>

@@ -131,12 +131,16 @@ export default function HostDashboard() {
       <div className="space-y-6">
         {/* Page title */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900 capitalize">Dashboard</h1>
           <Link href="/host/listings/create">
-            <Button size="sm">
-              <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <Button 
+            leftIcon={
+               <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
+            }
+            >
+             
               Neuer Parkplatz
             </Button>
           </Link>

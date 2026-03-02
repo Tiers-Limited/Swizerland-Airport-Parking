@@ -7,12 +7,11 @@ import { Card, Button, Input, Select, Alert, Spinner } from '@/components/ui';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import AddonsManager from '@/components/ui/AddonsManager';
 import { FadeIn } from '@/components/animations';
+import { PricingTier } from '@/types';
 
 const amenityKeys = [
   'covered', 'evCharging', 'security247', 'cctv', 'fenced', 'lit', 'accessible', 'carWash', 'valetParking',
 ] as const;
-
-const shuttleModes = ['scheduled', 'on_demand', 'hybrid'] as const;
 
 export default function EditListingPage() {
   const router = useRouter();
@@ -35,13 +34,13 @@ export default function EditListingPage() {
     longitude: 0,
     capacityTotal: '',
     basePricePerDay: '',
-    shuttleMode: 'scheduled' as typeof shuttleModes[number],
+    phoneNumber: '',
+    pricingTiers: [] as PricingTier[],
     description: '',
     distanceToAirportMin: '',
     checkInInstructions: '',
     cancellationPolicy: 'moderate',
     amenities: Object.fromEntries(amenityKeys.map((k) => [k, false])) as Record<string, boolean>,
-    shuttleHours: { start: '04:00', end: '23:00' },
     status: 'active',
     images: [] as string[],
   });
@@ -66,13 +65,13 @@ export default function EditListingPage() {
         longitude: (d.longitude as number) || 0,
         capacityTotal: String(d.capacity_total || ''),
         basePricePerDay: String(d.base_price_per_day || ''),
-        shuttleMode: (d.shuttle_mode as typeof shuttleModes[number]) || 'scheduled',
+        phoneNumber: (d.phone_number as string) || '',
+        pricingTiers: (d.pricing_tiers as PricingTier[]) || [],
         description: (d.description as string) || '',
         distanceToAirportMin: String(d.distance_to_airport_min || ''),
         checkInInstructions: (d.check_in_instructions as string) || '',
         cancellationPolicy: (d.cancellation_policy as string) || 'moderate',
         amenities: (d.amenities as Record<string, boolean>) || Object.fromEntries(amenityKeys.map((k) => [k, false])),
-        shuttleHours: (d.shuttle_hours as { start: string; end: string }) || { start: '04:00', end: '23:00' },
         status: (d.status as string) || 'active',
         images: Array.isArray(d.images) ? d.images as string[] : (typeof d.images === 'string' ? JSON.parse(d.images || '[]') : []),
       });
@@ -107,13 +106,13 @@ export default function EditListingPage() {
       longitude: form.longitude,
       capacityTotal: parseInt(form.capacityTotal) || 0,
       basePricePerDay: parseFloat(form.basePricePerDay) || 0,
-      shuttleMode: form.shuttleMode,
+      phoneNumber: form.phoneNumber,
+      pricingTiers: form.pricingTiers,
       description: form.description,
       distanceToAirportMin: parseInt(form.distanceToAirportMin) || 0,
       checkInInstructions: form.checkInInstructions,
       cancellationPolicy: form.cancellationPolicy,
       amenities: form.amenities,
-      shuttleHours: form.shuttleHours,
       images: form.images,
     };
 
@@ -250,28 +249,97 @@ export default function EditListingPage() {
           </div>
         </Card>
 
-        {/* Shuttle Settings */}
+        {/* Phone Number */}
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Shuttle-Einstellungen</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Select
-              label="Shuttle-Modus"
-              value={form.shuttleMode}
-              onChange={(val) => updateField('shuttleMode', val)}
-              options={shuttleModes.map((m) => ({ value: m, label: { scheduled: 'Planmässig', on_demand: 'Auf Anfrage', hybrid: 'Hybrid' }[m] }))}
-            />
-            <Input
-              label="Shuttle Beginn"
-              type="time"
-              value={form.shuttleHours.start}
-              onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, start: e.target.value } }))}
-            />
-            <Input
-              label="Shuttle Ende"
-              type="time"
-              value={form.shuttleHours.end}
-              onChange={(e) => setForm((prev) => ({ ...prev, shuttleHours: { ...prev.shuttleHours, end: e.target.value } }))}
-            />
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Kontakt</h2>
+          <Input
+            label="Telefonnummer"
+            value={form.phoneNumber}
+            onChange={(e) => updateField('phoneNumber', e.target.value)}
+            placeholder="+41 XX XXX XX XX"
+          />
+        </Card>
+
+        {/* Pricing Tiers — date-range based */}
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Preiszeiträume</h2>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => setForm((prev) => ({
+                ...prev,
+                pricingTiers: [...prev.pricingTiers, { start_date: '', end_date: '', total_price: 0 }],
+              }))}
+            >
+              + Zeitraum hinzufügen
+            </Button>
+          </div>
+          {form.pricingTiers.length === 0 && (
+            <p className="text-sm text-gray-500">Keine Preiszeiträume definiert. Es wird der Basispreis pro Tag verwendet.</p>
+          )}
+          <div className="space-y-4">
+            {form.pricingTiers.map((tier, idx) => (
+              <div key={idx} className="border border-gray-200 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Zeitraum {idx + 1}</span>
+                  <button
+                    type="button"
+                    className="text-red-500 hover:text-red-700 text-sm"
+                    onClick={() => setForm((prev) => ({
+                      ...prev,
+                      pricingTiers: prev.pricingTiers.filter((_, i) => i !== idx),
+                    }))}
+                  >
+                    Entfernen
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <Input
+                    label="Startdatum"
+                    type="date"
+                    value={tier.start_date}
+                    onChange={(e) => {
+                      const tiers = [...form.pricingTiers];
+                      tiers[idx] = { ...tiers[idx], start_date: e.target.value };
+                      setForm((prev) => ({ ...prev, pricingTiers: tiers }));
+                    }}
+                  />
+                  <Input
+                    label="Enddatum"
+                    type="date"
+                    value={tier.end_date}
+                    onChange={(e) => {
+                      const tiers = [...form.pricingTiers];
+                      tiers[idx] = { ...tiers[idx], end_date: e.target.value };
+                      setForm((prev) => ({ ...prev, pricingTiers: tiers }));
+                    }}
+                  />
+                  <Input
+                    label="Gesamtpreis (CHF)"
+                    type="number"
+                    step="0.01"
+                    value={tier.total_price}
+                    onChange={(e) => {
+                      const tiers = [...form.pricingTiers];
+                      tiers[idx] = { ...tiers[idx], total_price: parseFloat(e.target.value) || 0 };
+                      setForm((prev) => ({ ...prev, pricingTiers: tiers }));
+                    }}
+                  />
+                  <Input
+                    label="Bezeichnung (optional)"
+                    value={tier.label ?? ''}
+                    onChange={(e) => {
+                      const tiers = [...form.pricingTiers];
+                      tiers[idx] = { ...tiers[idx], label: e.target.value || undefined };
+                      setForm((prev) => ({ ...prev, pricingTiers: tiers }));
+                    }}
+                    placeholder="z.B. Sommerangebot"
+                  />
+                </div>
+              </div>
+            ))}
           </div>
         </Card>
 

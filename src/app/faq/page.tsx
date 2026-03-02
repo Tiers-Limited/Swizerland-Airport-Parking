@@ -27,23 +27,19 @@ const faqCategories = [
     ],
   },
   {
-    name: 'Shuttle-Service',
+    name: 'Transfer & Anreise',
     faqs: [
       {
-        question: 'Wie funktioniert der Shuttle-Service?',
-        answer: 'Nachdem Sie Ihr Auto geparkt haben, steigen Sie in einen kostenlosen Shuttlebus, der Sie direkt zum Flughafenterminal bringt. Bei Ihrer Rückkehr folgen Sie den Schildern zur Shuttle-Haltestelle, und der Shuttle bringt Sie zurück zur Parkeinrichtung.',
+        question: 'Wie komme ich vom Parkplatz zum Flughafen?',
+        answer: 'Die meisten Parkeinrichtungen bieten einen bequemen Transferservice zum Flughafenterminal an. Details zum Transfer finden Sie in der jeweiligen Parkplatzbeschreibung und in Ihrer Buchungsbestätigung.',
       },
       {
-        question: 'Wie oft fahren die Shuttles?',
-        answer: 'Die Shuttle-Frequenz variiert je nach Parkeinrichtung, aber die meisten fahren während der Stosszeiten alle 10–20 Minuten. Überprüfen Sie das jeweilige Parkinserat für genaue Shuttle-Fahrpläne und Betriebszeiten.',
-      },
-      {
-        question: 'Wie lange dauert der Shuttle zum Flughafen?',
-        answer: 'Die meisten unserer Partnereinrichtungen befinden sich 5–15 Minuten vom Flughafen Zürich entfernt. Die genaue Fahrzeit hängt von den Verkehrsbedingungen und dem Standort der jeweiligen Einrichtung ab.',
+        question: 'Wie weit sind die Parkplätze vom Flughafen entfernt?',
+        answer: 'Die meisten unserer Partnereinrichtungen befinden sich 5–15 Minuten vom Flughafen Zürich entfernt. Die genaue Entfernung und Fahrzeit finden Sie in der Parkplatzbeschreibung.',
       },
       {
         question: 'Was passiert, wenn mein Flug Verspätung hat?',
-        answer: 'Keine Sorge! Unser Shuttle-Service verkehrt während der gesamten Öffnungszeiten der Parkeinrichtung. Bei erheblicher Flugverspätung kontaktieren Sie die Parkeinrichtung direkt – die Telefonnummer finden Sie in Ihrer Buchungsbestätigung.',
+        answer: 'Keine Sorge! Bei erheblicher Flugverspätung kontaktieren Sie die Parkeinrichtung direkt – die Telefonnummer finden Sie in Ihrer Buchungsbestätigung.',
       },
     ],
   },
@@ -56,7 +52,7 @@ const faqCategories = [
       },
       {
         question: 'Was passiert bei meiner Ankunft in der Parkeinrichtung?',
-        answer: 'Bei Ihrer Ankunft melden Sie sich an der Rezeption mit Ihrer Buchungsbestätigung an. Das Personal weist Ihnen Ihren Parkplatz zu, und anschliessend können Sie den Shuttle zum Flughafen nehmen.',
+        answer: 'Bei Ihrer Ankunft melden Sie sich an der Rezeption mit Ihrer Buchungsbestätigung an. Das Personal weist Ihnen Ihren Parkplatz zu.',
       },
       {
         question: 'Kann ich meinen Autoschlüssel behalten?',
@@ -77,7 +73,7 @@ const faqCategories = [
       },
       {
         question: 'Ist der Preis endgültig oder kommen zusätzliche Kosten hinzu?',
-        answer: 'Der bei der Buchung angezeigte Preis ist der Endpreis, inklusive aller Steuern und des Shuttle-Service. Es gibt keine versteckten Gebühren. Zusätzliche Kosten fallen nur an, wenn Sie Ihren Aufenthalt über den gebuchten Zeitraum hinaus verlängern.',
+        answer: 'Der bei der Buchung angezeigte Preis ist der Endpreis, inklusive aller Steuern. Es gibt keine versteckten Gebühren. Zusätzliche Kosten fallen nur an, wenn Sie Ihren Aufenthalt über den gebuchten Zeitraum hinaus verlängern.',
       },
       {
         question: 'Wie erhalte ich eine Rechnung?',
@@ -110,7 +106,7 @@ export default function FAQPage() {
               Häufig gestellte Fragen
             </h1>
             <p className="text-xl text-gray-600">
-              Finden Sie Antworten auf häufige Fragen zu Parken, Buchungen und Shuttle-Services.
+              Finden Sie Antworten auf häufige Fragen zu Parken und Buchungen.
             </p>
           </div>
         </section>

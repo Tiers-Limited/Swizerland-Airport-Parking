@@ -42,7 +42,11 @@ export default function AccountDashboardPage() {
         setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
       }
       if (statsRes.success && statsRes.data) {
-        setStats(statsRes.data);
+        const upcoming = statsRes.data.upcomingBookings;
+        setStats({
+          ...statsRes.data,
+          upcomingBookings: Array.isArray(upcoming) ? upcoming.length : Number(upcoming || 0),
+        });
       }
     } catch {
       // Silently handle – empty state is fine

@@ -28,7 +28,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const loadingState = !!(isLoading || loading);
     const baseStyles = `
-      inline-flex items-center justify-center font-medium rounded-xl 
+      inline-flex items-center cursor-pointer justify-center font-medium rounded-xl 
       transition-all duration-200 focus:outline-none focus-visible:ring-2 
       focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed
     `;

@@ -15,7 +15,6 @@ interface Listing {
   capacity_total: number;
   capacity_available: number;
   base_price_per_day: number;
-  shuttle_mode: string;
   created_at: string;
   images?: string[];
 }
@@ -66,10 +65,13 @@ export default function HostListingsPage() {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Meine Parkplätze</h1>
           <Link href="/host/listings/create">
-            <Button size="sm">
-              <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <Button 
+            leftIcon={
+               <svg className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
+            }
+            >
               Neuer Parkplatz
             </Button>
           </Link>
@@ -82,7 +84,7 @@ export default function HostListingsPage() {
             </svg>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Keine Parkplätze</h3>
             <p className="text-gray-500 mb-6">Erstellen Sie Ihren ersten Parkplatz, um Buchungen zu erhalten.</p>
-            <Link href="/host/listings/create">
+            <Link href="/host/listings/create" className="cursor-pointer">
               <Button>Ersten Parkplatz erstellen</Button>
             </Link>
           </Card>
@@ -126,9 +128,6 @@ export default function HostListingsPage() {
                         </span>
                         <span className="font-medium text-gray-900">
                           CHF {Number(listing.base_price_per_day || 0).toFixed(2)}/Tag
-                        </span>
-                        <span className="capitalize text-xs px-2 py-0.5 bg-gray-100 rounded-full">
-                          {listing.shuttle_mode?.replace(/_/g, ' ')}
                         </span>
                       </div>
                     </div>

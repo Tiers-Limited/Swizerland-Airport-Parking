@@ -7,8 +7,8 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'ZurichPark - Airport Parking Made Easy',
-  description: 'Book secure airport parking near Zurich Airport (ZRH) with integrated shuttle service. Compare prices, find the best spots, and book in minutes.',
-  keywords: 'Zurich airport parking, ZRH parking, airport shuttle, Switzerland parking, secure parking',
+  description: 'Book secure airport parking near Zurich Airport (ZRH). Compare prices, find the best spots, and book in minutes.',
+  keywords: 'Zurich airport parking, ZRH parking, Switzerland parking, secure parking',
 };
 
 export default function RootLayout({

@@ -78,8 +78,7 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
     setForm(emptyForm);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setSaving(true);
     setError('');
     setSuccess('');
@@ -161,7 +160,7 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
 
       {/* Add/Edit Form */}
       {showForm && (
-        <form onSubmit={handleSubmit} className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
+        <div role="form" className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-4">
           <h3 className="text-sm font-semibold text-gray-700">
             {editingId ? 'Zusatzleistung bearbeiten' : 'Neue Zusatzleistung'}
           </h3>
@@ -209,11 +208,11 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
             <Button variant="secondary" type="button" size="sm" onClick={cancelForm}>
               Abbrechen
             </Button>
-            <Button type="submit" size="sm" loading={saving}>
+            <Button type="button" size="sm" loading={saving} onClick={() => handleSubmit()}>
               {editingId ? 'Speichern' : 'Hinzufügen'}
             </Button>
           </div>
-        </form>
+        </div>
       )}
 
       {/* Addons List */}

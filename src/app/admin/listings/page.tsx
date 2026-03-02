@@ -79,17 +79,19 @@ export default function AdminListingsPage() {
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
-            <Select
-              value={statusFilter}
-              onChange={(val) => { setStatusFilter(val); setPage(1); }}
-              options={[
-                { value: 'all', label: 'Alle' },
-                { value: 'pending', label: 'Ausstehend' },
-                { value: 'active', label: 'Aktiv' },
-                { value: 'inactive', label: 'Inaktiv' },
-                { value: 'rejected', label: 'Abgelehnt' },
-              ]}
-            />
+             <div className="flex-1">
+              <Select
+                value={statusFilter}
+                onChange={(val) => { setStatusFilter(val); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'Alle' },
+                  { value: 'pending', label: 'Ausstehend' },
+                  { value: 'active', label: 'Aktiv' },
+                  { value: 'inactive', label: 'Inaktiv' },
+                  { value: 'rejected', label: 'Abgelehnt' },
+                ]}
+              />
+            </div>
           </div>
         </Card>
 

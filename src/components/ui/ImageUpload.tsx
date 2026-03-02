@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import Image from 'next/image';
 import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface ImageUploadProps {
@@ -10,7 +11,7 @@ interface ImageUploadProps {
   label?: string;
 }
 
-export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUploadProps) {
+export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly<ImageUploadProps>) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -90,11 +91,13 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
       {images.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {images.map((url, index) => (
-            <div key={url} className="relative group aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
-              <img
+            <div key={url} className="relative group aspect-4/3 rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+              <Image
                 src={url}
-                alt={`Image ${index + 1}`}
-                className="w-full h-full object-cover"
+                alt={`Upload ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 50vw, 25vw"
               />
               {index === 0 && (
                 <span className="absolute top-1.5 left-1.5 bg-baby-blue-600 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
@@ -145,9 +148,10 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
 
       {/* Upload Area */}
       {images.length < maxImages && (
-        <div
+        <button
+          type="button"
           onClick={() => !uploading && fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
+          className={`w-full border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
             uploading
               ? 'border-baby-blue-300 bg-baby-blue-50'
               : 'border-gray-300 hover:border-baby-blue-400 hover:bg-baby-blue-50/50'
@@ -188,7 +192,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: ImageUpl
             onChange={handleFileSelect}
             className="hidden"
           />
-        </div>
+        </button>
       )}
 
       {error && (

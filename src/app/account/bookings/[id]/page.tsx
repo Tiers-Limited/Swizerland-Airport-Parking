@@ -39,20 +39,7 @@ interface BookingDetail {
     wheelchair_assistance?: boolean;
     notes?: string;
   };
-  outbound_shuttle?: ShuttleInfo;
-  return_shuttle?: ShuttleInfo;
   created_at: string;
-}
-
-interface ShuttleInfo {
-  id: string;
-  direction: string;
-  scheduled_departure: string;
-  actual_departure?: string;
-  actual_arrival?: string;
-  status: string;
-  vehicle_plate?: string;
-  driver_name?: string;
 }
 
 export default function BookingDetailPage() {
@@ -104,14 +91,6 @@ export default function BookingDetailPage() {
     completed: 'Abgeschlossen',
     cancelled: 'Storniert',
     refunded: 'Erstattet',
-  };
-
-  const shuttleStatusLabels: Record<string, string> = {
-    planned: 'Geplant',
-    boarding: 'Boarding',
-    en_route: 'Unterwegs',
-    completed: 'Angekommen',
-    cancelled: 'Storniert',
   };
 
   if (loading) {
@@ -231,47 +210,6 @@ export default function BookingDetailPage() {
             </div>
           )}
         </Card>
-
-        {/* Shuttle Status */}
-        {(booking.outbound_shuttle || booking.return_shuttle) && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Shuttle-Status</h2>
-            <div className="space-y-4">
-              {booking.outbound_shuttle && (
-                <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
-                  <div>
-                    <p className="font-medium text-gray-900">→ Zum Flughafen</p>
-                    <p className="text-sm text-gray-500">
-                      Geplant: {new Date(booking.outbound_shuttle.scheduled_departure).toLocaleString('de-CH')}
-                    </p>
-                    {booking.outbound_shuttle.driver_name && (
-                      <p className="text-xs text-gray-400">Fahrer: {booking.outbound_shuttle.driver_name}</p>
-                    )}
-                  </div>
-                  <Badge variant={statusColors[booking.outbound_shuttle.status] || 'gray'}>
-                    {shuttleStatusLabels[booking.outbound_shuttle.status] || booking.outbound_shuttle.status}
-                  </Badge>
-                </div>
-              )}
-              {booking.return_shuttle && (
-                <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
-                  <div>
-                    <p className="font-medium text-gray-900">← Zum Parkplatz</p>
-                    <p className="text-sm text-gray-500">
-                      Geplant: {new Date(booking.return_shuttle.scheduled_departure).toLocaleString('de-CH')}
-                    </p>
-                    {booking.return_shuttle.driver_name && (
-                      <p className="text-xs text-gray-400">Fahrer: {booking.return_shuttle.driver_name}</p>
-                    )}
-                  </div>
-                  <Badge variant={statusColors[booking.return_shuttle.status] || 'gray'}>
-                    {shuttleStatusLabels[booking.return_shuttle.status] || booking.return_shuttle.status}
-                  </Badge>
-                </div>
-              )}
-            </div>
-          </Card>
-        )}
 
         {/* Pricing */}
         <Card className="p-6">

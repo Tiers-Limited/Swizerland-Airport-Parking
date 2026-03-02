@@ -11,17 +11,19 @@ interface HeaderProps {
   transparent?: boolean;
 }
 
-export default function Header({ transparent = false }: HeaderProps) {
+export default function Header({ transparent = false }: Readonly<HeaderProps>) {
   const pathname = usePathname();
   const { isAuthenticated, user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
   const navigation = [
-    { name: 'Startseite', href: '/' },
-    { name: "So funktioniert's", href: '/how-it-works' },
-    { name: 'FAQ', href: '/faq' },
-    { name: 'Kontakt', href: '/contact' },
+    { name: 'Startseite', href: '/#home' },
+    { name: "So funktioniert's", href: '/#how-it-works' },
+    { name: 'Über uns', href: '/#about' },
+    { name: 'Standort', href: '/#location' },
+    { name: 'FAQ', href: '/#faq' },
+    { name: 'Kontakt', href: '/#contact' },
   ];
 
   const handleLogout = async () => {
@@ -82,9 +84,12 @@ export default function Header({ transparent = false }: HeaderProps) {
 
                 {isProfileMenuOpen && (
                   <>
-                    <div
-                      className="fixed inset-0 z-10"
+                    <button
+                      type="button"
+                      className="fixed inset-0 z-10 cursor-default bg-transparent border-none"
                       onClick={() => setIsProfileMenuOpen(false)}
+                      onKeyDown={(e) => { if (e.key === 'Escape') setIsProfileMenuOpen(false); }}
+                      aria-label="Close menu"
                     />
                     <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-medium border border-gray-100 py-2 z-20">
                       <div className="px-4 py-2 border-b border-gray-100">

@@ -122,7 +122,7 @@ export default function ProfilePage() {
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
               placeholder="+41 79 123 45 67"
-              helperText="Wird für Buchungsbestätigungen und Shuttle-Updates verwendet."
+              helperText="Wird für Buchungsbestätigungen verwendet."
             />
             <div className="flex justify-end">
               <Button type="submit" loading={loading}>
@@ -191,15 +191,15 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-500">E-Mail-Bestätigungen für Ihre Buchungen erhalten.</p>
               </div>
             </label>
-            <label className="flex items-center gap-3" aria-label="Shuttle-Updates">
+            <label className="flex items-center gap-3" aria-label="Buchungs-Updates">
               <input
                 type="checkbox"
                 defaultChecked
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <div>
-                <p className="font-medium text-gray-900">Shuttle-Updates</p>
-                <p className="text-sm text-gray-500">Echtzeit-Benachrichtigungen über Ihren Shuttle-Status erhalten.</p>
+                <p className="font-medium text-gray-900">Buchungs-Updates</p>
+                <p className="text-sm text-gray-500">Echtzeit-Benachrichtigungen über Ihren Buchungsstatus erhalten.</p>
               </div>
             </label>
             <label className="flex items-center gap-3" aria-label="Werbe-E-Mails">

@@ -51,7 +51,7 @@ export default function AdminPayoutsPage() {
     setLoading(true);
     const res = await apiCall<PendingHostPayout[]>('GET', '/payouts/pending');
     if (res.success && res.data) {
-      setPendingPayouts(Array.isArray(res.data) ? res.data : []);
+      setPendingPayouts(Array.isArray(res.data.hosts) ? res.data.hosts : []);
     }
     setLoading(false);
   }, []);

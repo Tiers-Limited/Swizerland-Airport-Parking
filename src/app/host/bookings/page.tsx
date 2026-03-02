@@ -9,23 +9,23 @@ interface HostBooking {
   id: string;
   booking_code: string;
   customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  vehicle_plate: string;
-  vehicle_model?: string;
-  start_date: string;
-  end_date: string;
-  arrival_time: string;
-  status: string;
-  total_price: number;
-  currency: string;
-  listing_name: string;
-  passenger_count: number;
-  luggage_count: number;
-  outbound_flight?: string;
-  return_flight?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  car_plate?: string;
+  car_model?: string;
+  start_datetime: string;
+  end_datetime: string;
+  arrival_lot_datetime?: string;
+  outbound_flight_no?: string;
+  return_flight_no?: string;
+  passengers?: number;
+  luggage?: number;
   special_requests?: string;
   created_at: string;
+  status?: string;
+  total_price?: string | number;
+  currency?: string;
+  location_name?: string;
 }
 
 export default function HostBookingsPage() {
@@ -56,7 +56,18 @@ export default function HostBookingsPage() {
     loadBookings();
   }, [loadBookings]);
 
-  const formatDate = (d: string) => new Date(d).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const formatDate = (d?: string) => {
+    if (!d) return '–';
+    try {
+      return new Date(d).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch { return '–'; }
+  };
+  const formatTime = (d?: string) => {
+    if (!d) return '–';
+    try {
+      return new Date(d).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+    } catch { return '–'; }
+  };
   const formatCurrency = (a: number, c = 'CHF') => new Intl.NumberFormat('de-CH', { style: 'currency', currency: c }).format(a);
 
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
@@ -127,7 +138,7 @@ export default function HostBookingsPage() {
                       </div>
                       <p className="text-sm text-gray-900 font-medium">{booking.customer_name}</p>
                       <p className="text-xs text-gray-500">
-                        {booking.listing_name} · {formatDate(booking.start_date)} – {formatDate(booking.end_date)}
+                        {booking.location_name} · {formatDate(booking.start_datetime)} – {formatDate(booking.end_datetime)}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
@@ -152,34 +163,34 @@ export default function HostBookingsPage() {
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs mb-0.5">Kennzeichen</p>
-                          <p className="text-gray-900 font-mono">{booking.vehicle_plate}</p>
+                          <p className="text-gray-900 font-mono">{booking.car_plate || '–'}</p>
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs mb-0.5">Modell</p>
-                          <p className="text-gray-900">{booking.vehicle_model || '–'}</p>
+                          <p className="text-gray-900">{booking.car_model || '–'}</p>
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs mb-0.5">Ankunftszeit</p>
-                          <p className="text-gray-900">{booking.arrival_time}</p>
+                          <p className="text-gray-900">{formatTime(booking.arrival_lot_datetime)}</p>
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs mb-0.5">Passagiere</p>
-                          <p className="text-gray-900">{booking.passenger_count}</p>
+                          <p className="text-gray-900">{booking.passengers ?? '–'}</p>
                         </div>
                         <div>
                           <p className="text-gray-500 text-xs mb-0.5">Gepäck</p>
-                          <p className="text-gray-900">{booking.luggage_count}</p>
+                          <p className="text-gray-900">{booking.luggage ?? '–'}</p>
                         </div>
-                        {booking.outbound_flight && (
+                        {(booking as any).outbound_flight_no && (
                           <div>
                             <p className="text-gray-500 text-xs mb-0.5">Hinflug</p>
-                            <p className="text-gray-900">{booking.outbound_flight}</p>
+                            <p className="text-gray-900">{(booking as any).outbound_flight_no}</p>
                           </div>
                         )}
-                        {booking.return_flight && (
+                        {(booking as any).return_flight_no && (
                           <div>
                             <p className="text-gray-500 text-xs mb-0.5">Rückflug</p>
-                            <p className="text-gray-900">{booking.return_flight}</p>
+                            <p className="text-gray-900">{(booking as any).return_flight_no}</p>
                           </div>
                         )}
                       </div>

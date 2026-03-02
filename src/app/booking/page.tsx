@@ -7,7 +7,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input, Alert, Badge, 
 import { Header, Footer } from '@/components/layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiCall } from '@/lib/api';
-import { formatCurrency, formatDate, calculateDays } from '@/lib/utils';
+import { formatCurrency, formatDate, calculateDays, formatDateForInput } from '@/lib/utils';
 import type { LocationAddon } from '@/types';
 
 interface AddonBreakdownItem {
@@ -38,8 +38,7 @@ interface ParkingDetails {
   name: string;
   address: string;
   images: string[];
-  shuttle_mode: string;
-  shuttle_hours: { start?: string; end?: string; frequency_min?: number } | null;
+  phone_number: string;
   base_price_per_day: number;
   check_in_instructions: string;
 }
@@ -73,8 +72,8 @@ export default function BookingPage() {
   const [selectedAddons, setSelectedAddons] = useState<Record<string, number>>({});
 
   // Get dates from URL params
-  const startDate = searchParams.get('start') || new Date().toISOString().split('T')[0];
-  const endDate = searchParams.get('end') || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+  const startDate = searchParams.get('start') || formatDateForInput(new Date());
+  const endDate = searchParams.get('end') || formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
   const arrivalTime = searchParams.get('arrival') || '10:00';
   const parkingId = searchParams.get('parking') || '';
 
@@ -185,12 +184,6 @@ export default function BookingPage() {
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-
-    if (!isAuthenticated) {
-      router.push(`/login?redirect=/booking?parking=${parkingId}&start=${startDate}&end=${endDate}&arrival=${arrivalTime}`);
-      return;
-    }
-
     setLoading(true);
     setError('');
 
@@ -199,56 +192,105 @@ export default function BookingPage() {
       if (!form.vehiclePlate.trim()) {
         throw new Error('Bitte geben Sie Ihr Kennzeichen ein.');
       }
+      if (!form.customerEmail.trim()) {
+        throw new Error('Bitte geben Sie Ihre E-Mail-Adresse ein.');
+      }
+      if (!form.customerName.trim()) {
+        throw new Error('Bitte geben Sie Ihren Namen ein.');
+      }
 
       const startDatetime = `${startDate}T${arrivalTime}:00`;
       const endDatetime = `${endDate}T12:00:00`;
 
-      // Create booking via API
       const addonsList = Object.entries(selectedAddons)
         .filter(([, qty]) => qty > 0)
         .map(([addonId, quantity]) => ({ addonId, quantity }));
 
-      const res = await apiCall<{
-        booking: Record<string, unknown>;
-        payment: Record<string, unknown>;
-        clientSecret?: string;
-      }>('POST', '/bookings', {
-        locationId: parkingId,
-        startDatetime,
-        endDatetime,
-        arrivalLotDatetime: startDatetime,
-        outboundFlightNo: form.outboundFlight || undefined,
-        returnFlightNo: form.returnFlight || undefined,
-        passengers: form.passengerCount,
-        luggage: form.luggageCount,
-        carPlate: form.vehiclePlate,
-        carModel: form.vehicleModel || undefined,
-        specialNotes: form.specialNotes || undefined,
-        childSeatRequired: form.childSeatRequired,
-        wheelchairAssistance: form.wheelchairAssistance,
-        addons: addonsList.length > 0 ? addonsList : undefined,
-      });
+      // Choose route: authenticated → /bookings, guest → /bookings/guest
+      if (isAuthenticated) {
+        // Authenticated booking
+        const res = await apiCall<{
+          booking: Record<string, unknown>;
+          payment: Record<string, unknown>;
+          clientSecret?: string;
+        }>('POST', '/bookings', {
+          locationId: parkingId,
+          startDatetime,
+          endDatetime,
+          arrivalLotDatetime: startDatetime,
+          outboundFlightNo: form.outboundFlight || undefined,
+          returnFlightNo: form.returnFlight || undefined,
+          passengers: form.passengerCount,
+          luggage: form.luggageCount,
+          carPlate: form.vehiclePlate,
+          carModel: form.vehicleModel || undefined,
+          specialNotes: form.specialNotes || undefined,
+          childSeatRequired: form.childSeatRequired,
+          wheelchairAssistance: form.wheelchairAssistance,
+          addons: addonsList.length > 0 ? addonsList : undefined,
+        });
 
-      if (!res.success || !res.data) {
-        throw new Error(res.error?.message || 'Buchung konnte nicht erstellt werden.');
+        if (!res.success || !res.data) {
+          throw new Error(res.error?.message || 'Buchung konnte nicht erstellt werden.');
+        }
+
+        const { booking, payment } = res.data;
+
+        // Confirm payment (simulated MVP flow)
+        const confirmRes = await apiCall<{
+          booking: Record<string, unknown>;
+          payment: Record<string, unknown>;
+        }>('POST', `/bookings/${booking.id}/confirm-payment`, {
+          paymentId: payment.id,
+        });
+
+        if (!confirmRes.success) {
+          console.error('Payment confirmation failed:', confirmRes.error?.message);
+        }
+
+        router.push(`/booking/confirmation?id=${booking.id}&code=${booking.booking_code}`);
+      } else {
+        // Guest booking — auto-creates customer account
+        const res = await apiCall<{
+          booking: Record<string, unknown>;
+          payment: Record<string, unknown>;
+          clientSecret?: string;
+          guestAccount?: boolean;
+        }>('POST', '/bookings/guest', {
+          customerName: form.customerName,
+          customerEmail: form.customerEmail,
+          customerPhone: form.customerPhone || undefined,
+          locationId: parkingId,
+          startDatetime,
+          endDatetime,
+          arrivalLotDatetime: startDatetime,
+          outboundFlightNo: form.outboundFlight || undefined,
+          returnFlightNo: form.returnFlight || undefined,
+          passengers: form.passengerCount,
+          luggage: form.luggageCount,
+          carPlate: form.vehiclePlate,
+          carModel: form.vehicleModel || undefined,
+          specialNotes: form.specialNotes || undefined,
+          childSeatRequired: form.childSeatRequired,
+          wheelchairAssistance: form.wheelchairAssistance,
+          addons: addonsList.length > 0 ? addonsList : undefined,
+        });
+
+        if (!res.success || !res.data) {
+          // Check if email already exists — prompt login
+          if (res.error?.code === 'EMAIL_EXISTS') {
+            setError('Ein Konto mit dieser E-Mail existiert bereits. Bitte melden Sie sich an, um die Buchung abzuschliessen.');
+            setLoading(false);
+            return;
+          }
+          throw new Error(res.error?.message || 'Buchung konnte nicht erstellt werden.');
+        }
+
+        const { booking } = res.data;
+
+        // Payment is auto-confirmed in the guest endpoint
+        router.push(`/booking/confirmation?id=${booking.id}&code=${booking.booking_code}&guest=1`);
       }
-
-      const { booking, payment } = res.data;
-
-      // Confirm payment (for simulated/MVP flow)
-      const confirmRes = await apiCall<{
-        booking: Record<string, unknown>;
-        payment: Record<string, unknown>;
-      }>('POST', `/bookings/${booking.id}/confirm-payment`, {
-        paymentId: payment.id,
-      });
-
-      if (!confirmRes.success) {
-        console.error('Payment confirmation failed:', confirmRes.error?.message);
-      }
-
-      // Redirect to confirmation page
-      router.push(`/booking/confirmation?id=${booking.id}&code=${booking.booking_code}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Buchung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.';
       setError(message);
@@ -302,11 +344,11 @@ export default function BookingPage() {
 
                 {error && <Alert variant="error">{error}</Alert>}
 
-                {!isAuthenticated && (
+                {/* {!isAuthenticated && (
                   <Alert variant="info">
-                    <Link href="/login" className="font-medium underline">Anmelden</Link>, um Ihre Daten automatisch auszufüllen und Ihre Buchungen einfach zu verwalten.
+                    Haben Sie bereits ein Konto? <Link href={`/login?redirect=/booking?parking=${parkingId}&start=${startDate}&end=${endDate}&arrival=${arrivalTime}`} className="font-medium underline">Anmelden</Link>, um Ihre Daten automatisch auszufüllen. Andernfalls wird beim Buchen automatisch ein Konto für Sie erstellt.
                   </Alert>
-                )}
+                )} */}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Contact Information */}
@@ -419,7 +461,7 @@ export default function BookingPage() {
                       </div>
 
                       {/* Extras */}
-                      <div className="border-t pt-4 space-y-3">
+                      {/* <div className="border-t pt-4 space-y-3">
                         <p className="font-medium text-gray-700 text-sm">Zusatzleistungen</p>
                         <label className="flex items-center gap-3">
                           <input
@@ -439,7 +481,7 @@ export default function BookingPage() {
                           />
                           <span className="text-sm text-gray-700">Rollstuhlunterstützung</span>
                         </label>
-                      </div>
+                      </div> */}
 
                       <div>
                         <label htmlFor="specialNotes" className="block text-sm font-medium text-gray-700 mb-1">
@@ -665,14 +707,6 @@ export default function BookingPage() {
                       </div>
                     </div>
 
-                    {parking.shuttle_hours?.frequency_min && (
-                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <svg className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                        </svg>
-                        <span>Kostenloser Shuttle alle {parking.shuttle_hours.frequency_min} Min.</span>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>

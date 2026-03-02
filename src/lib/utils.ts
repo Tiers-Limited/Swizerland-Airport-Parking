@@ -84,14 +84,14 @@ export function isValidEmail(email: string): boolean {
 // Validate Swiss phone number
 export function isValidSwissPhone(phone: string): boolean {
   // Swiss phone: +41 XX XXX XX XX or 0XX XXX XX XX
-  const phoneRegex = /^(\+41|0041|0)[1-9][0-9]{8}$/;
-  const cleanPhone = phone.replace(/[\s-]/g, '');
+  const phoneRegex = /^(\+41|0041|0)\d{9}$/;
+  const cleanPhone = phone.replaceAll(/[\s-]/g, '');
   return phoneRegex.test(cleanPhone);
 }
 
 // Format phone number
 export function formatPhone(phone: string): string {
-  const clean = phone.replace(/[\s-]/g, '');
+  const clean = phone.replaceAll(/[\s-]/g, '');
   if (clean.startsWith('+41')) {
     return `${clean.slice(0, 3)} ${clean.slice(3, 5)} ${clean.slice(5, 8)} ${clean.slice(8, 10)} ${clean.slice(10)}`;
   }
@@ -145,7 +145,7 @@ export function buildQueryString(params: Record<string, unknown>): string {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {
-      searchParams.append(key, String(value));
+      searchParams.append(key, String(value as string | number | boolean));
     }
   });
   return searchParams.toString();
@@ -158,7 +158,7 @@ export function getInitials(name: string | undefined | null): string {
   if (parts.length === 1) {
     return parts[0].charAt(0).toUpperCase();
   }
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  return (parts[0].charAt(0) + parts.at(-1)!.charAt(0)).toUpperCase();
 }
 
 // Get first name from full name
@@ -166,4 +166,13 @@ export function getFirstName(name: string | undefined | null): string {
   if (!name) return '';
   const parts = name.trim().split(/\s+/);
   return parts[0];
+}
+
+// Format a Date for HTML date inputs / query params as local YYYY-MM-DD
+export function formatDateForInput(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }

@@ -15,7 +15,7 @@ export default function TermsPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Einleitung</h2>
               <p className="text-gray-600 mb-4">
-                Willkommen bei Zurich Airport Parking («wir», «unser» oder «uns»). Diese Allgemeinen Geschäftsbedingungen regeln Ihre Nutzung unserer Website und Dienstleistungen, einschliesslich unserer Parkplatzreservierungsplattform und der damit verbundenen Shuttle-Dienste.
+                Willkommen bei Zurich Airport Parking («wir», «unser» oder «uns»). Diese Allgemeinen Geschäftsbedingungen regeln Ihre Nutzung unserer Website und Dienstleistungen, einschliesslich unserer Parkplatzreservierungsplattform.
               </p>
               <p className="text-gray-600">
                 Durch den Zugriff auf oder die Nutzung unserer Dienste erklären Sie sich mit diesen Bedingungen einverstanden. Wenn Sie diesen Bedingungen nicht zustimmen, nutzen Sie unsere Dienste bitte nicht.
@@ -30,7 +30,7 @@ export default function TermsPage() {
               <ul className="list-disc list-inside text-gray-600 space-y-2 mb-4">
                 <li>Parkeinrichtungen in der Nähe des Flughafens Zürich zu suchen und zu vergleichen</li>
                 <li>Reservierungen für Parkdienstleistungen vorzunehmen</li>
-                <li>Shuttle-Dienste zwischen Parkeinrichtungen und dem Flughafen zu nutzen</li>
+                <li>Transfermöglichkeiten zwischen Parkeinrichtungen und dem Flughafen zu nutzen</li>
                 <li>Ihre Buchungen und Kontoinformationen zu verwalten</li>
               </ul>
             </section>
@@ -56,7 +56,7 @@ export default function TermsPage() {
               <ul className="list-disc list-inside text-gray-600 space-y-2">
                 <li>Schliessen Sie einen Vertrag mit dem Parkplatzbetreiber ab</li>
                 <li>Die Zahlung ist zum Zeitpunkt der Buchung fällig</li>
-                <li>Die Preise beinhalten alle anfallenden Steuern und den Shuttle-Service</li>
+                <li>Die Preise beinhalten alle anfallenden Steuern</li>
                 <li>Sie erhalten eine Bestätigungs-E-Mail mit den Buchungsdetails</li>
               </ul>
             </section>
@@ -81,7 +81,7 @@ export default function TermsPage() {
               </p>
               <ul className="list-disc list-inside text-gray-600 space-y-2">
                 <li>Schäden an Fahrzeugen während des Parkens (die Haftung liegt beim Betreiber der Anlage)</li>
-                <li>Verspätungen bei Shuttle-Diensten aufgrund von Verkehr oder anderen Faktoren</li>
+                <li>Verspätungen bei Transfers aufgrund von Verkehr oder anderen Faktoren</li>
                 <li>Persönliche Gegenstände, die in Fahrzeugen zurückgelassen werden</li>
                 <li>Verluste, die durch Umstände ausserhalb unserer Kontrolle entstehen</li>
               </ul>
