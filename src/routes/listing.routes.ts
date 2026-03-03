@@ -38,6 +38,11 @@ router.put('/:id/addons/reorder', validateParams(z.object({ id: uuidSchema })), 
 router.patch('/addons/:addonId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.updateAddon);
 router.delete('/addons/:addonId', requireRole(UserRole.HOST, UserRole.ADMIN), listingController.deleteAddon);
 
+// Blackout dates management (host + admin)
+router.get('/:id/blackouts', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.getBlackouts);
+router.post('/:id/blackouts', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.createBlackout);
+router.delete('/:id/blackouts/:blackoutId', validateParams(z.object({ id: uuidSchema })), requireRole(UserRole.HOST, UserRole.ADMIN), listingController.deleteBlackout);
+
 // Admin status management
 router.patch('/:id/status', isAdmin, validateParams(z.object({ id: uuidSchema })),
   validateBody(z.object({ status: z.enum(['pending', 'active', 'inactive', 'rejected']) })),

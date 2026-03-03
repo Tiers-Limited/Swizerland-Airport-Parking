@@ -221,12 +221,12 @@ export class PaymentService {
             .where('id', payment.id)
             .update({ status: 'succeeded', updated_at: new Date() });
 
-          // Auto-confirm the booking
+          // Set booking to pending_approval (admin must approve)
           if (payment.booking_id) {
             await db('bookings')
               .where('id', payment.booking_id)
               .where('status', 'pending_payment')
-              .update({ status: 'confirmed', payment_id: payment.id, updated_at: new Date() });
+              .update({ status: 'pending_approval', payment_id: payment.id, updated_at: new Date() });
           }
         }
         break;

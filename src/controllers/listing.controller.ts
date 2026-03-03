@@ -368,4 +368,72 @@ export const listingController = {
     const addons = await listingService.reorderAddons(id, addonIds);
     res.json({ success: true, data: addons, message: 'Add-ons reordered successfully' });
   }),
+
+  // ===== BLACKOUT DATE ENDPOINTS =====
+
+  getBlackouts: asyncHandler(async (req: Request, res: Response) => {
+    const id = getId(req);
+    await listingService.findByIdOrFail(id);
+    const blackouts = await listingService.getBlackoutDates(id);
+    res.json({ success: true, data: blackouts });
+  }),
+
+  createBlackout: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const id = getId(req);
+    const listing = await listingService.findByIdOrFail(id);
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host || (listing.host_id !== host.id && req.user.role !== UserRole.ADMIN)) {
+      throw new ForbiddenError('You can only manage blackout dates for your own listings');
+    }
+
+    const { start_date, end_date, reason } = req.body;
+    const blackout = await listingService.createBlackoutDate(id, {
+      startDate: start_date,
+      endDate: end_date,
+      reason,
+    }, req.user.userId);
+
+    await auditService.log({
+      userId: req.user.userId,
+      action: 'blackout.create',
+      resource: 'blackout_dates',
+      resourceId: blackout.id as string,
+      newValues: { start_date, end_date, reason },
+      ipAddress: getIp(req),
+    });
+
+    res.status(201).json({ success: true, data: blackout, message: 'Blackout date created successfully' });
+  }),
+
+  deleteBlackout: asyncHandler(async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Not authenticated' });
+    }
+
+    const id = getId(req);
+    const blackoutId = req.params.blackoutId as string;
+    const listing = await listingService.findByIdOrFail(id);
+    const host = await hostService.findByUserId(req.user.userId);
+
+    if (!host || (listing.host_id !== host.id && req.user.role !== UserRole.ADMIN)) {
+      throw new ForbiddenError('You can only manage blackout dates for your own listings');
+    }
+
+    await listingService.deleteBlackoutDate(id, blackoutId);
+
+    await auditService.log({
+      userId: req.user.userId,
+      action: 'blackout.delete',
+      resource: 'blackout_dates',
+      resourceId: blackoutId,
+      ipAddress: getIp(req),
+    });
+
+    res.json({ success: true, message: 'Blackout date deleted successfully' });
+  }),
 };

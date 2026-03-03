@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { payoutService } from '../services/payout.service';
 import { paymentService } from '../services/payment.service';
 import { bookingService } from '../services/booking.service';
+import { hostService } from '../services/host.service';
 import { auditService } from '../services/audit.service';
 import { asyncHandler } from '../middleware/error.middleware';
-import { ValidationError } from '../utils/errors';
+import { ValidationError, NotFoundError } from '../utils/errors';
 import { db } from '../database';
 
 const getIp = (req: Request): string | undefined => {
@@ -200,10 +201,36 @@ export const payoutController = {
     });
   }),
 
-  // ── Host Payout Summary ────────────────────────────────────────────
+  // ── Host Payout Summary (by hostId param) ──────────────────────────
   getHostPayoutSummary: asyncHandler(async (req: Request, res: Response) => {
     const hostId = param(req, 'hostId');
     const summary = await payoutService.getHostPayoutSummary(hostId);
+    res.json({ success: true, data: summary });
+  }),
+
+  // ── Host: Get My Payouts ───────────────────────────────────────────
+  getMyPayouts: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.userId;
+    const host = await hostService.findByUserId(userId);
+    if (!host) throw new NotFoundError('Host profile not found');
+
+    const { status, page, limit } = req.query;
+    const result = await payoutService.listPayouts({
+      hostId: host.id,
+      status: status as string,
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 20,
+    });
+    res.json({ success: true, data: result });
+  }),
+
+  // ── Host: Get My Payout Summary ────────────────────────────────────
+  getMyPayoutSummary: asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.userId;
+    const host = await hostService.findByUserId(userId);
+    if (!host) throw new NotFoundError('Host profile not found');
+
+    const summary = await payoutService.getHostPayoutSummary(host.id);
     res.json({ success: true, data: summary });
   }),
 };

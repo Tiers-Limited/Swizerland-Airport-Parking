@@ -1,7 +1,10 @@
 import { Request, Response } from 'express';
 import { adminService } from '../services/admin.service';
+import { bookingService } from '../services/booking.service';
+import { emailService } from '../services/email.service';
 import { auditService } from '../services/audit.service';
 import { asyncHandler } from '../middleware/error.middleware';
+import { db } from '../database';
 
 const getIp = (req: Request): string | undefined => {
   const ip = req.ip;
@@ -162,6 +165,72 @@ export const adminController = {
       success: true,
       data: result,
       message: `Booking refunded: CHF ${result.refundAmount.toFixed(2)}`,
+    });
+  }),
+
+  // ── Approve Booking (admin confirms after reviewing payment) ───────
+  approveBooking: asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id as string;
+    const booking = await bookingService.approveBooking(id);
+
+    // Send confirmation emails
+    try {
+      const fullBooking = await bookingService.getBookingById(id);
+      const customer = await db('users').where('id', fullBooking.customer_id as string).first();
+      const location = await db('parking_locations').where('id', fullBooking.location_id as string).first();
+      const host = location ? await db('hosts').where('id', location.host_id).first() : null;
+      const hostUser = host ? await db('users').where('id', host.user_id).first() : null;
+      const fmtDate = (d: unknown) => { try { return new Date(d as string).toLocaleDateString('de-CH'); } catch { return String(d); } };
+
+      if (customer && location) {
+        emailService.sendBookingConfirmationToCustomer({
+          email: customer.email,
+          firstName: customer.name?.split(' ')[0] || 'Kunde',
+          bookingCode: fullBooking.booking_code as string,
+          startDate: fmtDate(fullBooking.start_datetime),
+          endDate: fmtDate(fullBooking.end_datetime),
+          locationName: location.name,
+          locationAddress: location.address || '',
+          hostPhone: location.phone_number || '',
+          totalPaid: String(fullBooking.total_price),
+          currency: (fullBooking.currency as string) || 'CHF',
+          checkInInstructions: location.check_in_instructions || undefined,
+        }).catch(err => console.error('Failed to send approval confirmation email:', err));
+      }
+
+      if (hostUser && customer && location) {
+        emailService.sendBookingNotificationToHost({
+          email: hostUser.email,
+          hostName: hostUser.name?.split(' ')[0] || 'Host',
+          bookingCode: fullBooking.booking_code as string,
+          startDate: fmtDate(fullBooking.start_datetime),
+          endDate: fmtDate(fullBooking.end_datetime),
+          locationName: location.name,
+          customerName: customer.name || '',
+          customerPhone: customer.phone || '',
+          carPlate: (fullBooking.car_plate as string) || '',
+          carModel: (fullBooking.car_model as string) || undefined,
+          amount: String(fullBooking.host_payout || fullBooking.total_price),
+          currency: (fullBooking.currency as string) || 'CHF',
+        }).catch(err => console.error('Failed to send host notification email:', err));
+      }
+    } catch (error_) {
+      console.error('Error preparing approval emails:', error_);
+    }
+
+    await auditService.log({
+      userId: req.user?.userId,
+      action: 'admin.booking.approve',
+      resource: 'bookings',
+      resourceId: id,
+      newValues: { status: 'confirmed' },
+      ipAddress: getIp(req),
+    });
+
+    res.json({
+      success: true,
+      data: booking,
+      message: 'Buchung genehmigt und bestätigt.',
     });
   }),
 

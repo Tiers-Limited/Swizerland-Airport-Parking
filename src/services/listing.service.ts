@@ -425,6 +425,37 @@ export class ListingService {
     }
     return this.getAddonsByLocationId(locationId);
   }
+
+  // ── Blackout Dates ─────────────────────────────────────────────────
+
+  async getBlackoutDates(locationId: string): Promise<Record<string, unknown>[]> {
+    return db('blackout_dates')
+      .where('location_id', locationId)
+      .orderBy('start_date', 'asc');
+  }
+
+  async createBlackoutDate(locationId: string, data: { startDate: string; endDate: string; reason?: string }, createdBy?: string): Promise<Record<string, unknown>> {
+    await this.findByIdOrFail(locationId);
+
+    const [blackout] = await db('blackout_dates').insert({
+      location_id: locationId,
+      start_date: data.startDate,
+      end_date: data.endDate,
+      reason: data.reason || null,
+      created_by: createdBy || null,
+    }).returning('*');
+
+    return blackout;
+  }
+
+  async deleteBlackoutDate(locationId: string, blackoutId: string): Promise<void> {
+    const blackout = await db('blackout_dates')
+      .where('id', blackoutId)
+      .where('location_id', locationId)
+      .first();
+    if (!blackout) throw new NotFoundError('Blackout date');
+    await db('blackout_dates').where('id', blackoutId).delete();
+  }
 }
 
 export const listingService = new ListingService();

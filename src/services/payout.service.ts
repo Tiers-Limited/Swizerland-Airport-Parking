@@ -17,6 +17,7 @@ export interface PayoutSummary {
   totalCommission: number;
   totalServiceFees: number;
   totalPayout: number;
+  totalPaid: number;
   currency: string;
 }
 
@@ -325,11 +326,12 @@ export class PayoutService {
       .count('* as count');
 
     return {
-      totalBookings: Number(completedPayouts.count || 0),
+      totalBookings: Number(completedPayouts.count || 0) + Number(pendingBookings.count || 0),
       totalRevenue: Number(pendingBookings.pending_revenue || 0),
       totalCommission: Number(pendingBookings.pending_commission || 0),
       totalServiceFees: 0,
       totalPayout: Number(pendingBookings.pending_payout || 0),
+      totalPaid: Number(completedPayouts.total_paid || 0),
       currency: 'CHF',
     };
   }

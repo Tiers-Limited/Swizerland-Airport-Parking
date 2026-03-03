@@ -155,6 +155,7 @@ export interface PricingRule extends BaseEntity {
 export type BookingStatus =
   | 'draft'
   | 'pending_payment'
+  | 'pending_approval'
   | 'confirmed'
   | 'checked_in'
   | 'completed'

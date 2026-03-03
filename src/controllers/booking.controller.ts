@@ -150,7 +150,7 @@ export const bookingController = {
       currency: (booking.currency as string) || 'CHF',
     });
 
-    // Auto-confirm payment for guest bookings (MVP simulated flow)
+    // Confirm payment and set booking to pending_approval (admin must approve)
     try {
       const payment = await paymentService.confirmPayment(paymentResult.payment.id as string);
       await bookingService.confirmBooking(booking.id as string, payment.id as string);
@@ -395,7 +395,7 @@ export const bookingController = {
     res.json({
       success: true,
       data: { booking, payment },
-      message: 'Payment confirmed. Booking is now confirmed.',
+      message: 'Payment confirmed. Booking is now pending admin approval.',
     });
   }),
 

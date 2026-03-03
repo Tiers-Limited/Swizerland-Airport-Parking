@@ -28,6 +28,7 @@ router.patch('/listings/:id/status', adminController.updateListingStatus);
 // Bookings
 router.get('/bookings', adminController.listBookings);
 router.patch('/bookings/:id/refund', adminController.refundBooking);
+router.post('/bookings/:id/approve', adminController.approveBooking);
 
 // Payments
 router.get('/payments', adminController.listPayments);

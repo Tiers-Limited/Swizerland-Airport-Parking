@@ -63,7 +63,8 @@ export interface CancelBookingResult {
 // ─── Valid state transitions ────────────────────────────────────────
 const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['pending_payment', 'cancelled'],
-  pending_payment: ['confirmed', 'cancelled'],
+  pending_payment: ['pending_approval', 'confirmed', 'cancelled'],
+  pending_approval: ['confirmed', 'cancelled'],
   confirmed: ['checked_in', 'cancelled', 'no_show'],
   checked_in: ['completed', 'cancelled'],
   completed: [],
@@ -282,7 +283,7 @@ export class BookingService {
     return booking;
   }
 
-  // ── Confirm Booking (after payment) ────────────────────────────────
+  // ── Confirm Booking (after payment – sets pending_approval for admin review) ──
   async confirmBooking(bookingId: string, paymentId: string): Promise<Record<string, unknown>> {
     const booking = await db('bookings').where('id', bookingId).first();
     if (!booking) throw new NotFoundError('Booking');
@@ -294,8 +295,28 @@ export class BookingService {
     const [updated] = await db('bookings')
       .where('id', bookingId)
       .update({
-        status: 'confirmed',
+        status: 'pending_approval',
         payment_id: paymentId,
+        updated_at: new Date(),
+      })
+      .returning('*');
+
+    return updated;
+  }
+
+  // ── Admin Approve Booking ──────────────────────────────────────────
+  async approveBooking(bookingId: string): Promise<Record<string, unknown>> {
+    const booking = await db('bookings').where('id', bookingId).first();
+    if (!booking) throw new NotFoundError('Booking');
+
+    if (booking.status !== 'pending_approval') {
+      throw new ValidationError(`Cannot approve booking in ${booking.status} status. Only pending_approval bookings can be approved.`);
+    }
+
+    const [updated] = await db('bookings')
+      .where('id', bookingId)
+      .update({
+        status: 'confirmed',
         updated_at: new Date(),
       })
       .returning('*');
@@ -338,7 +359,7 @@ export class BookingService {
       throw new AppError('You can only cancel your own bookings', 403, 'FORBIDDEN');
     }
 
-    const cancellableStatuses = ['confirmed', 'pending_payment', 'draft'];
+    const cancellableStatuses = ['confirmed', 'pending_payment', 'pending_approval', 'draft'];
     if (!cancellableStatuses.includes(booking.status)) {
       throw new ValidationError(`Cannot cancel booking in ${booking.status} status`);
     }
@@ -452,6 +473,8 @@ export class BookingService {
         query = query.whereIn('bookings.status', ['confirmed', 'checked_in']);
       } else if (status === 'past') {
         query = query.whereIn('bookings.status', ['completed', 'cancelled', 'refunded', 'no_show']);
+      } else if (status.includes(',')) {
+        query = query.whereIn('bookings.status', status.split(',').map(s => s.trim()));
       } else {
         query = query.where('bookings.status', status);
       }
