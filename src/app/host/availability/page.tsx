@@ -33,10 +33,11 @@ export default function HostAvailabilityPage() {
     async function loadData() {
       setLoading(true);
       // Load host's listings
-      const listingsRes = await apiCall<{ listings: Listing[] }>('GET', '/hosts/me/listings');
+      const listingsRes = await apiCall<{ listings: Listing[] }>('GET', '/listings/my');
       if (listingsRes.success && listingsRes.data) {
-        const listingData = Array.isArray(listingsRes.data) ? listingsRes.data : listingsRes.data.listings || [];
-        setListings(listingData);
+        const data = listingsRes.data as unknown;
+        const listingData = Array.isArray(data) ? data : (data as Record<string, unknown>).listings as Listing[] || [];
+        setListings(listingData as Listing[]);
         if (listingData.length > 0 && !selectedListing) {
           setSelectedListing(listingData[0].id);
         }

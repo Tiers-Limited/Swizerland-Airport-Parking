@@ -39,7 +39,9 @@ export default function AccountDashboardPage() {
       ]);
 
       if (bookingsRes.success && bookingsRes.data) {
-        setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
+        const data = bookingsRes.data as unknown;
+        const bookingsArray = Array.isArray(data) ? data : (data as Record<string, unknown>).bookings as BookingRow[] || [];
+        setBookings(bookingsArray as BookingRow[]);
       }
       if (statsRes.success && statsRes.data) {
         const upcoming = statsRes.data.upcomingBookings;

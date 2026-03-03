@@ -8,21 +8,24 @@ import { FadeIn } from '@/components/animations';
 interface Payout {
   id: string;
   host_id: string;
-  amount: number;
+  amount: string | number;
+  commission_amount: string | number;
   currency: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  period_start: string;
-  period_end: string;
   booking_count: number;
-  stripe_payout_id?: string;
+  notes?: string;
   created_at: string;
-  completed_at?: string;
+  processed_at?: string;
 }
 
 interface PayoutSummary {
+  totalBookings: number;
+  totalRevenue: number;
+  totalCommission: number;
+  totalServiceFees: number;
+  totalPayout: number;
   totalPaid: number;
-  totalPending: number;
-  nextPayout?: Payout;
+  currency: string;
 }
 
 export default function HostPayoutsPage() {
@@ -34,15 +37,20 @@ export default function HostPayoutsPage() {
   useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const [payoutsRes, summaryRes] = await Promise.all([
-        apiCall<{ payouts: Payout[]; total: number }>('GET', `/payouts/host?page=${page}&limit=20`),
-        apiCall<PayoutSummary>('GET', '/payouts/host/summary'),
-      ]);
-      if (payoutsRes.success && payoutsRes.data) {
-        const pData = Array.isArray(payoutsRes.data) ? payoutsRes.data : payoutsRes.data.payouts || [];
-        setPayouts(pData);
+      try {
+        const [payoutsRes, summaryRes] = await Promise.all([
+          apiCall<{ payouts: Payout[]; total: number }>('GET', `/payouts/host?page=${page}&limit=20`),
+          apiCall<PayoutSummary>('GET', '/payouts/host/summary'),
+        ]);
+        if (payoutsRes.success && payoutsRes.data) {
+          const rawData = payoutsRes.data as unknown;
+          const pData = Array.isArray(rawData) ? rawData : (rawData as Record<string, unknown>).payouts as Payout[] || [];
+          setPayouts(pData as Payout[]);
+        }
+        if (summaryRes.success && summaryRes.data) setSummary(summaryRes.data);
+      } catch (err) {
+        console.error('Failed to load payout data', err);
       }
-      if (summaryRes.success && summaryRes.data) setSummary(summaryRes.data);
       setLoading(false);
     }
     loadData();
@@ -80,19 +88,19 @@ export default function HostPayoutsPage() {
             <Card className="p-5">
               <p className="text-sm text-gray-500">Bereits ausgezahlt</p>
               <p className="text-2xl font-bold text-emerald-600 mt-1">
-                {formatCurrency(summary.totalPaid)}
+                {formatCurrency(Number(summary.totalPaid) || 0)}
               </p>
             </Card>
             <Card className="p-5">
               <p className="text-sm text-gray-500">Ausstehend</p>
               <p className="text-2xl font-bold text-yellow-600 mt-1">
-                {formatCurrency(summary.totalPending)}
+                {formatCurrency(Number(summary.totalPayout) || 0)}
               </p>
             </Card>
             <Card className="p-5">
-              <p className="text-sm text-gray-500">Nächste Auszahlung</p>
+              <p className="text-sm text-gray-500">Einnahmen (Gesamt)</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">
-                {summary.nextPayout ? formatCurrency(summary.nextPayout.amount) : '—'}
+                {formatCurrency((Number(summary.totalPaid) || 0) + (Number(summary.totalPayout) || 0))}
               </p>
             </Card>
           </div>
@@ -104,7 +112,7 @@ export default function HostPayoutsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-medium text-gray-500">Zeitraum</th>
+                  <th className="text-left py-3 px-4 font-medium text-gray-500">Beschreibung</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Buchungen</th>
                   <th className="text-left py-3 px-4 font-medium text-gray-500">Status</th>
                   <th className="text-right py-3 px-4 font-medium text-gray-500">Betrag</th>
@@ -115,13 +123,7 @@ export default function HostPayoutsPage() {
                 {payouts.map((payout) => (
                   <tr key={payout.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      {payout.period_start && payout.period_end ? (
-                        <>
-                          {new Date(payout.period_start).toLocaleDateString('de-CH', { month: 'short', day: 'numeric' })}
-                          {' – '}
-                          {new Date(payout.period_end).toLocaleDateString('de-CH', { month: 'short', day: 'numeric' })}
-                        </>
-                      ) : '—'}
+                      {payout.notes || `Auszahlung #${payout.id.slice(0, 8)}`}
                     </td>
                     <td className="py-3 px-4 text-gray-600">{payout.booking_count || '—'}</td>
                     <td className="py-3 px-4">
@@ -130,7 +132,7 @@ export default function HostPayoutsPage() {
                       </Badge>
                     </td>
                     <td className="py-3 px-4 text-right font-medium">
-                      {formatCurrency(payout.amount, payout.currency)}
+                      {formatCurrency(Number(payout.amount) || 0, payout.currency)}
                     </td>
                     <td className="py-3 px-4 text-right text-gray-500">
                       {new Date(payout.created_at).toLocaleDateString('de-CH')}

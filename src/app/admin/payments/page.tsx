@@ -8,12 +8,15 @@ import { FadeIn } from '@/components/animations';
 interface PaymentRow {
   id: string;
   amount: string | number;
+  currency: string;
   status: string;
   payment_method: string;
   booking_id: string;
   user_name: string;
   user_email: string;
-  listing_name: string;
+  listing_name?: string;
+  refunded_amount?: string | number;
+  stripe_payment_intent_id?: string;
   created_at: string;
 }
 
@@ -42,14 +45,23 @@ export default function AdminPaymentsPage() {
   useEffect(() => { loadPayments(); }, [loadPayments]);
 
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'gray'> = {
+    succeeded: 'success',
     completed: 'success',
     pending: 'warning',
     failed: 'error',
     refunded: 'gray',
   };
 
-  const formatCurrency = (val: string | number) =>
-    new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(Number(val || 0));
+  const statusLabels: Record<string, string> = {
+    succeeded: 'Erfolgreich',
+    completed: 'Abgeschlossen',
+    pending: 'Ausstehend',
+    failed: 'Fehlgeschlagen',
+    refunded: 'Erstattet',
+  };
+
+  const formatCurrency = (val: string | number, currency = 'CHF') =>
+    new Intl.NumberFormat('de-CH', { style: 'currency', currency }).format(Number(val || 0));
   const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('de-CH') : '—';
   const formatTime = (d: string) => d ? new Date(d).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : '';
 
@@ -74,7 +86,7 @@ export default function AdminPaymentsPage() {
                 options={[
                   { value: 'all', label: 'Alle' },
                   { value: 'pending', label: 'Ausstehend' },
-                  { value: 'completed', label: 'Abgeschlossen' },
+                  { value: 'succeeded', label: 'Erfolgreich' },
                   { value: 'failed', label: 'Fehlgeschlagen' },
                   { value: 'refunded', label: 'Erstattet' },
                 ]}
@@ -93,7 +105,6 @@ export default function AdminPaymentsPage() {
                   <tr>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Zahlungs-ID</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Kunde</th>
-                    <th className="text-left py-3 px-4 text-gray-500 font-medium">Inserat</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Betrag</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Methode</th>
                     <th className="text-left py-3 px-4 text-gray-500 font-medium">Status</th>
@@ -108,11 +119,10 @@ export default function AdminPaymentsPage() {
                         <p className="text-gray-900">{p.user_name || '—'}</p>
                         <p className="text-xs text-gray-400">{p.user_email || ''}</p>
                       </td>
-                      <td className="py-3 px-4 text-gray-600">{p.listing_name || '—'}</td>
-                      <td className="py-3 px-4 font-semibold">{formatCurrency(p.amount)}</td>
+                      <td className="py-3 px-4 font-semibold">{formatCurrency(p.amount, p.currency || 'CHF')}</td>
                       <td className="py-3 px-4 text-gray-600 capitalize">{p.payment_method || '—'}</td>
                       <td className="py-3 px-4">
-                        <Badge variant={statusColors[p.status] || 'gray'}>{p.status}</Badge>
+                        <Badge variant={statusColors[p.status] || 'gray'}>{statusLabels[p.status] || p.status}</Badge>
                       </td>
                       <td className="py-3 px-4 text-gray-500 text-xs">
                         <p>{formatDate(p.created_at)}</p>
@@ -122,7 +132,7 @@ export default function AdminPaymentsPage() {
                   ))}
                   {payments.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
+                      <td colSpan={6} className="py-12 text-center text-gray-400">Keine Ergebnisse gefunden</td>
                     </tr>
                   )}
                 </tbody>

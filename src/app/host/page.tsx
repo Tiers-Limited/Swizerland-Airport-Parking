@@ -19,12 +19,13 @@ interface HostBooking {
   id: string;
   booking_code: string;
   customer_name: string;
-  start_date: string;
-  end_date: string;
+  customer_email?: string;
+  start_datetime: string;
+  end_datetime: string;
   status: string;
-  total_price: number;
+  total_price: string | number;
   currency: string;
-  listing_name: string;
+  location_name?: string;
 }
 
 export default function HostDashboard() {
@@ -48,7 +49,8 @@ export default function HostDashboard() {
         setStats(statsRes.data);
       }
       if (bookingsRes.success && bookingsRes.data) {
-        const bookings = bookingsRes.data.bookings || (Array.isArray(bookingsRes.data) ? bookingsRes.data as unknown as HostBooking[] : []);
+        const data = bookingsRes.data as unknown;
+        const bookings = Array.isArray(data) ? data as HostBooking[] : ((data as Record<string, unknown>).bookings as HostBooking[] || []);
         setRecentBookings(bookings);
       }
     } catch (err) {
@@ -227,7 +229,7 @@ export default function HostDashboard() {
                       </td>
                       <td className="px-5 py-4 text-sm text-gray-700">{booking.customer_name}</td>
                       <td className="px-5 py-4 text-sm text-gray-500">
-                        {formatDate(booking.start_date)} – {formatDate(booking.end_date)}
+                        {formatDate(booking.start_datetime)} – {formatDate(booking.end_datetime)}
                       </td>
                       <td className="px-5 py-4">
                         <Badge variant={statusColors[booking.status] || 'gray'}>

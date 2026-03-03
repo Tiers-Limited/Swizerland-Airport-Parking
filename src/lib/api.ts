@@ -101,26 +101,44 @@ export async function apiCall<T>(
       
       // Map backend error codes to user-friendly messages
       const userFriendlyMessages: Record<string, string> = {
-        'INVALID_CREDENTIALS': 'Invalid email or password. Please check your credentials and try again.',
-        'AUTH_REQUIRED': 'Please log in to continue.',
-        'TOKEN_EXPIRED': 'Your session has expired. Please log in again.',
-        'INVALID_TOKEN': 'Invalid session. Please log in again.',
-        'ACCOUNT_LOCKED': 'Your account is temporarily locked. Please try again later.',
-        'RATE_LIMIT_EXCEEDED': 'Too many attempts. Please wait a moment and try again.',
-        'EMAIL_NOT_VERIFIED': 'Please verify your email address before logging in.',
-        'ACCOUNT_SUSPENDED': 'Your account has been suspended. Please contact support.',
-        'VALIDATION_ERROR': 'Please check your input and try again.',
-        'NOT_FOUND': 'The requested resource was not found.',
-        'CONFLICT': responseData?.message || 'This resource already exists.',
+        'INVALID_CREDENTIALS': 'Ungültige E-Mail oder Passwort. Bitte überprüfen Sie Ihre Eingaben.',
+        'AUTH_REQUIRED': 'Bitte melden Sie sich an, um fortzufahren.',
+        'TOKEN_EXPIRED': 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.',
+        'INVALID_TOKEN': 'Ungültige Sitzung. Bitte melden Sie sich erneut an.',
+        'ACCOUNT_LOCKED': 'Ihr Konto ist vorübergehend gesperrt. Bitte versuchen Sie es später erneut.',
+        'RATE_LIMIT_EXCEEDED': 'Zu viele Versuche. Bitte warten Sie einen Moment.',
+        'EMAIL_NOT_VERIFIED': 'Bitte bestätigen Sie Ihre E-Mail-Adresse.',
+        'ACCOUNT_SUSPENDED': 'Ihr Konto wurde gesperrt. Bitte kontaktieren Sie den Support.',
+        'VALIDATION_ERROR': 'Bitte überprüfen Sie Ihre Eingaben.',
+        'NOT_FOUND': 'Die angeforderte Ressource wurde nicht gefunden.',
+        'ROUTE_NOT_FOUND': 'Die angeforderte Seite wurde nicht gefunden.',
+        'CONFLICT': 'Dieser Eintrag existiert bereits.',
+        'FORBIDDEN': 'Sie haben keine Berechtigung für diese Aktion.',
+        'INTERNAL_ERROR': 'Ein interner Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
+        'DATABASE_ERROR': 'Ein Serverfehler ist aufgetreten. Bitte versuchen Sie es später erneut.',
       };
       
       const errorCode = responseData?.code;
       const friendlyMessage = errorCode ? userFriendlyMessages[errorCode] : null;
       
+      // Determine the message: use friendly message if available,
+      // otherwise use a clean version of the backend message (strip technical details)
+      let displayMessage = friendlyMessage || 'Etwas ist schief gelaufen. Bitte versuchen Sie es erneut.';
+      
+      // If backend provides a non-technical message and no friendly mapping exists, use it
+      if (!friendlyMessage && responseData?.message) {
+        const msg = responseData.message as string;
+        // Filter out technical/query errors, stack traces, SQL errors
+        const isTechnical = /query|syntax|column|relation|table|undefined|null|cannot|TypeError|Error:|at\s+\w+/i.test(msg);
+        if (!isTechnical) {
+          displayMessage = msg;
+        }
+      }
+      
       return {
         success: false,
         error: {
-          message: friendlyMessage || responseData?.message || 'Something went wrong. Please try again.',
+          message: displayMessage,
           code: errorCode || 'UNKNOWN_ERROR',
           details: responseData?.errors,
         },
@@ -128,7 +146,7 @@ export async function apiCall<T>(
     }
     return {
       success: false,
-      error: { message: 'Unable to connect to the server. Please check your internet connection.' },
+      error: { message: 'Verbindung zum Server nicht möglich. Bitte überprüfen Sie Ihre Internetverbindung.' },
     };
   }
 }

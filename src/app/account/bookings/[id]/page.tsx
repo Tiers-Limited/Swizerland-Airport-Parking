@@ -13,32 +13,34 @@ interface BookingDetail {
   customer_name: string;
   customer_email: string;
   customer_phone: string;
-  listing_name: string;
-  listing_address: string;
-  start_date: string;
-  end_date: string;
-  arrival_time: string;
-  vehicle_plate: string;
-  vehicle_model?: string;
-  vehicle_color?: string;
-  passenger_count: number;
-  luggage_count: number;
-  outbound_flight?: string;
-  return_flight?: string;
-  return_flight_arrival?: string;
-  total_days: number;
-  base_price: number;
-  discount_amount: number;
-  service_fee: number;
-  total_price: number;
+  location_name: string;
+  location_address: string;
+  location_images?: string;
+  location_phone?: string;
+  check_in_instructions?: string;
+  start_datetime: string;
+  end_datetime: string;
+  arrival_lot_datetime: string;
+  car_plate: string;
+  car_model?: string;
+  passengers: number;
+  luggage: number;
+  outbound_flight_no?: string;
+  return_flight_no?: string;
+  base_price: string | number;
+  discount_applied: string | number;
+  service_fee: string | number;
+  addons_total: string | number;
+  platform_commission: string | number;
+  host_payout: string | number;
+  total_price: string | number;
   currency: string;
   status: string;
   payment_status: string;
-  special_requests?: {
-    child_seat?: boolean;
-    wheelchair_assistance?: boolean;
-    notes?: string;
-  };
+  child_seat_required?: boolean;
+  wheelchair_assistance?: boolean;
+  special_notes?: string;
+  addons?: string;
   created_at: string;
 }
 
@@ -63,7 +65,7 @@ export default function BookingDetailPage() {
   const handleCancel = async () => {
     if (!confirm('Möchten Sie diese Buchung wirklich stornieren?')) return;
     setCancelling(true);
-    const res = await apiCall('PATCH', `/bookings/${bookingId}/cancel`, {});
+    const res = await apiCall('POST', `/bookings/${bookingId}/cancel`, {});
     if (res.success) {
       setRefreshKey(k => k + 1);
     }
@@ -76,6 +78,7 @@ export default function BookingDetailPage() {
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray' | 'primary'> = {
     draft: 'gray',
     pending_payment: 'warning',
+    pending_approval: 'warning',
     confirmed: 'success',
     checked_in: 'primary',
     completed: 'info',
@@ -86,6 +89,7 @@ export default function BookingDetailPage() {
   const statusLabels: Record<string, string> = {
     draft: 'Entwurf',
     pending_payment: 'Zahlung ausstehend',
+    pending_approval: 'Wartet auf Genehmigung',
     confirmed: 'Bestätigt',
     checked_in: 'Eingecheckt',
     completed: 'Abgeschlossen',
@@ -109,17 +113,27 @@ export default function BookingDetailPage() {
   }
 
   const paymentVariant = (status: string) => {
-    if (status === 'paid') return 'success' as const;
+    if (status === 'succeeded') return 'success' as const;
     if (status === 'refunded') return 'error' as const;
+    if (status === 'failed') return 'error' as const;
     return 'warning' as const;
   };
   const paymentLabel = (status: string) => {
-    if (status === 'paid') return 'Bezahlt';
+    if (status === 'succeeded') return 'Bezahlt';
     if (status === 'refunded') return 'Erstattet';
+    if (status === 'failed') return 'Fehlgeschlagen';
     return 'Ausstehend';
   };
 
   const canCancel = ['confirmed', 'pending_payment'].includes(booking.status);
+
+  // Calculate total days from start/end dates
+  const totalDays = (() => {
+    const start = new Date(booking.start_datetime);
+    const end = new Date(booking.end_datetime);
+    const diff = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return diff > 0 ? diff : 1;
+  })();
 
   return (
     <FadeIn>
@@ -141,9 +155,9 @@ export default function BookingDetailPage() {
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Parkplatz</h2>
           <div className="space-y-2">
-            <p className="font-medium text-gray-900">{booking.listing_name}</p>
-            {booking.listing_address && (
-              <p className="text-sm text-gray-500">{booking.listing_address}</p>
+            <p className="font-medium text-gray-900">{booking.location_name}</p>
+            {booking.location_address && (
+              <p className="text-sm text-gray-500">{booking.location_address}</p>
             )}
           </div>
         </Card>
@@ -154,57 +168,54 @@ export default function BookingDetailPage() {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-gray-500">Anreise</p>
-              <p className="font-medium">{new Date(booking.start_date).toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="font-medium">{new Date(booking.start_datetime).toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
             <div>
               <p className="text-gray-500">Abreise</p>
-              <p className="font-medium">{new Date(booking.end_date).toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="font-medium">{new Date(booking.end_datetime).toLocaleDateString('de-CH', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
             <div>
               <p className="text-gray-500">Ankunftszeit</p>
-              <p className="font-medium">{booking.arrival_time}</p>
+              <p className="font-medium">{booking.arrival_lot_datetime ? new Date(booking.arrival_lot_datetime).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }) : '—'}</p>
             </div>
             <div>
               <p className="text-gray-500">Dauer</p>
-              <p className="font-medium">{booking.total_days} Tage</p>
+              <p className="font-medium">{totalDays} Tage</p>
             </div>
             <div>
               <p className="text-gray-500">Fahrzeug</p>
-              <p className="font-medium">{booking.vehicle_plate}</p>
-              {booking.vehicle_model && <p className="text-xs text-gray-400">{booking.vehicle_model} {booking.vehicle_color}</p>}
+              <p className="font-medium">{booking.car_plate}</p>
+              {booking.car_model && <p className="text-xs text-gray-400">{booking.car_model}</p>}
             </div>
             <div>
               <p className="text-gray-500">Passagiere / Gepäck</p>
-              <p className="font-medium">{booking.passenger_count} Pax / {booking.luggage_count} Gepäck</p>
+              <p className="font-medium">{booking.passengers} Pax / {booking.luggage} Gepäck</p>
             </div>
-            {booking.outbound_flight && (
+            {booking.outbound_flight_no && (
               <div>
                 <p className="text-gray-500">Hinflug</p>
-                <p className="font-medium">{booking.outbound_flight}</p>
+                <p className="font-medium">{booking.outbound_flight_no}</p>
               </div>
             )}
-            {booking.return_flight && (
+            {booking.return_flight_no && (
               <div>
                 <p className="text-gray-500">Rückflug</p>
-                <p className="font-medium">{booking.return_flight}</p>
-                {booking.return_flight_arrival && (
-                  <p className="text-xs text-gray-400">Ankunft: {booking.return_flight_arrival}</p>
-                )}
+                <p className="font-medium">{booking.return_flight_no}</p>
               </div>
             )}
           </div>
-          {booking.special_requests && (
+          {(booking.child_seat_required || booking.wheelchair_assistance || booking.special_notes) && (
             <div className="mt-4 pt-4 border-t border-gray-100">
               <p className="text-gray-500 text-sm mb-2">Sonderwünsche</p>
               <div className="flex flex-wrap gap-2">
-                {booking.special_requests.child_seat && (
+                {booking.child_seat_required && (
                   <Badge variant="info">Kindersitz</Badge>
                 )}
-                {booking.special_requests.wheelchair_assistance && (
+                {booking.wheelchair_assistance && (
                   <Badge variant="info">Rollstuhlhilfe</Badge>
                 )}
-                {booking.special_requests.notes && (
-                  <p className="text-sm text-gray-600 w-full">{booking.special_requests.notes}</p>
+                {booking.special_notes && (
+                  <p className="text-sm text-gray-600 w-full">{booking.special_notes}</p>
                 )}
               </div>
             </div>
@@ -216,22 +227,28 @@ export default function BookingDetailPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Kosten</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-500">Grundpreis ({booking.total_days} Tage)</span>
-              <span>{formatCurrency(booking.base_price, booking.currency)}</span>
+              <span className="text-gray-500">Grundpreis ({totalDays} Tage)</span>
+              <span>{formatCurrency(Number(booking.base_price) || 0, booking.currency)}</span>
             </div>
-            {booking.discount_amount > 0 && (
+            {Number(booking.discount_applied) > 0 && (
               <div className="flex justify-between text-green-600">
                 <span>Rabatt</span>
-                <span>-{formatCurrency(booking.discount_amount, booking.currency)}</span>
+                <span>-{formatCurrency(Number(booking.discount_applied), booking.currency)}</span>
+              </div>
+            )}
+            {Number(booking.addons_total) > 0 && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Zusatzleistungen</span>
+                <span>{formatCurrency(Number(booking.addons_total), booking.currency)}</span>
               </div>
             )}
             <div className="flex justify-between">
               <span className="text-gray-500">Servicegebühr</span>
-              <span>{formatCurrency(booking.service_fee, booking.currency)}</span>
+              <span>{formatCurrency(Number(booking.service_fee) || 0, booking.currency)}</span>
             </div>
             <div className="flex justify-between pt-2 border-t border-gray-100 font-semibold text-base">
               <span>Gesamtbetrag</span>
-              <span>{formatCurrency(booking.total_price, booking.currency)}</span>
+              <span>{formatCurrency(Number(booking.total_price) || 0, booking.currency)}</span>
             </div>
           </div>
           <div className="mt-3">

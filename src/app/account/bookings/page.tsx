@@ -53,9 +53,11 @@ export default function BookingsPage() {
       else if (filter === 'cancelled') params.set('status', 'cancelled,refunded');
       if (searchQuery) params.set('search', searchQuery);
 
-      const res = await apiCall<BookingRow[]>('GET', `/bookings/my?${params}`);
+      const res = await apiCall<{ bookings: BookingRow[]; total: number }>('GET', `/bookings/my?${params}`);
       if (res.success && res.data) {
-        setBookings(Array.isArray(res.data) ? res.data : []);
+        const data = res.data as unknown;
+        const bookingsArray = Array.isArray(data) ? data : (data as Record<string, unknown>).bookings as BookingRow[] || [];
+        setBookings(bookingsArray as BookingRow[]);
       }
     } catch {
       // empty

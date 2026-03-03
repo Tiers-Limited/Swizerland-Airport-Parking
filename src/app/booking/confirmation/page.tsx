@@ -124,15 +124,30 @@ export default function BookingConfirmationPage() {
         <div className="container mx-auto px-4 max-w-3xl">
           {/* Success Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              booking.status === 'confirmed' ? 'bg-green-100' : 'bg-blue-100'
+            }`}>
+              {booking.status === 'confirmed' ? (
+                <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              ) : (
+                <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Buchung bestätigt!</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {booking.status === 'confirmed' ? 'Buchung bestätigt!' : 'Zahlung erhalten!'}
+            </h1>
             <p className="text-gray-600">
-              Ihre Parkplatzreservierung wurde erfolgreich erstellt.
+              {booking.status === 'confirmed'
+                ? 'Ihre Parkplatzreservierung wurde erfolgreich bestätigt.'
+                : 'Ihre Zahlung wurde erfolgreich verarbeitet. Ihre Buchung wird nun vom Admin geprüft und bestätigt. Sie erhalten eine Bestätigungs-E-Mail, sobald Ihre Buchung genehmigt wurde.'}
             </p>
+            {booking.status === 'pending_approval' && (
+              <Badge variant="warning" className="mt-3">Wartet auf Genehmigung</Badge>
+            )}
           </div>
 
           {/* Booking Code */}

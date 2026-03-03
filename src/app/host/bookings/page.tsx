@@ -132,8 +132,8 @@ export default function HostBookingsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-mono text-sm font-medium text-baby-blue-600">{booking.booking_code}</span>
-                        <Badge variant={statusColors[booking.status] || 'gray'}>
-                          {booking.status.replace(/_/g, ' ')}
+                        <Badge variant={statusColors[booking.status ?? ''] || 'gray'}>
+                          {booking.status ? booking.status.replace(/_/g, ' ') : ''}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-900 font-medium">{booking.customer_name}</p>

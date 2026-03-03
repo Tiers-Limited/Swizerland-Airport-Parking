@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Header, Footer } from '@/components/layout';
@@ -74,6 +74,7 @@ type SortOption = 'price' | 'rating' | 'distance';
 
 export default function ZurichSearchPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [listings, setListings] = useState<ParkingListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('price');
@@ -87,6 +88,16 @@ export default function ZurichSearchPage() {
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
   const days = startDate && endDate ? calculateDays(startDate, endDate) : 1;
+
+  const updateDateParam = useCallback((key: string, value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    router.replace(`/zurich?${params.toString()}`);
+  }, [searchParams, router]);
 
   useEffect(() => {
     async function fetchListings() {
@@ -127,11 +138,11 @@ export default function ZurichSearchPage() {
   });
 
   const getAmenityBadges = (amenities: ParkingListing['amenities']) => {
-    const badges: { label: string; icon: string }[] = [];
-    if (amenities.covered) badges.push({ label: 'Überdacht', icon: '🏠' });
-    if (amenities.evCharging) badges.push({ label: 'E-Ladestation', icon: '⚡' });
-    if (amenities.security247) badges.push({ label: '24/7 Sicherheit', icon: '🛡️' });
-    if (amenities.carWash) badges.push({ label: 'Autowaschanlage', icon: '🚿' });
+    const badges: { label: string; icon: React.ReactNode }[] = [];
+    if (amenities.covered) badges.push({ label: 'Überdacht', icon: <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> });
+    if (amenities.evCharging) badges.push({ label: 'E-Ladestation', icon: <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> });
+    if (amenities.security247) badges.push({ label: '24/7 Sicherheit', icon: <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg> });
+    if (amenities.carWash) badges.push({ label: 'Autowaschanlage', icon: <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg> });
     return badges;
   };
 
@@ -278,11 +289,23 @@ export default function ZurichSearchPage() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm">
                 <label htmlFor="search-from" className="text-gray-500">Von:</label>
-                <input id="search-from" type="date" defaultValue={startDate} className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                <input
+                  id="search-from"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => updateDateParam('startDate', e.target.value)}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm"
+                />
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <label htmlFor="search-to" className="text-gray-500">Bis:</label>
-                <input id="search-to" type="date" defaultValue={endDate} className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm" />
+                <input
+                  id="search-to"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => updateDateParam('endDate', e.target.value)}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm"
+                />
               </div>
             </div>
           </div>

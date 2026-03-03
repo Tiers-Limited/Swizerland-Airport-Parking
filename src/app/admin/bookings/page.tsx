@@ -52,13 +52,37 @@ export default function AdminBookingsPage() {
     }
   }
 
+  async function handleApprove(id: string) {
+    if (!confirm('Möchten Sie diese Buchung genehmigen und bestätigen?')) return;
+    const res = await apiCall('POST', `/admin/bookings/${id}/approve`);
+    if (res.success) {
+      setMessage('Buchung genehmigt und bestätigt.');
+      loadBookings();
+    } else {
+      setMessage('Fehler: ' + (res.error?.message || 'Genehmigung fehlgeschlagen'));
+    }
+  }
+
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
     confirmed: 'success',
+    pending_payment: 'warning',
+    pending_approval: 'warning',
     pending: 'warning',
     cancelled: 'error',
     completed: 'info',
     refunded: 'gray',
     active: 'success',
+  };
+
+  const statusLabels: Record<string, string> = {
+    pending_payment: 'Zahlung ausstehend',
+    pending_approval: 'Wartet auf Genehmigung',
+    confirmed: 'Bestätigt',
+    checked_in: 'Eingecheckt',
+    completed: 'Abgeschlossen',
+    cancelled: 'Storniert',
+    refunded: 'Erstattet',
+    active: 'Aktiv',
   };
 
   const formatCurrency = (val: string | number) =>
@@ -89,7 +113,8 @@ export default function AdminBookingsPage() {
                 onChange={(val) => { setStatusFilter(val); setPage(1); }}
                 options={[
                   { value: 'all', label: 'Alle' },
-                  { value: 'pending', label: 'Ausstehend' },
+                  { value: 'pending_approval', label: 'Wartet auf Genehmigung' },
+                  { value: 'pending_payment', label: 'Zahlung ausstehend' },
                   { value: 'confirmed', label: 'Bestätigt' },
                   { value: 'active', label: 'Aktiv' },
                   { value: 'completed', label: 'Abgeschlossen' },
@@ -135,11 +160,15 @@ export default function AdminBookingsPage() {
                         <p>{formatDate(b.end_datetime as unknown as string)}</p>
                       </td>
                       <td className="py-3 px-4 font-medium">{formatCurrency(b.total_price)}</td>
-                                            <td className="py-3 px-4 font-medium">{formatCurrency(b.total_price)}</td>
                       <td className="py-3 px-4">
-                        <Badge variant={statusColors[b.status] || 'gray'}>{b.status}</Badge>
+                        <Badge variant={statusColors[b.status] || 'gray'}>{statusLabels[b.status] || b.status}</Badge>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="py-3 px-4 text-right space-x-2">
+                        {b.status === 'pending_approval' && (
+                          <Button size="sm" variant="primary" onClick={() => handleApprove(b.id)}>
+                            Genehmigen
+                          </Button>
+                        )}
                         {(b.status === 'confirmed' || b.status === 'active') && (
                           <Button size="sm" variant="danger" onClick={() => handleRefund(b.id)}>
                             Erstatten

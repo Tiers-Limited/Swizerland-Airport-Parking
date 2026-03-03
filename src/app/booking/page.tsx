@@ -236,7 +236,7 @@ export default function BookingPage() {
 
         const { booking, payment } = res.data;
 
-        // Confirm payment (simulated MVP flow)
+        // Confirm payment (marks booking as pending_approval for admin review)
         const confirmRes = await apiCall<{
           booking: Record<string, unknown>;
           payment: Record<string, unknown>;

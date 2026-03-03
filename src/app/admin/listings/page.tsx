@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { apiCall } from '@/lib/api';
-import { Card, Badge, Button, Input, Select, Spinner, Alert } from '@/components/ui';
+import { Card, Badge, Button, Input, Select, Spinner, Alert, Modal } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 
 interface ListingRow {
@@ -16,6 +16,15 @@ interface ListingRow {
   host_email: string;
   host_company: string;
   created_at: string;
+  airport_code?: string;
+  distance_to_airport_min?: number;
+  description?: string;
+  shuttle_mode?: string;
+  cancellation_policy?: string;
+  phone_number?: string;
+  images?: string[];
+  amenities?: Record<string, boolean>;
+  pricing_tiers?: Array<{ label?: string; name?: string; start_date?: string; end_date?: string; total_price?: number; price_per_day?: number; min_days?: number; max_days?: number; fixed_total?: number }>;
 }
 
 export default function AdminListingsPage() {
@@ -27,6 +36,7 @@ export default function AdminListingsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedListing, setSelectedListing] = useState<ListingRow | null>(null);
 
   useEffect(() => {
     async function loadListings() {
@@ -133,6 +143,9 @@ export default function AdminListingsPage() {
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <Button size="sm" variant="secondary" onClick={() => setSelectedListing(listing)}>
+                            Anzeigen
+                          </Button>
                           {listing.status === 'pending' && (
                             <>
                               <Button size="sm" onClick={() => handleStatusChange(listing.id, 'active')}>
@@ -179,6 +192,129 @@ export default function AdminListingsPage() {
             )}
           </Card>
         )}
+
+        {/* Listing Detail Modal */}
+        <Modal isOpen={!!selectedListing} onClose={() => setSelectedListing(null)} title={selectedListing?.name || 'Inserat Details'}>
+          {selectedListing && (
+            <div className="space-y-6 max-h-[70vh] overflow-y-auto">
+              {/* Images */}
+              {selectedListing.images && selectedListing.images.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {selectedListing.images.map((img, i) => (
+                    <img key={i} src={img} alt={`${selectedListing.name} ${i + 1}`} className="h-32 w-48 object-cover rounded-lg flex-shrink-0" />
+                  ))}
+                </div>
+              )}
+
+              {/* Basic Info */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Adresse</p>
+                  <p className="font-medium text-gray-900">{selectedListing.address}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Status</p>
+                  <Badge variant={statusColors[selectedListing.status] || 'gray'}>{selectedListing.status}</Badge>
+                </div>
+                <div>
+                  <p className="text-gray-500">Flughafen</p>
+                  <p className="font-medium text-gray-900">{selectedListing.airport_code || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Entfernung zum Flughafen</p>
+                  <p className="font-medium text-gray-900">{selectedListing.distance_to_airport_min ? `${selectedListing.distance_to_airport_min} Min.` : '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Kapazität</p>
+                  <p className="font-medium text-gray-900">{selectedListing.capacity_total} Stellplätze</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Basispreis / Tag</p>
+                  <p className="font-medium text-gray-900">{formatCurrency(selectedListing.base_price_per_day)}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Shuttle-Modus</p>
+                  <p className="font-medium text-gray-900 capitalize">{selectedListing.shuttle_mode || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Stornierungsrichtlinie</p>
+                  <p className="font-medium text-gray-900 capitalize">{selectedListing.cancellation_policy || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Telefon</p>
+                  <p className="font-medium text-gray-900">{selectedListing.phone_number || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Erstellt am</p>
+                  <p className="font-medium text-gray-900">{new Date(selectedListing.created_at).toLocaleDateString('de-CH')}</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              {selectedListing.description && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Beschreibung</p>
+                  <p className="text-sm text-gray-700">{selectedListing.description}</p>
+                </div>
+              )}
+
+              {/* Host Info */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-2">Host Informationen</p>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-500">Name</p>
+                    <p className="font-medium text-gray-900">{selectedListing.host_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500">Firma</p>
+                    <p className="font-medium text-gray-900">{selectedListing.host_company || '—'}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <p className="text-gray-500">E-Mail</p>
+                    <p className="font-medium text-gray-900">{selectedListing.host_email}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Amenities */}
+              {selectedListing.amenities && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Ausstattung</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(selectedListing.amenities).map(([key, value]) => (
+                      <span
+                        key={key}
+                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+                          value ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400 line-through'
+                        }`}
+                      >
+                        {value ? '✓' : '✗'} {key.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase())}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pricing Tiers */}
+              {selectedListing.pricing_tiers && selectedListing.pricing_tiers.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Preisstaffeln</p>
+                  <div className="space-y-2">
+                    {selectedListing.pricing_tiers.map((tier, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">
+                        <span className="font-medium text-gray-900">{tier.label || tier.name || `Staffel ${i + 1}`}</span>
+                        <span className="text-gray-600">
+                          {tier.total_price ? formatCurrency(tier.total_price) : tier.fixed_total ? formatCurrency(tier.fixed_total) : tier.price_per_day ? `${formatCurrency(tier.price_per_day)}/Tag` : '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </Modal>
       </div>
     </FadeIn>
   );

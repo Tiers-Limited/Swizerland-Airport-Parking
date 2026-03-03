@@ -5,18 +5,38 @@ import { apiCall } from '@/lib/api';
 import { Card, Badge, Select, Spinner, Button, Alert } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 
-interface PendingHostPayout {
+interface PendingBooking {
+  id: string;
+  booking_code: string;
+  total_price: string | number;
+  platform_commission: string | number;
+  host_payout: string | number;
+  service_fee: string | number;
+  addons_total: string | number;
+  currency: string;
+  status: string;
+  created_at: string;
+  start_datetime: string;
+  end_datetime: string;
+  location_name: string;
   host_id: string;
+  company_name: string;
+  commission_rate: string | number;
   host_name: string;
   host_email: string;
-  company_name: string | null;
-  commission_rate: number;
-  booking_count: number;
-  total_revenue: number;
-  total_commission: number;
-  total_payout: number;
-  currency: string;
-  booking_ids: string[];
+}
+
+interface PendingHostPayout {
+  hostId: string;
+  hostName: string;
+  hostEmail: string;
+  companyName: string | null;
+  commissionRate: number;
+  bookings: PendingBooking[];
+  totalRevenue: number;
+  totalCommission: number;
+  totalAddons: number;
+  totalPayout: number;
 }
 
 interface PayoutRow {
@@ -60,9 +80,11 @@ export default function AdminPayoutsPage() {
     setLoading(true);
     const params = new URLSearchParams();
     if (statusFilter !== 'all') params.set('status', statusFilter);
-    const res = await apiCall<PayoutRow[]>('GET', `/payouts/list?${params}`);
+    const res = await apiCall<{ payouts: PayoutRow[]; total: number; totalPages: number; page: number }>('GET', `/payouts/list?${params}`);
     if (res.success && res.data) {
-      setPayoutHistory(Array.isArray(res.data) ? res.data : []);
+      const raw = res.data as unknown as Record<string, unknown>;
+      const list = Array.isArray(raw) ? raw : Array.isArray(raw.payouts) ? raw.payouts : [];
+      setPayoutHistory(list as PayoutRow[]);
     }
     setLoading(false);
   }, [statusFilter]);
@@ -73,17 +95,18 @@ export default function AdminPayoutsPage() {
   }, [tab, loadPending, loadHistory]);
 
   const handleCreatePayout = async (host: PendingHostPayout) => {
-    setProcessing(host.host_id);
+    setProcessing(host.hostId);
     setError('');
     setSuccess('');
     try {
+      const bookingIds = host.bookings.map(b => b.id);
       const res = await apiCall<{ payout: PayoutRow }>('POST', '/payouts', {
-        hostId: host.host_id,
-        bookingIds: host.booking_ids,
-        notes: `Auszahlung für ${host.booking_count} Buchung(en)`,
+        hostId: host.hostId,
+        bookingIds,
+        notes: `Auszahlung für ${host.bookings.length} Buchung(en)`,
       });
       if (res.success) {
-        setSuccess(`Auszahlung von ${formatCurrency(host.total_payout)} für ${host.host_name || host.company_name} erstellt.`);
+        setSuccess(`Auszahlung von ${formatCurrency(host.totalPayout)} für ${host.hostName || host.companyName} erstellt.`);
         loadPending();
       } else {
         setError(res.error?.message || 'Auszahlung konnte nicht erstellt werden.');
@@ -134,10 +157,10 @@ export default function AdminPayoutsPage() {
   };
 
   // Summary stats
-  const totalPendingRevenue = pendingPayouts.reduce((s, p) => s + p.total_revenue, 0);
-  const totalPendingCommission = pendingPayouts.reduce((s, p) => s + p.total_commission, 0);
-  const totalPendingPayout = pendingPayouts.reduce((s, p) => s + p.total_payout, 0);
-  const totalPendingBookings = pendingPayouts.reduce((s, p) => s + p.booking_count, 0);
+  const totalPendingRevenue = pendingPayouts.reduce((s, p) => s + (p.totalRevenue || 0), 0);
+  const totalPendingCommission = pendingPayouts.reduce((s, p) => s + (p.totalCommission || 0), 0);
+  const totalPendingPayout = pendingPayouts.reduce((s, p) => s + (p.totalPayout || 0), 0);
+  const totalPendingBookings = pendingPayouts.reduce((s, p) => s + (p.bookings?.length || 0), 0);
 
   return (
     <FadeIn>
@@ -203,42 +226,42 @@ export default function AdminPayoutsPage() {
             {!loading && pendingPayouts.length > 0 && (
               <div className="space-y-4">
                 {pendingPayouts.map((host) => (
-                  <Card key={host.host_id} padding="none">
+                  <Card key={host.hostId} padding="none">
                     <div className="p-6">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
                             <h3 className="font-semibold text-gray-900">
-                              {host.company_name || host.host_name}
+                              {host.companyName || host.hostName}
                             </h3>
                             <Badge variant="warning" size="sm">
-                              {host.booking_count} Buchung(en)
+                              {host.bookings?.length || 0} Buchung(en)
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-500 mb-3">{host.host_email}</p>
+                          <p className="text-sm text-gray-500 mb-3">{host.hostEmail}</p>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <p className="text-gray-500">Einnahmen</p>
-                              <p className="font-medium text-gray-900">{formatCurrency(host.total_revenue)}</p>
+                              <p className="font-medium text-gray-900">{formatCurrency(host.totalRevenue || 0)}</p>
                             </div>
                             <div>
-                              <p className="text-gray-500">Kommission ({host.commission_rate}%)</p>
-                              <p className="font-medium text-green-600">{formatCurrency(host.total_commission)}</p>
+                              <p className="text-gray-500">Kommission ({host.commissionRate}%)</p>
+                              <p className="font-medium text-green-600">{formatCurrency(host.totalCommission || 0)}</p>
                             </div>
                             <div>
                               <p className="text-gray-500">Auszahlung</p>
-                              <p className="font-bold text-gray-900 text-lg">{formatCurrency(host.total_payout)}</p>
+                              <p className="font-bold text-gray-900 text-lg">{formatCurrency(host.totalPayout || 0)}</p>
                             </div>
                             <div>
-                              <p className="text-gray-500">Währung</p>
-                              <p className="font-medium text-gray-900">{host.currency}</p>
+                              <p className="text-gray-500">Zusatzleistungen</p>
+                              <p className="font-medium text-gray-900">{formatCurrency(host.totalAddons || 0)}</p>
                             </div>
                           </div>
                         </div>
                         <div className="shrink-0">
                           <Button
                             onClick={() => handleCreatePayout(host)}
-                            loading={processing === host.host_id}
+                            loading={processing === host.hostId}
                             disabled={!!processing}
                           >
                             Auszahlung erstellen
