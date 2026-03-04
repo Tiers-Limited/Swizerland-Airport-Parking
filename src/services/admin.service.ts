@@ -2,6 +2,7 @@ import { db } from '../database';
 import { NotFoundError, ConflictError } from '../utils/errors';
 import { hashPassword, generateRandomToken } from '../utils/auth.utils';
 import { emailService } from './email.service';
+import { paymentService } from './payment.service';
 import { UserRole, UserStatus, VerificationStatus } from '../types/roles';
 
 // ─── Create Host Input ───────────────────────────────────────────────
@@ -346,47 +347,95 @@ export class AdminService {
     const booking = await db('bookings').where('id', bookingId).first();
     if (!booking) throw new NotFoundError('Booking');
 
-    // Calculate refund amount based on cancellation policy if not specified
-    let refundAmount = amount;
-    if (refundAmount === undefined || refundAmount === null) {
+    // ── Determine refund amount ──────────────────────────────────────
+    // Admin can pass an explicit amount; otherwise we apply the standard policy.
+    let refundAmount: number;
+    if (amount !== undefined && amount !== null) {
+      refundAmount = Math.round(amount * 100) / 100;
+    } else {
+      // Standard policy: >24h = 100%, 12–24h = 50%, <12h = 0%
       const now = new Date();
       const arrival = new Date(booking.start_datetime);
       const hoursUntilArrival = (arrival.getTime() - now.getTime()) / (1000 * 60 * 60);
 
       if (hoursUntilArrival > 24) {
-        refundAmount = Number(booking.total_price);
+        refundAmount = Math.round(Number(booking.total_price) * 100) / 100;
       } else if (hoursUntilArrival >= 12) {
-        refundAmount = Number(booking.total_price) * 0.5;
+        refundAmount = Math.round(Number(booking.total_price) * 0.5 * 100) / 100;
       } else {
         refundAmount = 0;
       }
     }
 
-    refundAmount = Math.round(refundAmount * 100) / 100;
+    const refundReason = reason || 'Admin forced refund';
 
-    const [updated] = await db('bookings')
-      .where('id', bookingId)
-      .update({ status: 'refunded', updated_at: new Date() })
-      .returning('*');
+    // ── Issue the Stripe refund (if payment exists & amount > 0) ────
+    if (refundAmount > 0) {
+      // Prefer booking.payment_id; fall back to latest payment for this booking.
+      let paymentId: string | null = booking.payment_id ?? null;
+      if (!paymentId) {
+        const latestPayment = await db('payments')
+          .where('booking_id', bookingId)
+          .where('status', 'succeeded')
+          .orderBy('created_at', 'desc')
+          .first();
+        paymentId = latestPayment?.id ?? null;
+      }
 
-    // If payment exists, process refund
-    if (booking.payment_id) {
-      const newRefundedAmount = Math.min(
-        Number(booking.total_price),
-        refundAmount
-      );
-      const isFullRefund = newRefundedAmount >= Number(booking.total_price);
-
-      await db('payments')
-        .where('id', booking.payment_id)
-        .update({
-          status: isFullRefund ? 'refunded' : 'partially_refunded',
-          refunded_amount: newRefundedAmount,
-          updated_at: new Date(),
+      if (paymentId) {
+        // Delegate to paymentService so the single Stripe refund path is always used.
+        // This ensures the actual Stripe API call happens and the payments record is
+        // kept in sync regardless of whether it's a live or simulated payment.
+        await paymentService.processRefund({
+          paymentId,
+          amount: refundAmount,
+          reason: refundReason,
         });
+      }
     }
 
-    return { booking: updated, refundAmount, reason: reason || 'Admin refund' };
+    // ── Update booking ───────────────────────────────────────────────
+    const newStatus = refundAmount > 0 ? 'refunded' : 'cancelled';
+    const [updated] = await db('bookings')
+      .where('id', bookingId)
+      .update({
+        status:       newStatus,
+        refund_reason: refundReason,
+        refunded_at:  refundAmount > 0 ? new Date() : null,
+        updated_at:   new Date(),
+      })
+      .returning('*');
+
+    // ── Email notifications ──────────────────────────────────────────
+    try {
+      const customer = await db('users').where('id', booking.customer_id).first();
+      if (customer) {
+        const fmtCHF = (v: number) =>
+          new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(v);
+        const fmtDate = (d: unknown) => {
+          try { return new Date(d as string).toLocaleDateString('de-CH'); } catch { return String(d); }
+        };
+
+        // Reuse generic sendEmail so we don't need a new template method
+        emailService.sendEmail({
+          to:      customer.email,
+          subject: refundAmount > 0 ? 'Rückerstattung bestätigt' : 'Buchung storniert',
+          html: `
+            <p>Hallo ${customer.name?.split(' ')[0] || 'Kunde'},</p>
+            <p>Ihre Buchung <strong>${booking.booking_code}</strong> wurde vom Administrator
+            ${refundAmount > 0 ? `storniert und eine Rückerstattung von <strong>${fmtCHF(refundAmount)}</strong> wurde veranlasst` : 'storniert'}.</p>
+            ${ refundAmount > 0 ? `<p>Die Rückerstattung erscheint in 5–10 Werktagen auf Ihrer Karte.</p>` : '' }
+            <p>Grund: ${refundReason}</p>
+            <p>Zeitraum: ${fmtDate(booking.start_datetime)} – ${fmtDate(booking.end_datetime)}</p>
+            <p>Bei Fragen wenden Sie sich bitte an unseren Support.</p>
+          `,
+        }).catch((err: unknown) => console.error('[AdminService] Refund email failed:', err));
+      }
+    } catch (emailErr) {
+      console.error('[AdminService] Error sending refund notification:', emailErr);
+    }
+
+    return { booking: updated, refundAmount, reason: refundReason };
   }
 
   // ── Payments ───────────────────────────────────────────────────────

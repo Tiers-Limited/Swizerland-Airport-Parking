@@ -1,5 +1,9 @@
+import Stripe from 'stripe';
+
 import { db } from '../database';
 import { NotFoundError, ValidationError } from '../utils/errors';
+import config from '../config';
+
 
 // ─── Types ─────────────────────────────────────────────────────────
 export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed';
@@ -175,7 +179,16 @@ export class PayoutService {
     return payout;
   }
 
-  // ── Process Payout (mark as completed) ─────────────────────────────
+  // ── Process Payout (mark as completed + Stripe bookkeeping) ──────────
+  /**
+   * Marks a pending payout as completed.
+   *
+   * With Stripe Destination Charges funds are already in the host's Connect
+   * balance the moment each payment succeeds — Stripe then automatically
+   * pays them out to the host's bank on the Connect payout schedule.
+   * This method records the Stripe transfer IDs and, optionally, triggers
+   * an on-demand Stripe Payout from the Connect account to the host's bank.
+   */
   async processPayout(payoutId: string, adminUserId: string): Promise<Record<string, unknown>> {
     const payout = await db('payouts').where('id', payoutId).first();
     if (!payout) throw new NotFoundError('Payout');
@@ -184,16 +197,66 @@ export class PayoutService {
       throw new ValidationError(`Cannot process payout in ${payout.status} status`);
     }
 
-    // In production: trigger Stripe Transfer to host's connected account
-    // For MVP: admin manually transfers and marks as completed
+    // Collect the Stripe transfer IDs from all bookings in this payout
+    const bookingRows = await db('bookings')
+      .where('payout_id', payoutId)
+      .whereNotNull('stripe_transfer_id')
+      .select('stripe_transfer_id');
+
+    const transferIds = bookingRows
+      .map((b: { stripe_transfer_id: string }) => b.stripe_transfer_id)
+      .filter(Boolean) as string[];
+
+    // ── Optional: trigger Stripe on-demand payout from Connect balance ──
+    let notes = payout.notes || '';
+    if (config.stripe.secretKey) {
+      const hostRow = await db('hosts')
+        .where('id', payout.host_id)
+        .select('stripe_account_id', 'payout_account_id')
+        .first();
+
+      const connectId: string | undefined =
+        hostRow?.stripe_account_id?.startsWith('acct_')
+          ? hostRow.stripe_account_id
+          : hostRow?.payout_account_id?.startsWith('acct_')
+          ? hostRow.payout_account_id
+          : undefined;
+
+      if (connectId) {
+        try {
+          const stripe = new Stripe(config.stripe.secretKey, {
+            apiVersion: '2026-02-25.clover',
+            typescript: true,
+          });
+          const stripePayout = await stripe.payouts.create(
+            {
+              amount:   Math.round(payout.amount * 100),
+              currency: (payout.currency || 'chf').toLowerCase(),
+              metadata: { payout_id: payoutId },
+            },
+            { stripeAccount: connectId },
+          );
+          notes = `Stripe payout ${stripePayout.id} triggered for ${connectId}. Transfers: ${transferIds.join(', ')}`;
+        } catch (err: unknown) {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.error(`[PayoutService] Stripe payout failed for ${connectId}:`, msg);
+          notes = `Stripe payout failed: ${msg}. Manual transfer required. Transfers: ${transferIds.join(', ')}`;
+        }
+      } else {
+        notes = `No Stripe Connect account. Manual transfer required. Transfers: ${transferIds.join(', ')}`;
+      }
+    } else {
+      notes = `Simulation mode. Transfers: ${transferIds.join(', ')}`;
+    }
 
     const [updated] = await db('payouts')
       .where('id', payoutId)
       .update({
-        status: 'completed',
-        processed_by: adminUserId,
-        processed_at: new Date(),
-        updated_at: new Date(),
+        status:         'completed',
+        notes,
+        processed_by:   adminUserId,
+        processed_at:   new Date(),
+        updated_at:     new Date(),
       })
       .returning('*');
 

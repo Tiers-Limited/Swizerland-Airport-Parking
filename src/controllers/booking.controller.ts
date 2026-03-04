@@ -142,12 +142,19 @@ export const bookingController = {
       addons,
     });
 
+    // Look up the host's Stripe Connect account for the Destination Charge
+    const hostStripeAccountIdGuest = await getHostStripeAccountId(locationId);
+    const platformFeeAmountGuest   =
+      Number(booking.service_fee || 0) + Number(booking.platform_commission || 0);
+
     // Create payment
     const paymentResult = await paymentService.createPayment({
       userId,
-      bookingId: booking.id as string,
-      amount: booking.total_price as number,
-      currency: (booking.currency as string) || 'CHF',
+      bookingId:            booking.id as string,
+      amount:               booking.total_price as number,
+      currency:             (booking.currency as string) || 'CHF',
+      hostStripeAccountId:  hostStripeAccountIdGuest,
+      platformFeeAmount:    platformFeeAmountGuest,
     });
 
     // Confirm payment and set booking to pending_approval (admin must approve)
@@ -287,12 +294,20 @@ export const bookingController = {
       addons,
     });
 
-    // Create payment
+    // Look up the host's Stripe Connect account for the Destination Charge
+    const hostStripeAccountId   = await getHostStripeAccountId(locationId);
+    // Platform fee = service_fee + commission (what the platform keeps)
+    const platformFeeAmount     =
+      Number(booking.service_fee || 0) + Number(booking.platform_commission || 0);
+
+    // Create payment (Stripe PaymentIntent with Destination Charge if host has Connect)
     const paymentResult = await paymentService.createPayment({
       userId,
-      bookingId: booking.id as string,
-      amount: booking.total_price as number,
-      currency: (booking.currency as string) || 'CHF',
+      bookingId:            booking.id as string,
+      amount:               booking.total_price as number,
+      currency:             (booking.currency as string) || 'CHF',
+      hostStripeAccountId,
+      platformFeeAmount,
     });
 
     await auditService.log({
@@ -536,4 +551,25 @@ async function isUserHostOfLocation(userId: string, locationId: string): Promise
     .first();
 
   return !!location;
+}
+
+/**
+ * Look up the Stripe Connect account ID for the host of a given parking location.
+ * Returns the stripe_account_id (preferred) or the legacy payout_account_id.
+ * Returns undefined when no Connect account is set up yet.
+ */
+async function getHostStripeAccountId(locationId: string): Promise<string | undefined> {
+  const row = await db('parking_locations')
+    .join('hosts', 'hosts.id', 'parking_locations.host_id')
+    .where('parking_locations.id', locationId)
+    .select('hosts.stripe_account_id', 'hosts.payout_account_id')
+    .first();
+
+  if (!row) return undefined;
+
+  // Prefer the dedicated stripe_account_id column added in migration 010;
+  // fall back to the legacy payout_account_id from migration 001.
+  const id: string | undefined = row.stripe_account_id || row.payout_account_id || undefined;
+  // Only return real Stripe Connect IDs (they start with "acct_")
+  return id?.startsWith('acct_') ? id : undefined;
 }

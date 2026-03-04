@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import config from './config';
 import routes from './routes';
+import webhookRoutes from './routes/webhook.routes';
 import {
   errorHandler,
   notFoundHandler,
@@ -34,7 +35,16 @@ export function createApp(): Application {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
   }));
 
-  // Request parsing
+  // ── Stripe Webhook Route ─────────────────────────────────────────
+  // MUST be registered before express.json() so the raw Buffer body is
+  // available for Stripe's signature verification (constructEvent).
+  app.use(
+    `/api/${config.apiVersion}/webhooks`,
+    express.raw({ type: 'application/json' }),
+    webhookRoutes,
+  );
+
+  // Request parsing (all other routes get parsed JSON)
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   app.use(cookieParser());
