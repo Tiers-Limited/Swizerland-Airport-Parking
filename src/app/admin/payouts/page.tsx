@@ -69,9 +69,21 @@ export default function AdminPayoutsPage() {
 
   const loadPending = useCallback(async () => {
     setLoading(true);
-    const res = await apiCall<PendingHostPayout[]>('GET', '/payouts/pending');
+    // API sometimes returns { hosts: PendingHostPayout[] } or directly PendingHostPayout[]
+    const res = await apiCall('GET', '/payouts/pending');
     if (res.success && res.data) {
-      setPendingPayouts(Array.isArray(res.data.hosts) ? res.data.hosts : []);
+      const data = res.data as unknown;
+      type HostsWrapper = { hosts?: unknown };
+      let hosts: PendingHostPayout[] = [];
+
+      if (Array.isArray(data)) {
+        hosts = data as PendingHostPayout[];
+      } else if (typeof data === 'object' && data !== null && 'hosts' in (data as HostsWrapper)) {
+        const wrapper = data as HostsWrapper;
+        if (Array.isArray(wrapper.hosts)) hosts = wrapper.hosts as PendingHostPayout[];
+      }
+
+      setPendingPayouts(hosts);
     }
     setLoading(false);
   }, []);
@@ -82,9 +94,18 @@ export default function AdminPayoutsPage() {
     if (statusFilter !== 'all') params.set('status', statusFilter);
     const res = await apiCall<{ payouts: PayoutRow[]; total: number; totalPages: number; page: number }>('GET', `/payouts/list?${params}`);
     if (res.success && res.data) {
-      const raw = res.data as unknown as Record<string, unknown>;
-      const list = Array.isArray(raw) ? raw : Array.isArray(raw.payouts) ? raw.payouts : [];
-      setPayoutHistory(list as PayoutRow[]);
+      const data = res.data as unknown;
+      type PayoutsWrapper = { payouts?: unknown };
+      let list: PayoutRow[] = [];
+
+      if (Array.isArray(data)) {
+        list = data as PayoutRow[];
+      } else if (typeof data === 'object' && data !== null && 'payouts' in (data as PayoutsWrapper)) {
+        const wrapper = data as PayoutsWrapper;
+        if (Array.isArray(wrapper.payouts)) list = wrapper.payouts as PayoutRow[];
+      }
+
+      setPayoutHistory(list);
     }
     setLoading(false);
   }, [statusFilter]);

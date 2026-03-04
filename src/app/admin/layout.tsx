@@ -157,7 +157,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
                 href={item.href}
                 onClick={() => setIsSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                  'flex items-center gap-3 capitalize px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                   isActive(item.href)
                     ? 'bg-red-50 text-red-700'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'

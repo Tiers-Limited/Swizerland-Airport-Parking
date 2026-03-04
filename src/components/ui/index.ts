@@ -50,3 +50,6 @@ export type { ToggleProps } from './Toggle';
 
 export { default as LanguageSwitcher } from './LanguageSwitcher';
 export { default as GoogleTranslate } from './GoogleTranslate';
+
+export { StripeCardForm } from './StripeCardForm';
+export type { CardFormRef } from './StripeCardForm';

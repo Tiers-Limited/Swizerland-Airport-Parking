@@ -61,10 +61,17 @@ export default function BookingConfirmationPage() {
 
     try {
       let res;
-      if (bookingId) {
+      // If a booking code is provided (public), prefer that lookup even if an ID is present.
+      // This allows guests following confirmation links with both params to view the booking
+      // without needing to be authenticated.
+      if (bookingCode) {
+        res = await apiCall<BookingDetail>('GET', `/bookings/code/${bookingCode}`);
+      } else if (bookingId) {
         res = await apiCall<BookingDetail>('GET', `/bookings/${bookingId}`);
       } else {
-        res = await apiCall<BookingDetail>('GET', `/bookings/code/${bookingCode}`);
+        setError('Kein Buchungscode angegeben.');
+        setLoading(false);
+        return;
       }
 
       if (res.success && res.data) {

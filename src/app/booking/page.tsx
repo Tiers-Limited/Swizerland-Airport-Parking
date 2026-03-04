@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Alert, Badge, Spinner } from '@/components/ui';
+import { StripeCardForm } from '@/components/ui/StripeCardForm';
+import type { CardFormRef } from '@/components/ui/StripeCardForm';
 import { Header, Footer } from '@/components/layout';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiCall } from '@/lib/api';
@@ -66,6 +68,11 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState('');
+  const [paymentError, setPaymentError] = useState('');
+  // Ref to the Stripe card form — parent calls cardFormRef.current.confirmPayment()
+  const cardFormRef = useRef<CardFormRef | null>(null);
+  // Track whether form was pre-filled from sessionStorage (avoids user-prefill overwrite)
+  const restoredFromStorage = useRef(false);
   const [parking, setParking] = useState<ParkingDetails | null>(null);
   const [pricing, setPricing] = useState<PriceBreakdown | null>(null);
   const [availableAddons, setAvailableAddons] = useState<LocationAddon[]>([]);
@@ -92,8 +99,30 @@ export default function BookingPage() {
     wheelchairAssistance: false,
   });
 
-  // Prefill user data
+  // Restore booking draft saved before a login redirect
   useEffect(() => {
+    const raw = sessionStorage.getItem('pendingBookingDraft');
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw) as {
+        form: BookingFormData;
+        selectedAddons?: Record<string, number>;
+      };
+      if (draft.form) {
+        setForm(draft.form);
+        restoredFromStorage.current = true;
+      }
+      if (draft.selectedAddons) setSelectedAddons(draft.selectedAddons);
+    } catch {
+      // ignore corrupt storage
+    } finally {
+      sessionStorage.removeItem('pendingBookingDraft');
+    }
+  }, []); // run once on mount
+
+  // Prefill user data (only when no draft was restored from sessionStorage)
+  useEffect(() => {
+    if (restoredFromStorage.current) return;
     if (user) {
       setForm((prev) => ({
         ...prev,
@@ -186,113 +215,129 @@ export default function BookingPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setPaymentError('');
+
+    // ── Validate ────────────────────────────────────────────────────────────────
+    if (!form.customerName.trim()) {
+      setError('Bitte geben Sie Ihren Namen ein.');
+      setLoading(false);
+      return;
+    }
+    if (!form.customerEmail.trim()) {
+      setError('Bitte geben Sie Ihre E-Mail-Adresse ein.');
+      setLoading(false);
+      return;
+    }
+    if (!form.vehiclePlate.trim()) {
+      setError('Bitte geben Sie Ihr Kennzeichen ein.');
+      setLoading(false);
+      return;
+    }
+
+    const startDatetime = `${startDate}T${arrivalTime}:00`;
+    const endDatetime = `${endDate}T12:00:00`;
+    const addonsList = Object.entries(selectedAddons)
+      .filter(([, qty]) => qty > 0)
+      .map(([addonId, quantity]) => ({ addonId, quantity }));
+
+    // Common booking payload
+    const bookingPayload = {
+      locationId: parkingId,
+      startDatetime,
+      endDatetime,
+      arrivalLotDatetime: startDatetime,
+      outboundFlightNo: form.outboundFlight || undefined,
+      returnFlightNo: form.returnFlight || undefined,
+      passengers: form.passengerCount,
+      luggage: form.luggageCount,
+      carPlate: form.vehiclePlate,
+      carModel: form.vehicleModel || undefined,
+      specialNotes: form.specialNotes || undefined,
+      childSeatRequired: form.childSeatRequired,
+      wheelchairAssistance: form.wheelchairAssistance,
+      addons: addonsList.length > 0 ? addonsList : undefined,
+    };
 
     try {
-      // Validate required fields
-      if (!form.vehiclePlate.trim()) {
-        throw new Error('Bitte geben Sie Ihr Kennzeichen ein.');
-      }
-      if (!form.customerEmail.trim()) {
-        throw new Error('Bitte geben Sie Ihre E-Mail-Adresse ein.');
-      }
-      if (!form.customerName.trim()) {
-        throw new Error('Bitte geben Sie Ihren Namen ein.');
-      }
+      // ── Step 1: Create booking (get clientSecret from backend) ──────────────
+      let bookingId: string;
+      let bookingCode: string;
+      let paymentId: string | undefined;
+      let clientSecret: string | undefined;
+      let isGuest = false;
 
-      const startDatetime = `${startDate}T${arrivalTime}:00`;
-      const endDatetime = `${endDate}T12:00:00`;
-
-      const addonsList = Object.entries(selectedAddons)
-        .filter(([, qty]) => qty > 0)
-        .map(([addonId, quantity]) => ({ addonId, quantity }));
-
-      // Choose route: authenticated → /bookings, guest → /bookings/guest
       if (isAuthenticated) {
-        // Authenticated booking
         const res = await apiCall<{
           booking: Record<string, unknown>;
           payment: Record<string, unknown>;
           clientSecret?: string;
-        }>('POST', '/bookings', {
-          locationId: parkingId,
-          startDatetime,
-          endDatetime,
-          arrivalLotDatetime: startDatetime,
-          outboundFlightNo: form.outboundFlight || undefined,
-          returnFlightNo: form.returnFlight || undefined,
-          passengers: form.passengerCount,
-          luggage: form.luggageCount,
-          carPlate: form.vehiclePlate,
-          carModel: form.vehicleModel || undefined,
-          specialNotes: form.specialNotes || undefined,
-          childSeatRequired: form.childSeatRequired,
-          wheelchairAssistance: form.wheelchairAssistance,
-          addons: addonsList.length > 0 ? addonsList : undefined,
-        });
+        }>('POST', '/bookings', bookingPayload);
 
         if (!res.success || !res.data) {
           throw new Error(res.error?.message || 'Buchung konnte nicht erstellt werden.');
         }
-
-        const { booking, payment } = res.data;
-
-        // Confirm payment (marks booking as pending_approval for admin review)
-        const confirmRes = await apiCall<{
-          booking: Record<string, unknown>;
-          payment: Record<string, unknown>;
-        }>('POST', `/bookings/${booking.id}/confirm-payment`, {
-          paymentId: payment.id,
-        });
-
-        if (!confirmRes.success) {
-          console.error('Payment confirmation failed:', confirmRes.error?.message);
-        }
-
-        router.push(`/booking/confirmation?id=${booking.id}&code=${booking.booking_code}`);
+        bookingId    = res.data.booking.id as string;
+        bookingCode  = res.data.booking.booking_code as string;
+        paymentId    = res.data.payment.id as string;
+        clientSecret = res.data.clientSecret;
       } else {
-        // Guest booking — auto-creates customer account
         const res = await apiCall<{
           booking: Record<string, unknown>;
-          payment: Record<string, unknown>;
+          payment?: Record<string, unknown>;
           clientSecret?: string;
-          guestAccount?: boolean;
         }>('POST', '/bookings/guest', {
-          customerName: form.customerName,
+          customerName:  form.customerName,
           customerEmail: form.customerEmail,
           customerPhone: form.customerPhone || undefined,
-          locationId: parkingId,
-          startDatetime,
-          endDatetime,
-          arrivalLotDatetime: startDatetime,
-          outboundFlightNo: form.outboundFlight || undefined,
-          returnFlightNo: form.returnFlight || undefined,
-          passengers: form.passengerCount,
-          luggage: form.luggageCount,
-          carPlate: form.vehiclePlate,
-          carModel: form.vehicleModel || undefined,
-          specialNotes: form.specialNotes || undefined,
-          childSeatRequired: form.childSeatRequired,
-          wheelchairAssistance: form.wheelchairAssistance,
-          addons: addonsList.length > 0 ? addonsList : undefined,
+          ...bookingPayload,
         });
 
         if (!res.success || !res.data) {
-          // Check if email already exists — prompt login
+          // Email already has an account → save draft and redirect to login
           if (res.error?.code === 'EMAIL_EXISTS') {
-            setError('Ein Konto mit dieser E-Mail existiert bereits. Bitte melden Sie sich an, um die Buchung abzuschliessen.');
-            setLoading(false);
+            sessionStorage.setItem('pendingBookingDraft', JSON.stringify({ form, selectedAddons }));
+            const returnUrl = `/booking?parking=${parkingId}&start=${startDate}&end=${endDate}&arrival=${arrivalTime}`;
+            router.push(`/login?returnUrl=${encodeURIComponent(returnUrl)}`);
             return;
           }
           throw new Error(res.error?.message || 'Buchung konnte nicht erstellt werden.');
         }
-
-        const { booking } = res.data;
-
-        // Payment is auto-confirmed in the guest endpoint
-        router.push(`/booking/confirmation?id=${booking.id}&code=${booking.booking_code}&guest=1`);
+        bookingId    = res.data.booking.id as string;
+        bookingCode  = res.data.booking.booking_code as string;
+        paymentId    = res.data.payment?.id as string;
+        clientSecret = res.data.clientSecret;
+        isGuest      = true;
       }
+
+      // ── Step 2: Confirm Stripe payment (skipped in simulation mode) ─────────
+      const isSimulated = !clientSecret || clientSecret.includes('_sim_');
+      if (!isSimulated) {
+        const result = await cardFormRef.current?.confirmPayment(clientSecret!);
+        if (result?.error) {
+          setPaymentError(result.error);
+          setLoading(false);
+          // Note: booking stays in pending_payment — admin can clean up or user can retry
+          return;
+        }
+      }
+
+      // ── Step 3: Confirm payment in backend ──────────────────────────────────
+      if (paymentId) {
+        try {
+          await apiCall('POST', `/bookings/${bookingId}/confirm-payment`, { paymentId });
+        } catch {
+          // Non-fatal — Stripe webhook will also advance the status
+        }
+      }
+
+      // ── Step 4: Navigate to confirmation ───────────────────────────────────
+      router.push(
+        `/booking/confirmation?id=${bookingId}&code=${bookingCode}${isGuest ? '&guest=1' : ''}`
+      );
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Buchung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.';
+      const message = err instanceof Error
+        ? err.message
+        : 'Buchung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.';
       setError(message);
     } finally {
       setLoading(false);
@@ -300,6 +345,12 @@ export default function BookingPage() {
   };
 
   const totalDays = pricing?.days || calculateDays(startDate, endDate);
+
+  // Pre-compute values used in JSX to avoid nested template literals / ternaries
+  const loginReturnPath = '/booking?parking=' + parkingId + '&start=' + startDate + '&end=' + endDate + '&arrival=' + arrivalTime;
+  const loginHref = '/login?returnUrl=' + encodeURIComponent(loginReturnPath);
+  const priceStr = pricing?.totalPrice == null ? '' : formatCurrency(pricing.totalPrice);
+  const bookingBtnLabel = loading ? 'Buchung wird verarbeitet...' : 'Jetzt buchen – ' + priceStr;
 
   if (pageLoading) {
     return (
@@ -343,12 +394,6 @@ export default function BookingPage() {
                 <h1 className="text-2xl font-bold text-gray-900">Buchung abschliessen</h1>
 
                 {error && <Alert variant="error">{error}</Alert>}
-
-                {/* {!isAuthenticated && (
-                  <Alert variant="info">
-                    Haben Sie bereits ein Konto? <Link href={`/login?redirect=/booking?parking=${parkingId}&start=${startDate}&end=${endDate}&arrival=${arrivalTime}`} className="font-medium underline">Anmelden</Link>, um Ihre Daten automatisch auszufüllen. Andernfalls wird beim Buchen automatisch ein Konto für Sie erstellt.
-                  </Alert>
-                )} */}
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   {/* Contact Information */}
@@ -413,7 +458,7 @@ export default function BookingPage() {
                       <CardTitle>Reisedetails</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label htmlFor="passengerCount" className="block text-sm font-medium text-gray-700 mb-1">
                             Anzahl Passagiere
@@ -444,14 +489,15 @@ export default function BookingPage() {
                             ))}
                           </select>
                         </div>
-                        <Input
+                       
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <Input
                           label="Hinflug-Nr. (optional)"
                           value={form.outboundFlight}
                           onChange={(e) => setForm({ ...form, outboundFlight: e.target.value.toUpperCase() })}
                           placeholder="z.B. LX 123"
                         />
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
                           label="Rückflug-Nr. (optional)"
                           value={form.returnFlight}
@@ -460,28 +506,7 @@ export default function BookingPage() {
                         />
                       </div>
 
-                      {/* Extras */}
-                      {/* <div className="border-t pt-4 space-y-3">
-                        <p className="font-medium text-gray-700 text-sm">Zusatzleistungen</p>
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={form.childSeatRequired}
-                            onChange={(e) => setForm({ ...form, childSeatRequired: e.target.checked })}
-                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                          />
-                          <span className="text-sm text-gray-700">Kindersitz benötigt</span>
-                        </label>
-                        <label className="flex items-center gap-3">
-                          <input
-                            type="checkbox"
-                            checked={form.wheelchairAssistance}
-                            onChange={(e) => setForm({ ...form, wheelchairAssistance: e.target.checked })}
-                            className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                          />
-                          <span className="text-sm text-gray-700">Rollstuhlunterstützung</span>
-                        </label>
-                      </div> */}
+                     
 
                       <div>
                         <label htmlFor="specialNotes" className="block text-sm font-medium text-gray-700 mb-1">
@@ -574,26 +599,35 @@ export default function BookingPage() {
                   )}
 
                   {/* Payment Section */}
-                  <Card>
+                  <Card id="payment-section">
                     <CardHeader>
                       <CardTitle>Zahlung</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <svg className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                          </svg>
-                          <span className="font-medium text-blue-800">Sichere Zahlung</span>
+                    <CardContent className="space-y-4">
+                      {!isAuthenticated && (
+                        <div className="flex items-center justify-between rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm">
+                          <span className="text-gray-600">Bereits ein Konto?</span>
+                          <Link
+                            href={loginHref}
+                            className="font-medium text-primary-600 hover:underline"
+                            onClick={() => {
+                              sessionStorage.setItem('pendingBookingDraft', JSON.stringify({ form, selectedAddons }));
+                            }}
+                          >
+                            Jetzt anmelden
+                          </Link>
                         </div>
-                        <p className="text-sm text-blue-700">
-                          Ihre Zahlung wird sicher verarbeitet. Die Abbuchung erfolgt erst nach Bestätigung der Buchung.
-                        </p>
-                        <div className="flex items-center gap-3 mt-3">
-                          <Badge variant="gray" size="sm">Visa</Badge>
-                          <Badge variant="gray" size="sm">Mastercard</Badge>
-                          <Badge variant="gray" size="sm">TWINT</Badge>
-                        </div>
+                      )}
+
+                      {paymentError && <Alert variant="error">{paymentError}</Alert>}
+
+                      {/* Stripe card fields (always visible; forwardRef exposes confirmPayment) */}
+                      <StripeCardForm ref={cardFormRef} />
+
+                      <div className="flex items-center gap-3 pt-1">
+                        <Badge variant="gray" size="sm">Visa</Badge>
+                        <Badge variant="gray" size="sm">Mastercard</Badge>
+                        <Badge variant="gray" size="sm">TWINT</Badge>
                       </div>
                     </CardContent>
                   </Card>
@@ -615,11 +649,7 @@ export default function BookingPage() {
                   </div>
 
                   <Button type="submit" size="lg" className="w-full" loading={loading}>
-                  {(() => {
-                    if (loading) return 'Buchung wird erstellt...';
-                    const priceText = pricing?.totalPrice == null ? '' : formatCurrency(pricing.totalPrice);
-                    return `Jetzt buchen – ${priceText}`;
-                  })()}
+                    {bookingBtnLabel}
                   </Button>
                 </form>
               </div>

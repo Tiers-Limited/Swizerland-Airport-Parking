@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Card, Button } from '@/components/ui';
 import { Header, Footer } from '@/components/layout';
@@ -8,7 +9,9 @@ import { FadeIn } from '@/components/animations';
 export default function HostOnboardingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header />
+      <Suspense fallback={<div className="h-16" />}>
+        <Header />
+      </Suspense>
 
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <FadeIn>
@@ -61,7 +64,9 @@ export default function HostOnboardingPage() {
         </FadeIn>
       </main>
 
-      <Footer />
+      <Suspense fallback={<div className="h-24" />}>
+        <Footer />
+      </Suspense>
     </div>
   );
 }
