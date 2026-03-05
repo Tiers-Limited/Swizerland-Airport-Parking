@@ -5,6 +5,7 @@ import { apiCall } from '@/lib/api';
 import { Card, Badge, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 import Link from 'next/link';
+import { Icon } from '@/components/ui/Icons';
 
 interface DashboardStats {
   totalUsers: number;
@@ -58,12 +59,12 @@ export default function AdminDashboardPage() {
   }
 
   const statCards = [
-    { label: 'Gesamtbenutzer', value: stats.totalUsers, icon: '👥', color: 'bg-blue-50 text-blue-600', href: '/admin/users' },
-    { label: 'Gesamthosts', value: stats.totalHosts, icon: '🏢', color: 'bg-purple-50 text-purple-600', href: '/admin/hosts' },
-    { label: 'Gesamtinserate', value: stats.totalListings, icon: '📍', color: 'bg-green-50 text-green-600', href: '/admin/listings' },
-    { label: 'Gesamtbuchungen', value: stats.totalBookings, icon: '📋', color: 'bg-orange-50 text-orange-600', href: '/admin/bookings' },
-    { label: 'Gesamtumsatz', value: formatCurrency(stats.totalRevenue), icon: '💰', color: 'bg-emerald-50 text-emerald-600', href: '/admin/payments' },
-    { label: 'Aktive Buchungen', value: stats.activeBookings, icon: '🚗', color: 'bg-cyan-50 text-cyan-600', href: '/admin/bookings' },
+    { label: 'Gesamtbenutzer', value: stats.totalUsers, icon: <Icon name="Users" className="h-6 w-6" />, color: 'bg-blue-50 text-blue-600', href: '/admin/users' },
+    { label: 'Gesamthosts', value: stats.totalHosts, icon: <Icon name="Building" className="h-6 w-6" />, color: 'bg-purple-50 text-purple-600', href: '/admin/hosts' },
+    { label: 'Gesamtinserate', value: stats.totalListings, icon: <Icon name="MapPin" className="h-6 w-6" />, color: 'bg-green-50 text-green-600', href: '/admin/listings' },
+    { label: 'Gesamtbuchungen', value: stats.totalBookings, icon: <Icon name="Clipboard" className="h-6 w-6" />, color: 'bg-orange-50 text-orange-600', href: '/admin/bookings' },
+    { label: 'Gesamtumsatz', value: formatCurrency(stats.totalRevenue), icon: <Icon name="DollarSign" className="h-6 w-6" />, color: 'bg-emerald-50 text-emerald-600', href: '/admin/payments' },
+    { label: 'Aktive Buchungen', value: stats.activeBookings, icon: <Icon name="Car" className="h-6 w-6" />, color: 'bg-cyan-50 text-cyan-600', href: '/admin/bookings' },
   ];
 
   const alertCards = [

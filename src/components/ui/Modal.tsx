@@ -3,6 +3,7 @@
 import { Fragment, ReactNode } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { cn } from '@/lib/utils';
+import { Icon } from './Icons';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -71,14 +72,7 @@ export function Modal({
                   onClick={onClose}
                   className="absolute right-4 top-4 p-1 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                 >
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
+                  <Icon name="X" className="h-5 w-5" />
                 </button>
 
                 {title && (

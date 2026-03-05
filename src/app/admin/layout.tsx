@@ -164,7 +164,7 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
                 )}
               >
                 {item.icon}
-                <span>{item.label}</span>
+                <span >{item.label}</span>
               </Link>
             ))}
           </nav>
@@ -219,10 +219,14 @@ export default function AdminLayout({ children }: Readonly<{ children: React.Rea
               <button
                 type="button"
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-sm">
                   {getInitials(user?.name)}
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-sm font-medium text-gray-900 leading-tight" >{user?.name}</p>
+                  <p className="text-xs text-gray-500 leading-tight" >{user?.email}</p>
                 </div>
               </button>
 

@@ -56,12 +56,10 @@ export default function GoogleTranslate({ variant = 'default', className }: Goog
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const langParam = searchParams.get('lang');
-  const [currentLang, setCurrentLang] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      return langParam === 'en' ? 'en' : (localStorage.getItem('gTranslateLang') || 'de');
-    }
-    return langParam === 'en' ? 'en' : 'de';
-  });
+  // Initialize deterministically for server render; update from localStorage on mount
+  const [currentLang, setCurrentLang] = useState<string>(
+    () => (langParam === 'en' ? 'en' : 'de')
+  );
   const [switching, setSwitching] = useState(false);
   const initializedRef = useRef(false);
 
@@ -73,6 +71,7 @@ export default function GoogleTranslate({ variant = 'default', className }: Goog
     // If script already in DOM, skip
     if (document.getElementById('google-translate-script')) return;
 
+    const containerId = 'google_translate_element_root';
     window.googleTranslateElementInit = () => {
       new window.google.translate.TranslateElement(
         {
@@ -80,7 +79,7 @@ export default function GoogleTranslate({ variant = 'default', className }: Goog
           includedLanguages: 'de,en',
           autoDisplay: false,
         },
-        'google_translate_element'
+        containerId
       );
     };
 
@@ -105,6 +104,27 @@ export default function GoogleTranslate({ variant = 'default', className }: Goog
       `;
       document.head.appendChild(style);
     }
+  }, []);
+
+  // We only ever need a single container appended to <body>.  Keeping it
+  // around across mounts avoids race conditions with the Google script
+  // manipulating / removing it while React is unmounting.
+  //
+  // The module-level variable ensures the container is created once and
+  // reused for every <GoogleTranslate> instance.
+
+  useEffect(() => {
+    const containerId = 'google_translate_element_root';
+    let container = document.getElementById(containerId) as HTMLDivElement | null;
+    if (!container) {
+      container = document.createElement('div');
+      container.id = containerId;
+      container.style.display = 'none';
+      document.body.appendChild(container);
+    }
+
+    // no cleanup: keeping the element in the DOM prevents the Google script
+    // from ever trying to remove a node that React already removed.
   }, []);
 
   // On mount, apply saved language after Google Translate loads
@@ -167,6 +187,7 @@ export default function GoogleTranslate({ variant = 'default', className }: Goog
     <button
       key={lang.code}
       type="button"
+      
       disabled={switching && lang.code !== currentLang}
       onClick={() => changeLanguage(lang.code)}
       className={cn(
@@ -191,7 +212,7 @@ export default function GoogleTranslate({ variant = 'default', className }: Goog
 
   return (
     <>
-      <div id="google_translate_element" style={{ display: 'none' }} />
+      {/* Google Translate mounts into a container appended to document.body (not inside React tree) */}
       <div className={cn(
         variant === 'compact'
           ? 'flex items-center gap-1 rounded-lg bg-gray-100 p-0.5'

@@ -7,6 +7,7 @@ import { Card, CardContent, Button, Badge, Spinner } from '@/components/ui';
 import { Header, Footer } from '@/components/layout';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
+import { Icon } from '@/components/ui/Icons';
 
 interface BookingAddonLine {
   addon_id: string;
@@ -135,13 +136,9 @@ export default function BookingConfirmationPage() {
               booking.status === 'confirmed' ? 'bg-green-100' : 'bg-blue-100'
             }`}>
               {booking.status === 'confirmed' ? (
-                <svg className="h-10 w-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+                <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
               ) : (
-                <svg className="h-10 w-10 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                <Icon name="Clock" className="h-10 w-10 text-blue-600" />
               )}
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

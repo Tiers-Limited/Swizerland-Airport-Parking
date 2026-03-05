@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { Icon } from './Icons';
 
 interface ImageUploadProps {
   images: string[];
@@ -113,9 +114,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly
                     className="p-1.5 bg-white/90 rounded-lg hover:bg-white transition-colors"
                     title="Move left"
                   >
-                    <svg className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <Icon name="ChevronLeft" className="h-4 w-4 text-gray-700" />
                   </button>
                 )}
                 {index < images.length - 1 && (
@@ -125,9 +124,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly
                     className="p-1.5 bg-white/90 rounded-lg hover:bg-white transition-colors"
                     title="Move right"
                   >
-                    <svg className="h-4 w-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    <Icon name="ChevronRight" className="h-4 w-4 text-gray-700" />
                   </button>
                 )}
                 <button
@@ -136,9 +133,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly
                   className="p-1.5 bg-red-500/90 rounded-lg hover:bg-red-600 transition-colors"
                   title="Remove"
                 >
-                  <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
+                  <Icon name="X" className="h-4 w-4 text-white" />
                 </button>
               </div>
             </div>

@@ -73,6 +73,12 @@ export default function AdminListingsPage() {
   const formatCurrency = (val: string | number) =>
     new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(Number(val || 0));
 
+  const amenityLabels: Record<string, string> = {
+    covered: 'Überdacht', evCharging: 'E-Ladestation', security247: '24/7 Sicherheit',
+    cctv: 'Videoüberwachung', fenced: 'Eingezäunt', lit: 'Beleuchtet',
+    accessible: 'Barrierefrei', carWash: 'Autowaschanlage', valetParking: 'Valet Parking',
+  };
+
   return (
     <FadeIn>
       <div className="space-y-6">
@@ -194,7 +200,7 @@ export default function AdminListingsPage() {
         )}
 
         {/* Listing Detail Modal */}
-        <Modal isOpen={!!selectedListing} onClose={() => setSelectedListing(null)} title={selectedListing?.name || 'Inserat Details'}>
+        <Modal isOpen={!!selectedListing} onClose={() => setSelectedListing(null)} title={selectedListing?.name || 'Inserat Details'} size="full">
           {selectedListing && (
             <div className="space-y-6 max-h-[70vh] overflow-y-auto">
               {/* Images */}
@@ -209,43 +215,43 @@ export default function AdminListingsPage() {
               {/* Basic Info */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Adresse</p>
+                  <p className="text-gray-500" >Adresse</p>
                   <p className="font-medium text-gray-900">{selectedListing.address}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Status</p>
+                  <p className="text-gray-500" >Status</p>
                   <Badge variant={statusColors[selectedListing.status] || 'gray'}>{selectedListing.status}</Badge>
                 </div>
                 <div>
-                  <p className="text-gray-500">Flughafen</p>
+                  <p className="text-gray-500" >Flughafen</p>
                   <p className="font-medium text-gray-900">{selectedListing.airport_code || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Entfernung zum Flughafen</p>
+                  <p className="text-gray-500" >Entfernung zum Flughafen</p>
                   <p className="font-medium text-gray-900">{selectedListing.distance_to_airport_min ? `${selectedListing.distance_to_airport_min} Min.` : '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Kapazität</p>
+                  <p className="text-gray-500" >Kapazität</p>
                   <p className="font-medium text-gray-900">{selectedListing.capacity_total} Stellplätze</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Basispreis / Tag</p>
+                  <p className="text-gray-500" >Basispreis / Tag</p>
                   <p className="font-medium text-gray-900">{formatCurrency(selectedListing.base_price_per_day)}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Shuttle-Modus</p>
+                  <p className="text-gray-500" >Shuttle-Modus</p>
                   <p className="font-medium text-gray-900 capitalize">{selectedListing.shuttle_mode || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Stornierungsrichtlinie</p>
+                  <p className="text-gray-500" >Stornierungsrichtlinie</p>
                   <p className="font-medium text-gray-900 capitalize">{selectedListing.cancellation_policy || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Telefon</p>
+                  <p className="text-gray-500" >Telefon</p>
                   <p className="font-medium text-gray-900">{selectedListing.phone_number || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Erstellt am</p>
+                  <p className="text-gray-500" >Erstellt am</p>
                   <p className="font-medium text-gray-900">{new Date(selectedListing.created_at).toLocaleDateString('de-CH')}</p>
                 </div>
               </div>
@@ -253,25 +259,25 @@ export default function AdminListingsPage() {
               {/* Description */}
               {selectedListing.description && (
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Beschreibung</p>
+                  <p className="text-sm text-gray-500 mb-1" >Beschreibung</p>
                   <p className="text-sm text-gray-700">{selectedListing.description}</p>
                 </div>
               )}
 
               {/* Host Info */}
               <div className="bg-gray-50 rounded-xl p-4">
-                <p className="text-sm font-semibold text-gray-700 mb-2">Host Informationen</p>
+                <p className="text-sm font-semibold text-gray-700 mb-2" >Host Informationen</p>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-gray-500">Name</p>
+                    <p className="text-gray-500" >Name</p>
                     <p className="font-medium text-gray-900">{selectedListing.host_name}</p>
                   </div>
                   <div>
-                    <p className="text-gray-500">Firma</p>
+                    <p className="text-gray-500" >Firma</p>
                     <p className="font-medium text-gray-900">{selectedListing.host_company || '—'}</p>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-gray-500">E-Mail</p>
+                    <p className="text-gray-500" >E-Mail</p>
                     <p className="font-medium text-gray-900">{selectedListing.host_email}</p>
                   </div>
                 </div>
@@ -280,16 +286,17 @@ export default function AdminListingsPage() {
               {/* Amenities */}
               {selectedListing.amenities && (
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Ausstattung</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2" >Ausstattung</p>
                   <div className="flex flex-wrap gap-2">
                     {Object.entries(selectedListing.amenities).map(([key, value]) => (
                       <span
                         key={key}
+                        
                         className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
                           value ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-400 line-through'
                         }`}
                       >
-                        {value ? '✓' : '✗'} {key.replace(/([A-Z])/g, ' $1').replace(/^\w/, c => c.toUpperCase())}
+                        {value ? '✓' : '✗'} {amenityLabels[key] || key}
                       </span>
                     ))}
                   </div>
@@ -299,7 +306,7 @@ export default function AdminListingsPage() {
               {/* Pricing Tiers */}
               {selectedListing.pricing_tiers && selectedListing.pricing_tiers.length > 0 && (
                 <div>
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Preisstaffeln</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2" >Preisstaffeln</p>
                   <div className="space-y-2">
                     {selectedListing.pricing_tiers.map((tier, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-blue-50 rounded-lg text-sm">

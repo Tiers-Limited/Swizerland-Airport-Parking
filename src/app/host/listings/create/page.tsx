@@ -127,33 +127,6 @@ export default function CreateListingPage() {
                 required
               />
             </div>
-            <Input
-              label="Stadt"
-              value={form.city}
-              onChange={(e) => updateField('city', e.target.value)}
-              required
-            />
-            <Input
-              label="Postleitzahl"
-              value={form.postalCode}
-              onChange={(e) => updateField('postalCode', e.target.value)}
-              placeholder="8000"
-              required
-            />
-            <Input
-              label="Breitengrad"
-              type="number"
-              step="any"
-              value={form.latitude}
-              onChange={(e) => updateField('latitude', parseFloat(e.target.value))}
-            />
-            <Input
-              label="Längengrad"
-              type="number"
-              step="any"
-              value={form.longitude}
-              onChange={(e) => updateField('longitude', parseFloat(e.target.value))}
-            />
             <div className="md:col-span-2">
               <Input
                 label="Telefonnummer (für Kunden nach Buchung sichtbar)"

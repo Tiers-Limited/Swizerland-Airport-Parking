@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '@/lib/api';
-import { Card, Badge, Button, Input, Select, Spinner, Alert } from '@/components/ui';
+import { Card, Badge, Button, Input, Select, Spinner, Alert, Modal } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 
 interface BookingRow {
@@ -26,6 +26,7 @@ export default function AdminBookingsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [message, setMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState<{ type: 'refund' | 'approve'; id: string } | null>(null);
 
   const loadBookings = useCallback(async () => {
     setLoading(true);
@@ -44,7 +45,6 @@ export default function AdminBookingsPage() {
   useEffect(() => { loadBookings(); }, [loadBookings]);
 
   async function handleRefund(id: string) {
-    if (!confirm('Möchten Sie diese Buchung wirklich erstatten?')) return;
     const res = await apiCall('PATCH', `/admin/bookings/${id}/refund`);
     if (res.success) {
       setMessage('Erstattung erfolgreich verarbeitet');
@@ -53,7 +53,6 @@ export default function AdminBookingsPage() {
   }
 
   async function handleApprove(id: string) {
-    if (!confirm('Möchten Sie diese Buchung genehmigen und bestätigen?')) return;
     const res = await apiCall('POST', `/admin/bookings/${id}/approve`);
     if (res.success) {
       setMessage('Buchung genehmigt und bestätigt.');
@@ -61,6 +60,13 @@ export default function AdminBookingsPage() {
     } else {
       setMessage('Fehler: ' + (res.error?.message || 'Genehmigung fehlgeschlagen'));
     }
+  }
+
+  function handleConfirmAction() {
+    if (!confirmAction) return;
+    if (confirmAction.type === 'refund') handleRefund(confirmAction.id);
+    else handleApprove(confirmAction.id);
+    setConfirmAction(null);
   }
 
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
@@ -165,12 +171,12 @@ export default function AdminBookingsPage() {
                       </td>
                       <td className="py-3 px-4 text-right space-x-2">
                         {b.status === 'pending_approval' && (
-                          <Button size="sm" variant="primary" onClick={() => handleApprove(b.id)}>
+                          <Button size="sm" variant="primary" onClick={() => setConfirmAction({ type: 'approve', id: b.id })}>
                             Genehmigen
                           </Button>
                         )}
                         {(b.status === 'confirmed' || b.status === 'active') && (
-                          <Button size="sm" variant="danger" onClick={() => handleRefund(b.id)}>
+                          <Button size="sm" variant="danger" onClick={() => setConfirmAction({ type: 'refund', id: b.id })}>
                             Erstatten
                           </Button>
                         )}
@@ -199,6 +205,23 @@ export default function AdminBookingsPage() {
             )}
           </Card>
         )}
+        
+        {/* Confirmation Modal */}
+        <Modal isOpen={!!confirmAction} onClose={() => setConfirmAction(null)} title={confirmAction?.type === 'refund' ? 'Buchung erstatten' : 'Buchung genehmigen'} size="sm">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              {confirmAction?.type === 'refund'
+                ? 'Möchten Sie diese Buchung wirklich erstatten?'
+                : 'Möchten Sie diese Buchung genehmigen und bestätigen?'}
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setConfirmAction(null)}>Abbrechen</Button>
+              <Button variant={confirmAction?.type === 'refund' ? 'danger' : 'primary'} onClick={handleConfirmAction}>
+                {confirmAction?.type === 'refund' ? 'Erstatten' : 'Genehmigen'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </FadeIn>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '@/lib/api';
-import { Card, Button, Input, Alert, Spinner, Toggle } from '@/components/ui';
+import { Card, Button, Input, Alert, Spinner, Toggle, Modal } from '@/components/ui';
 import type { LocationAddon } from '@/types';
 
 interface AddonsManagerProps {
@@ -36,6 +36,7 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AddonFormData>(emptyForm);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const loadAddons = useCallback(async () => {
     setLoading(true);
@@ -109,8 +110,6 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
   };
 
   const handleDelete = async (addonId: string) => {
-    if (!confirm('Möchten Sie diese Zusatzleistung wirklich löschen?')) return;
-
     const res = await apiCall('DELETE', `/listings/addons/${addonId}`);
     if (res.success) {
       setSuccess('Zusatzleistung gelöscht');
@@ -118,6 +117,7 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
     } else {
       setError(res.error?.message || 'Fehler beim Löschen');
     }
+    setDeleteTarget(null);
   };
 
   const handleToggle = async (addon: LocationAddon) => {
@@ -263,7 +263,7 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
                 <Button variant="secondary" size="sm" onClick={() => openEdit(addon)}>
                   Bearbeiten
                 </Button>
-                <Button variant="secondary" size="sm" onClick={() => handleDelete(addon.id)} className="text-red-600 hover:text-red-700">
+                <Button variant="secondary" size="sm" onClick={() => setDeleteTarget(addon.id)} className="text-red-600 hover:text-red-700">
                   Löschen
                 </Button>
               </div>
@@ -271,6 +271,19 @@ export default function AddonsManager({ locationId }: AddonsManagerProps) {
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal isOpen={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Zusatzleistung löschen" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Möchten Sie diese Zusatzleistung wirklich löschen?
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Abbrechen</Button>
+            <Button variant="danger" onClick={() => deleteTarget && handleDelete(deleteTarget)}>Löschen</Button>
+          </div>
+        </div>
+      </Modal>
     </Card>
   );
 }

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button, Input, Card, Alert, Logo } from '@/components/ui';
 import { getDefaultRedirectPath } from '@/lib/rbac';
+import { Icon } from '@/components/ui/Icons';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -98,11 +99,7 @@ export default function LoginPage() {
                 placeholder="you@example.com"
                 autoComplete="email"
                 required
-                leftIcon={
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                }
+                leftIcon={<Icon name="Mail" className="h-5 w-5" />}
               />
 
               <div>
@@ -115,11 +112,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
-                  leftIcon={
-                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  }
+                  leftIcon={<Icon name="Lock" className="h-5 w-5" />}
                 />
                 <div className="text-right mt-2">
                   <Link href="/forgot-password" className="text-sm text-baby-blue-600 hover:text-baby-blue-700">
@@ -134,7 +127,7 @@ export default function LoginPage() {
                 size="lg"
                 isLoading={isLoading}
               >
-                Anmelden
+                <span >Anmelden</span>
               </Button>
             </form>
 
@@ -151,7 +144,7 @@ export default function LoginPage() {
               <div className="mt-6">
                 <Link href="/register">
                   <Button variant="secondary" className="w-full" size="lg">
-                    Registrieren
+                    <span >Registrieren</span>
                   </Button>
                 </Link>
               </div>

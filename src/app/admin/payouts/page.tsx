@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiCall } from '@/lib/api';
-import { Card, Badge, Select, Spinner, Button, Alert } from '@/components/ui';
+import { Card, Badge, Select, Spinner, Button, Alert, Modal } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 
 interface PendingBooking {
@@ -62,6 +62,7 @@ export default function AdminPayoutsPage() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [failTarget, setFailTarget] = useState<string | null>(null);
 
   const formatCurrency = (val: number, currency = 'CHF') =>
     new Intl.NumberFormat('de-CH', { style: 'currency', currency }).format(val);
@@ -158,7 +159,6 @@ export default function AdminPayoutsPage() {
   };
 
   const handleFailPayout = async (payoutId: string) => {
-    if (!globalThis.confirm('Sind Sie sicher? Dies macht die Auszahlung rückgängig.')) return;
     setProcessing(payoutId);
     const res = await apiCall('POST', `/payouts/${payoutId}/fail`, { reason: 'Manuell abgelehnt' });
     if (res.success) {
@@ -168,6 +168,7 @@ export default function AdminPayoutsPage() {
       setError(res.error?.message || 'Fehler.');
     }
     setProcessing(null);
+    setFailTarget(null);
   };
 
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'gray' | 'primary'> = {
@@ -364,7 +365,7 @@ export default function AdminPayoutsPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="text-red-600"
-                                  onClick={() => handleFailPayout(p.id)}
+                                  onClick={() => setFailTarget(p.id)}
                                   disabled={!!processing}
                                 >
                                   Ablehnen
@@ -387,6 +388,19 @@ export default function AdminPayoutsPage() {
           </>
         )}
       </div>
+
+      {/* Fail Payout Confirmation Modal */}
+      <Modal isOpen={!!failTarget} onClose={() => setFailTarget(null)} title="Auszahlung ablehnen" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Sind Sie sicher? Dies macht die Auszahlung rückgängig.
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setFailTarget(null)}>Abbrechen</Button>
+            <Button variant="danger" onClick={() => failTarget && handleFailPayout(failTarget)}>Ablehnen</Button>
+          </div>
+        </div>
+      </Modal>
     </FadeIn>
   );
 }

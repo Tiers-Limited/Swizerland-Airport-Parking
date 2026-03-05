@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Card, Button, Badge, Input, Spinner } from '@/components/ui';
+import { Card, Button, Badge, Input, Spinner, Modal } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
 import type { BookingStatus } from '@/types';
@@ -43,6 +43,7 @@ export default function BookingsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -69,9 +70,9 @@ export default function BookingsPage() {
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
   const handleCancel = async (id: string) => {
-    if (!globalThis.confirm('Sind Sie sicher, dass Sie diese Buchung stornieren möchten?')) return;
     const res = await apiCall('POST', `/bookings/${id}/cancel`);
     if (res.success) fetchBookings();
+    setCancelTarget(null);
   };
 
   return (
@@ -173,7 +174,7 @@ export default function BookingsPage() {
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700"
-                        onClick={() => handleCancel(booking.id)}
+                        onClick={() => setCancelTarget(booking.id)}
                       >
                         Stornieren
                       </Button>
@@ -185,6 +186,19 @@ export default function BookingsPage() {
           ))}
         </div>
       )}
+
+      {/* Cancel Confirmation Modal */}
+      <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Buchung stornieren" size="sm">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Sind Sie sicher, dass Sie diese Buchung stornieren möchten?
+          </p>
+          <div className="flex justify-end gap-3">
+            <Button variant="secondary" onClick={() => setCancelTarget(null)}>Abbrechen</Button>
+            <Button variant="danger" onClick={() => cancelTarget && handleCancel(cancelTarget)}>Stornieren</Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

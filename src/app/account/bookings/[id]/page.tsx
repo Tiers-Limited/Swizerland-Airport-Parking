@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { apiCall } from '@/lib/api';
-import { Card, Badge, Spinner, Button } from '@/components/ui';
+import { Card, Badge, Spinner, Button, Modal } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 import Link from 'next/link';
 
@@ -51,6 +51,7 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     async function loadBooking() {
@@ -63,13 +64,13 @@ export default function BookingDetailPage() {
   }, [bookingId, refreshKey]);
 
   const handleCancel = async () => {
-    if (!confirm('Möchten Sie diese Buchung wirklich stornieren?')) return;
     setCancelling(true);
     const res = await apiCall('POST', `/bookings/${bookingId}/cancel`, {});
     if (res.success) {
       setRefreshKey(k => k + 1);
     }
     setCancelling(false);
+    setShowCancelModal(false);
   };
 
   const formatCurrency = (val: number, currency = 'CHF') =>
@@ -261,11 +262,24 @@ export default function BookingDetailPage() {
         {/* Actions */}
         {canCancel && (
           <div className="flex justify-end">
-            <Button variant="ghost" onClick={handleCancel} loading={cancelling}>
+            <Button variant="ghost" onClick={() => setShowCancelModal(true)} loading={cancelling}>
               Buchung stornieren
             </Button>
           </div>
         )}
+
+        {/* Cancel Confirmation Modal */}
+        <Modal isOpen={showCancelModal} onClose={() => setShowCancelModal(false)} title="Buchung stornieren" size="sm">
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              Möchten Sie diese Buchung wirklich stornieren?
+            </p>
+            <div className="flex justify-end gap-3">
+              <Button variant="secondary" onClick={() => setShowCancelModal(false)}>Abbrechen</Button>
+              <Button variant="danger" onClick={handleCancel} loading={cancelling}>Stornieren</Button>
+            </div>
+          </div>
+        </Modal>
       </div>
     </FadeIn>
   );

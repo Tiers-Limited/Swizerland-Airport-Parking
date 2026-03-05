@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo, Button, GoogleTranslate } from '@/components/ui';
 import { cn, getInitials, getFirstName } from '@/lib/utils';
+import { Icon } from '../ui/Icons';
 
 interface HeaderProps {
   transparent?: boolean;
@@ -55,6 +56,7 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
                     ? 'text-baby-blue-600'
                     : 'text-gray-600 hover:text-gray-900'
                 )}
+                
               >
                 {item.name}
               </Link>
@@ -77,9 +79,7 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
                   <span className="text-sm font-medium text-gray-700">
                     {getFirstName(user?.name)}
                   </span>
-                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <Icon name="ChevronDown" className="h-4 w-4 text-gray-400" />
                 </button>
 
                 {isProfileMenuOpen && (
@@ -156,11 +156,11 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
               <>
                 <Link href="/login">
                   <Button variant="ghost" size="sm">
-                    Anmelden
+                    <span >Anmelden</span>
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">Jetzt starten</Button>
+                  <Button size="sm"><span >Jetzt starten</span></Button>
                 </Link>
               </>
             )}
@@ -173,13 +173,9 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             {isMobileMenuOpen ? (
-              <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <Icon name="X" className="h-6 w-6 text-gray-600" />
             ) : (
-              <svg className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
+              <Icon name="Menu" className="h-6 w-6 text-gray-600" />
             )}
           </button>
         </div>
@@ -199,6 +195,7 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
                       ? 'bg-baby-blue-50 text-baby-blue-600'
                       : 'text-gray-600 hover:bg-gray-50'
                   )}
+                  
                 >
                   {item.name}
                 </Link>
@@ -264,10 +261,10 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
                     <GoogleTranslate variant="compact" />
                   </div>
                   <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="secondary" className="w-full">Anmelden</Button>
+                    <Button variant="secondary" className="w-full"><span >Anmelden</span></Button>
                   </Link>
                   <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button className="w-full">Jetzt starten</Button>
+                    <Button className="w-full"><span >Jetzt starten</span></Button>
                   </Link>
                 </>
               )}

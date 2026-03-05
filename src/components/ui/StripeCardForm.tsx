@@ -14,6 +14,7 @@
  */
 
 import { forwardRef, useImperativeHandle } from 'react';
+import { Icon } from './Icons';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 
@@ -105,10 +106,7 @@ export const StripeCardForm = forwardRef<CardFormRef>(function StripeCardForm(_,
         <p className="text-xs font-semibold text-gray-500 tracking-wide">KARTENDATEN</p>
         <InnerCardForm ref={ref} />
         <div className="flex items-center gap-2 text-xs text-gray-400">
-          <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+          <Icon name="Lock" className="h-4 w-4 shrink-0" />
           Sichere Zahlung via Stripe � 256-Bit SSL-Verschl�sselung
         </div>
       </div>
