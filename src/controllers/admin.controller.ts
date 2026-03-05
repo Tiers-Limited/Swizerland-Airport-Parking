@@ -149,7 +149,7 @@ export const adminController = {
 
   refundBooking: asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id as string;
-    const { amount, reason } = req.body;
+    const { amount, reason } = req.body || {};
     const result = await adminService.refundBooking(id, amount, reason);
 
     await auditService.log({
