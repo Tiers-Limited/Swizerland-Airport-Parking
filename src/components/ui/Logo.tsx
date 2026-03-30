@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 export interface LogoProps {
@@ -14,51 +15,47 @@ export default function Logo({
   linkTo = '/', 
   showText = true 
 }: LogoProps) {
+
   const sizes = {
-    sm: { icon: 'h-6 w-6', text: 'text-lg' },
-    md: { icon: 'h-8 w-8', text: 'text-xl' },
-    lg: { icon: 'h-10 w-10', text: 'text-2xl' },
+    sm: { width: 120, height: 40, text: 'text-lg' },
+    md: { width: 180, height: 60, text: 'text-xl' },
+    lg: { width: 70, height: 50, text: 'text-xl' },
   };
 
   const LogoContent = () => (
-    <div className={cn('flex items-center gap-2', className)}>
-      {/* Parking icon with airplane */}
-      <div className={cn('relative', sizes[size].icon)}>
-        <svg
-          viewBox="0 0 40 40"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full"
-        >
-          {/* Background circle */}
-          <circle cx="20" cy="20" r="18" fill="#3B9AFF" />
-          {/* P letter */}
-          <path
-            d="M14 12h7c3.5 0 6 2.5 6 6s-2.5 6-6 6h-4v6h-3V12zm3 9h4c1.5 0 3-1 3-3s-1.5-3-3-3h-4v6z"
-            fill="white"
-          />
-          {/* Small airplane */}
-          <path
-            d="M28 8l3 2-8 4-2-1 7-5z"
-            fill="white"
-            opacity="0.8"
-          />
-        </svg>
+    <div className={cn('flex items-center gap-0', className)}>
+      
+      {/* Logo Image */}
+      <div className="relative">
+        <Image
+          src="https://res.cloudinary.com/dge3lt4u6/image/upload/v1772734683/Screenshot_2026-03-05_201508-removebg-preview_mhdcyt.png"
+          alt="elvario logo"
+          width={sizes[size].width}
+          height={sizes[size].height}
+          className="object-contain"
+          priority
+        />
       </div>
+
+      {/* Logo Text */}
       {showText && (
-        <div className="flex flex-col leading-none">
-          <span className={cn('font-bold text-gray-900', sizes[size].text)}>
-            ZurichPark
-          </span>
-          <span className="text-xs text-gray-500">Airport Parking</span>
-        </div>
+        <span
+          className={cn("font-semibold text-black lowercase", sizes[size].text)}
+          style={{ textTransform: 'none' }}
+        >
+          Elvario
+        </span>
       )}
+
     </div>
   );
 
   if (linkTo) {
     return (
-      <Link href={linkTo} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-baby-blue-500 rounded-lg">
+      <Link
+        href={linkTo}
+        className="focus:outline-none focus-visible:ring-2 focus-visible:ring-baby-blue-500 rounded-lg"
+      >
         <LogoContent />
       </Link>
     );

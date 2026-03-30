@@ -42,7 +42,7 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <Logo size="md" />
+          <Logo size="lg" />
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">

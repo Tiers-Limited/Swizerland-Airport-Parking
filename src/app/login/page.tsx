@@ -70,7 +70,7 @@ export default function LoginPage() {
       {/* Header */}
       <header className="py-6 px-4">
         <div className="max-w-7xl mx-auto">
-          <Logo />
+          <Logo size='lg'/>
         </div>
       </header>
 
