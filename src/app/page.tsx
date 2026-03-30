@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import DatePicker from 'react-datepicker';
@@ -172,6 +173,43 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ===== BECOME A HOST ===== */}
+      <section className="py-14 md:py-20 bg-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 text-center mb-10">Parking partner</h2>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            <div className="bg-gray-200 rounded-sm p-8 md:p-10">
+              <h3 className="text-3xl font-bold text-gray-900 mb-4">Why become a parking partner?</h3>
+              <p className="text-gray-700 leading-relaxed mb-8">
+                Reach more customers through our marketplace and manage your listings with one host portal.
+                Register as a host, and your account will stay under admin approval until verified.
+                Once approved, you will get full access to the host portal.
+              </p>
+              <Link href="/host-registration">
+                <Button size="lg">Become a host</Button>
+              </Link>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {[
+                'Active on 140 airports with 700+ parking partners',
+                'Always-on campaigns for generating relevant visitors',
+                'Well-known brand in the airport parking industry',
+                'High conversion rates through continuous A/B testing',
+                'Multilingual customer service available',
+                'Additional insights and data to perform even better',
+              ].map((item) => (
+                <div key={item} className="bg-white rounded-sm p-5 border border-gray-200 flex gap-3">
+                  <span className="text-primary-500 text-xl leading-none">✦</span>
+                  <p className="text-gray-800 text-sm leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

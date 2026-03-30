@@ -29,15 +29,15 @@ export default function HostOnboardingPage() {
 
             <Card className="p-8 text-center">
               <div className="text-5xl mb-4">📋</div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Registrierung nur über den Administrator</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">Host-Selbstregistrierung</h2>
               <p className="text-gray-600 mb-6">
-                Host-Konten werden ausschliesslich durch den Administrator erstellt.
-                Bitte kontaktieren Sie uns, um ein Host-Konto zu erhalten.
+                Sie koennen sich jetzt selbst als Host registrieren.
+                Nach der Registrierung prueft der Administrator Ihre Anfrage.
               </p>
 
               <div className="space-y-3">
-                <Link href="/contact">
-                  <Button className="w-full">Kontakt aufnehmen</Button>
+                <Link href="/host-registration">
+                  <Button className="w-full">Zur Host-Registrierung</Button>
                 </Link>
                 <Link href="/">
                   <Button variant="secondary" className="w-full">Zurück zur Startseite</Button>

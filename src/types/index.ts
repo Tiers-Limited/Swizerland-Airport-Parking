@@ -223,6 +223,7 @@ export interface HostProfile {
   payout_account_id?: string;
   verification_status: VerificationStatus;
   documents_verified: boolean;
+  rejection_reason?: string;
   commission_rate: number;
   service_fee: number;
   tax_id?: string;
