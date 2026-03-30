@@ -91,15 +91,15 @@ export const adminController = {
 
   updateHostVerification: asyncHandler(async (req: Request, res: Response) => {
     const id = req.params.id as string;
-    const { status, documentsVerified } = req.body;
-    const updated = await adminService.updateHostVerification(id, status, documentsVerified);
+    const { status, documentsVerified, rejectionReason } = req.body;
+    const updated = await adminService.updateHostVerification(id, status, documentsVerified, rejectionReason);
 
     await auditService.log({
       userId: req.user?.userId,
       action: 'admin.host.verify',
       resource: 'hosts',
       resourceId: id,
-      newValues: { status, documentsVerified },
+      newValues: { status, documentsVerified, rejectionReason },
       ipAddress: getIp(req),
     });
 

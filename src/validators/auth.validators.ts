@@ -72,7 +72,7 @@ export const updateUserRoleSchema = z.object({
 
 // Host Registration Schema
 export const registerHostSchema = z.object({
-  companyName: z.string().max(255).optional(),
+  companyName: z.string().min(2, 'Company name is required').max(255),
   taxId: z.string().max(50).optional(),
   address: z.string().max(500).optional(),
   website: z.url().max(255).optional().or(z.literal('')),

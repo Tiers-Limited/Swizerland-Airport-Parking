@@ -1,5 +1,5 @@
 import { db } from '../database';
-import { userService } from './user.service';
+import { emailService } from './email.service';
 import { Host, UserRole, VerificationStatus } from '../types';
 import { NotFoundError, ConflictError } from '../utils/errors';
 
@@ -29,11 +29,23 @@ export class HostService {
         website: data.website,
         verification_status: VerificationStatus.PENDING,
         documents_verified: false,
+        rejection_reason: null,
       })
       .returning('*');
 
-    // Update user role to host
-    await userService.updateRole(userId, UserRole.HOST);
+    // Keep user role as customer until admin approval.
+    await db('users')
+      .where('id', userId)
+      .whereNot('role', UserRole.ADMIN)
+      .update({ role: UserRole.CUSTOMER, updated_at: new Date() });
+
+    const user = await db('users').where('id', userId).select('email', 'name').first();
+    if (user?.email) {
+      await emailService.sendHostRegistrationPendingEmail({
+        email: user.email,
+        firstName: user.name?.split(' ')[0] || user.name || 'Host',
+      });
+    }
 
     return host;
   }

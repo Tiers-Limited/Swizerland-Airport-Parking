@@ -31,6 +31,18 @@ export interface HostCredentialsEmailData {
   tempPassword: string;
 }
 
+export interface HostRegistrationPendingEmailData {
+  email: string;
+  firstName: string;
+}
+
+export interface HostVerificationStatusEmailData {
+  email: string;
+  firstName: string;
+  status: 'approved' | 'rejected';
+  rejectionReason?: string;
+}
+
 export interface BookingConfirmationEmailData {
   email: string;
   firstName: string;
@@ -439,6 +451,146 @@ Das Airport Parking Team
       text,
       html,
     });
+  }
+
+  /**
+   * Send host pending approval notification
+   */
+  async sendHostRegistrationPendingEmail(data: HostRegistrationPendingEmailData): Promise<boolean> {
+    const subject = 'Ihr Host-Konto wird geprueft – Airport Parking';
+
+    const text = `
+Hallo ${data.firstName},
+
+vielen Dank fuer Ihre Host-Registrierung.
+
+Ihr Konto ist aktuell unter Pruefung. Sobald der Administrator Ihre Anfrage genehmigt,
+erhalten Sie Zugriff auf das Host-Portal.
+
+Mit freundlichen Gruessen,
+Das Airport Parking Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host-Registrierung eingegangen</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #3B9AFF 0%, #1a6fd4 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Airport Parking</h1>
+  </div>
+
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.firstName}!</h2>
+    <p>Vielen Dank fuer Ihre Host-Registrierung.</p>
+    <p>Ihr Konto ist aktuell unter Pruefung. Sobald der Administrator Ihre Anfrage genehmigt, erhalten Sie Zugriff auf das Host-Portal.</p>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.sendEmail({ to: data.email, subject, text, html });
+  }
+
+  /**
+   * Send host approval/rejection email
+   */
+  async sendHostVerificationStatusEmail(data: HostVerificationStatusEmailData): Promise<boolean> {
+    if (data.status === 'approved') {
+      const portalUrl = `${config.frontendUrl}/host`;
+      const subject = 'Ihr Host-Konto wurde genehmigt – Airport Parking';
+
+      const text = `
+Hallo ${data.firstName},
+
+Ihr Host-Konto wurde genehmigt.
+Sie koennen jetzt auf das Host-Portal zugreifen:
+${portalUrl}
+
+Mit freundlichen Gruessen,
+Das Airport Parking Team
+      `.trim();
+
+      const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host-Konto genehmigt</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #34c759 0%, #2fa04f 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Host-Konto genehmigt</h1>
+  </div>
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.firstName}!</h2>
+    <p>Ihr Host-Konto wurde erfolgreich genehmigt.</p>
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${portalUrl}" style="display: inline-block; background: #2fa04f; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+        Zum Host-Portal
+      </a>
+    </div>
+  </div>
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
+  </div>
+</body>
+</html>
+      `.trim();
+
+      return this.sendEmail({ to: data.email, subject, text, html });
+    }
+
+    const subject = 'Ihr Host-Konto wurde abgelehnt – Airport Parking';
+    const reason = data.rejectionReason || 'Kein Grund angegeben';
+
+    const text = `
+Hallo ${data.firstName},
+
+leider wurde Ihr Host-Konto abgelehnt.
+
+Grund: ${reason}
+
+Mit freundlichen Gruessen,
+Das Airport Parking Team
+    `.trim();
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Host-Konto abgelehnt</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #ff6b6b 0%, #e05252 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Host-Konto abgelehnt</h1>
+  </div>
+  <div style="background: #ffffff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333; margin-top: 0;">Hallo ${data.firstName}!</h2>
+    <p>Leider wurde Ihr Host-Konto abgelehnt.</p>
+    <div style="background: #fff1f1; border: 1px solid #ffd2d2; border-radius: 8px; padding: 16px; margin: 16px 0;">
+      <p style="margin: 0;"><strong>Grund:</strong> ${reason}</p>
+    </div>
+  </div>
+  <div style="text-align: center; padding: 20px; color: #888; font-size: 12px;">
+    <p>&copy; ${new Date().getFullYear()} Airport Parking. Alle Rechte vorbehalten.</p>
+  </div>
+</body>
+</html>
+    `.trim();
+
+    return this.sendEmail({ to: data.email, subject, text, html });
   }
 
   /**

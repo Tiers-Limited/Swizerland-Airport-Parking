@@ -1,5 +1,5 @@
 import { db } from '../database';
-import { NotFoundError, ConflictError } from '../utils/errors';
+import { NotFoundError, ConflictError, ValidationError } from '../utils/errors';
 import { hashPassword, generateRandomToken } from '../utils/auth.utils';
 import { emailService } from './email.service';
 import { paymentService } from './payment.service';
@@ -162,20 +162,63 @@ export class AdminService {
     };
   }
 
-  async updateHostVerification(hostId: string, status: string, documentsVerified?: boolean) {
+  async updateHostVerification(
+    hostId: string,
+    status: string,
+    documentsVerified?: boolean,
+    rejectionReason?: string
+  ) {
     const host = await db('hosts').where('id', hostId).first();
     if (!host) throw new NotFoundError('Host');
+
+    const allowedStatuses = [VerificationStatus.APPROVED, VerificationStatus.REJECTED];
+    if (!allowedStatuses.includes(status as VerificationStatus)) {
+      throw new ValidationError('Status must be approved or rejected');
+    }
+
+    if (status === VerificationStatus.REJECTED && !rejectionReason?.trim()) {
+      throw new ValidationError('Rejection reason is required');
+    }
 
     const updateData: Record<string, unknown> = {
       verification_status: status,
       updated_at: new Date(),
     };
-    if (documentsVerified !== undefined) updateData.documents_verified = documentsVerified;
+    if (documentsVerified === undefined) {
+      updateData.documents_verified = status === VerificationStatus.APPROVED;
+    } else {
+      updateData.documents_verified = documentsVerified;
+    }
+
+    updateData.rejection_reason =
+      status === VerificationStatus.REJECTED ? rejectionReason?.trim() || null : null;
 
     const [updated] = await db('hosts')
       .where('id', hostId)
       .update(updateData)
       .returning('*');
+
+    if (status === VerificationStatus.APPROVED) {
+      await db('users')
+        .where('id', host.user_id)
+        .whereNot('role', UserRole.ADMIN)
+        .update({ role: UserRole.HOST, updated_at: new Date() });
+    } else if (status === VerificationStatus.REJECTED) {
+      await db('users')
+        .where('id', host.user_id)
+        .whereNot('role', UserRole.ADMIN)
+        .update({ role: UserRole.CUSTOMER, updated_at: new Date() });
+    }
+
+    const hostUser = await db('users').where('id', host.user_id).select('email', 'name').first();
+    if (hostUser?.email) {
+      await emailService.sendHostVerificationStatusEmail({
+        email: hostUser.email,
+        firstName: hostUser.name?.split(' ')[0] || hostUser.name || 'Host',
+        status: status as 'approved' | 'rejected',
+        rejectionReason: status === VerificationStatus.REJECTED ? rejectionReason?.trim() : undefined,
+      });
+    }
 
     return updated;
   }

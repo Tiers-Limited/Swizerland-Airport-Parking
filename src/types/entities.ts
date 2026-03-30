@@ -51,6 +51,7 @@ export interface Host extends BaseEntity {
   payout_account_id?: string;
   verification_status: VerificationStatus;
   documents_verified: boolean;
+  rejection_reason?: string;
   commission_rate: number; // % platform takes (default 18%)
   service_fee: number; // CHF fee per booking (default 5)
   tax_id?: string;
