@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -65,7 +65,9 @@ export default function Header({ transparent = false }: Readonly<HeaderProps>) {
 
           {/* Desktop Auth */}
           <div className="hidden md:flex items-center gap-3">
-            <GoogleTranslate variant="compact" />
+            <Suspense fallback={<div className="w-10 h-10" />}>
+              <GoogleTranslate variant="compact" />
+            </Suspense>
             {isAuthenticated ? (
               <div className="relative">
                 <button
