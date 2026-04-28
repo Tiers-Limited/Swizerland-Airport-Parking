@@ -6,6 +6,11 @@ export interface EmailOptions {
   subject: string;
   text?: string;
   html?: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer;
+    contentType?: string;
+  }>;
 }
 
 export interface VerificationEmailData {
@@ -114,7 +119,7 @@ class EmailService {
    * Send an email
    */
   async sendEmail(options: EmailOptions): Promise<boolean> {
-    const { to, subject, text, html } = options;
+    const { to, subject, text, html, attachments } = options;
 
     // If not configured, log to console (useful for development)
     if (!this.isConfigured || !this.transporter) {
@@ -123,6 +128,7 @@ class EmailService {
       console.log(`Subject: ${subject}`);
       console.log(`Text: ${text || 'N/A'}`);
       console.log(`HTML: ${html ? 'Yes' : 'No'}`);
+      console.log(`Attachments: ${attachments?.length || 0}`);
       console.log('==============================================');
       return true; // Return true in dev mode so the flow continues
     }
@@ -134,6 +140,7 @@ class EmailService {
         subject,
         text,
         html,
+        attachments,
       });
 
       console.log(`Email sent successfully to ${to}`);
@@ -142,6 +149,15 @@ class EmailService {
       console.error(`Failed to send email to ${to}:`, error);
       return false;
     }
+  }
+
+  async sendPayoutStatementEmail(data: { email: string; firstName: string; subject: string; text: string; pdf: Buffer; fileName: string }): Promise<boolean> {
+    return this.sendEmail({
+      to: data.email,
+      subject: data.subject,
+      text: data.text,
+      attachments: [{ filename: data.fileName, content: data.pdf, contentType: 'application/pdf' }],
+    });
   }
 
   /**

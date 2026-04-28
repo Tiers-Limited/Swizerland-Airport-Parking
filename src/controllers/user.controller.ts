@@ -23,6 +23,20 @@ const getId = (req: Request): string => {
   return Array.isArray(id) ? id[0] : id;
 };
 
+const diffFields = <T extends object>(before: T, after: T, keys: Array<keyof T>) => {
+  const oldValues: Record<string, unknown> = {};
+  const newValues: Record<string, unknown> = {};
+
+  for (const key of keys) {
+    if (before[key] !== after[key]) {
+      oldValues[String(key)] = before[key];
+      newValues[String(key)] = after[key];
+    }
+  }
+
+  return { oldValues, newValues };
+};
+
 /**
  * User Controller
  * Handles user management endpoints
@@ -82,7 +96,19 @@ export const userController = {
       throw new ForbiddenError('You can only update your own profile');
     }
 
-    const updatedUser = await userService.update(id, data);
+    const before = await userService.findByIdOrFail(id);
+    const updatedUser = req.user?.role === UserRole.ADMIN
+      ? await userService.updateAdmin(id, data as Parameters<typeof userService.updateAdmin>[1])
+      : await userService.update(id, data);
+
+    const { oldValues, newValues } = diffFields(before, await userService.findByIdOrFail(id), [
+      'name',
+      'email',
+      'phone',
+      'email_verified',
+      'role',
+      'status',
+    ]);
 
     // Audit log
     await auditService.log({
@@ -90,7 +116,8 @@ export const userController = {
       action: 'user.update',
       resource: 'users',
       resourceId: id,
-      newValues: data,
+      oldValues,
+      newValues,
       ipAddress: getIp(req),
     });
 
@@ -98,6 +125,30 @@ export const userController = {
       success: true,
       data: updatedUser,
       message: 'Profile updated successfully',
+    });
+  }),
+
+  /**
+   * POST /api/v1/users/:id/reset-password
+   * Send password reset email (admin only)
+   */
+  sendPasswordReset: asyncHandler(async (req: Request, res: Response) => {
+    const id = getId(req);
+    const user = await userService.findByIdOrFail(id);
+    const result = await userService.sendPasswordResetEmail(id);
+
+    await auditService.log({
+      userId: req.user?.userId,
+      action: 'user.password_reset',
+      resource: 'users',
+      resourceId: id,
+      newValues: { email: user.email, tokenIssued: !!result.token },
+      ipAddress: getIp(req),
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset email sent',
     });
   }),
 

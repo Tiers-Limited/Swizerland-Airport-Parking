@@ -5,8 +5,9 @@ import { bookingService } from '../services/booking.service';
 import { hostService } from '../services/host.service';
 import { auditService } from '../services/audit.service';
 import { asyncHandler } from '../middleware/error.middleware';
-import { ValidationError, NotFoundError } from '../utils/errors';
+import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { db } from '../database';
+import { UserRole } from '../types/roles';
 
 const getIp = (req: Request): string | undefined => {
   const ip = req.ip;
@@ -23,9 +24,11 @@ export const payoutController = {
 
   // ── Get Pending Payouts (grouped by host) ──────────────────────────
   getPendingPayouts: asyncHandler(async (req: Request, res: Response) => {
-    const { hostId, page, limit } = req.query;
+    const { hostId, fromDate, toDate, page, limit } = req.query;
     const result = await payoutService.getPendingPayouts({
       hostId: hostId as string,
+      fromDate: fromDate as string,
+      toDate: toDate as string,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 50,
     });
@@ -113,10 +116,12 @@ export const payoutController = {
 
   // ── List All Payouts ───────────────────────────────────────────────
   listPayouts: asyncHandler(async (req: Request, res: Response) => {
-    const { hostId, status, page, limit } = req.query;
+    const { hostId, status, fromDate, toDate, page, limit } = req.query;
     const result = await payoutService.listPayouts({
       hostId: hostId as string,
       status: status as string,
+      fromDate: fromDate as string,
+      toDate: toDate as string,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
     });
@@ -128,6 +133,26 @@ export const payoutController = {
     const id = param(req, 'id');
     const payout = await payoutService.getPayoutById(id);
     res.json({ success: true, data: payout });
+  }),
+
+  // ── Get Payout Statement PDF ──────────────────────────────────────
+  getPayoutStatement: asyncHandler(async (req: Request, res: Response) => {
+    const id = param(req, 'id');
+    if (req.user?.role === UserRole.HOST) {
+      const host = await hostService.findByUserId(req.user.userId);
+      if (!host) throw new NotFoundError('Host profile not found');
+
+      const payout = await payoutService.getPayoutById(id);
+      if (String(payout.host_id) !== String(host.id)) {
+        throw new ForbiddenError('You can only access your own payout statements');
+      }
+    }
+
+    const statement = await payoutService.getPayoutStatement(id);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${statement.fileName}"`);
+    res.send(statement.pdf);
   }),
 
   // ── Admin Manual Refund ────────────────────────────────────────────
@@ -214,10 +239,12 @@ export const payoutController = {
     const host = await hostService.findByUserId(userId);
     if (!host) throw new NotFoundError('Host profile not found');
 
-    const { status, page, limit } = req.query;
+    const { status, fromDate, toDate, page, limit } = req.query;
     const result = await payoutService.listPayouts({
       hostId: host.id,
       status: status as string,
+      fromDate: fromDate as string,
+      toDate: toDate as string,
       page: page ? Number(page) : 1,
       limit: limit ? Number(limit) : 20,
     });

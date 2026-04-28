@@ -23,7 +23,6 @@ router.get('/my', bookingController.getMyBookings);
 router.get('/my/stats', bookingController.getMyStats);
 router.get('/:id', bookingController.getBooking);
 router.post('/:bookingId/confirm-payment', bookingController.confirmPayment);
-router.post('/:id/cancel', bookingController.cancelBooking);
 router.patch('/:id/status', bookingController.updateStatus);
 
 export default router;

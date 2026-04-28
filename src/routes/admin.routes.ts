@@ -19,6 +19,7 @@ router.patch('/users/:id/status', adminController.updateUserStatus);
 // Hosts
 router.get('/hosts', adminController.listHosts);
 router.post('/hosts', adminController.createHost);
+router.patch('/hosts/:id', adminController.updateHost);
 router.patch('/hosts/:id/verify', adminController.updateHostVerification);
 
 // Listings
@@ -26,7 +27,10 @@ router.get('/listings', adminController.listListings);
 router.patch('/listings/:id/status', adminController.updateListingStatus);
 
 // Bookings
+router.get('/bookings/:id', adminController.getBooking);
 router.get('/bookings', adminController.listBookings);
+router.patch('/bookings/:id/dates', adminController.updateBookingDates);
+router.post('/bookings/:id/cancel', adminController.cancelBooking);
 router.patch('/bookings/:id/refund', adminController.refundBooking);
 router.post('/bookings/:id/approve', adminController.approveBooking);
 

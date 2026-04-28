@@ -53,6 +53,13 @@ router.patch(
   userController.update
 );
 
+router.post(
+  '/:id/reset-password',
+  isAdmin,
+  validateParams(z.object({ id: uuidSchema })),
+  userController.sendPasswordReset
+);
+
 /**
  * @route   PATCH /api/v1/users/:id/status
  * @desc    Update user status (suspend/activate)

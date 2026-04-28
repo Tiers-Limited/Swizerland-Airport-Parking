@@ -93,14 +93,18 @@ export class UserService {
     }
 
     const updateData: Partial<User> = {
-      ...data,
       updated_at: new Date(),
     };
 
-    if (data.email) {
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone || undefined;
+    if (data.email !== undefined) {
       updateData.email = data.email.toLowerCase();
       updateData.email_verified = false; // Require re-verification
     }
+    if (data.emailVerified !== undefined) updateData.email_verified = data.emailVerified;
+    if (data.role !== undefined) updateData.role = data.role;
+    if (data.status !== undefined) updateData.status = data.status as UserStatus;
 
     const [updated] = await db(this.tableName)
       .where('id', id)
@@ -108,6 +112,56 @@ export class UserService {
       .returning('*');
 
     return sanitizeUser(updated) as UserPublic;
+  }
+
+  async updateAdmin(
+    id: string,
+    data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      emailVerified?: boolean;
+      role?: UserRole | string;
+      status?: UserStatus | string;
+    }
+  ): Promise<UserPublic> {
+    const current = await this.findByIdOrFail(id);
+
+    if (data.email) {
+      const existing = await db(this.tableName)
+        .where('email', data.email.toLowerCase())
+        .whereNot('id', id)
+        .first();
+
+      if (existing) {
+        throw new ConflictError('Email already in use');
+      }
+    }
+
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.phone !== undefined) updateData.phone = data.phone || null;
+    if (data.email !== undefined) {
+      updateData.email = data.email.toLowerCase();
+      updateData.email_verified = data.emailVerified ?? false;
+    } else if (data.emailVerified !== undefined) {
+      updateData.email_verified = data.emailVerified;
+    }
+    if (data.role !== undefined && current.role !== UserRole.ADMIN) updateData.role = data.role;
+    if (data.status !== undefined) updateData.status = data.status as UserStatus;
+
+    const [updated] = await db(this.tableName)
+      .where('id', id)
+      .update(updateData)
+      .returning('*');
+
+    return sanitizeUser(updated) as UserPublic;
+  }
+
+  async sendPasswordResetEmail(id: string): Promise<{ token: string }> {
+    const { authService } = await import('./auth.service');
+    const user = await this.findByIdOrFail(id);
+    return authService.requestPasswordReset(user.email);
   }
 
   /**

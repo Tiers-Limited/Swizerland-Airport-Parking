@@ -18,6 +18,20 @@ const phoneSchema = z
   .optional()
   .or(z.literal(''));
 
+const swissIbanSchema = z
+  .string()
+  .trim()
+  .regex(/^CH\d{2}(?:\s?[A-Z0-9]){15,30}$/, 'Invalid Swiss IBAN format')
+  .optional()
+  .or(z.literal(''));
+
+const swissMwstSchema = z
+  .string()
+  .trim()
+  .regex(/^(?:CHE-)?\d{3}\.\d{3}\.\d{3}(?:\s?(?:MWST|TVA|IVA))?$/i, 'Invalid MWST number format')
+  .optional()
+  .or(z.literal(''));
+
 // Auth Schemas
 export const registerSchema = z.object({
   email: emailSchema,
@@ -59,6 +73,9 @@ export const updateUserSchema = z.object({
   name: nameSchema.optional(),
   phone: phoneSchema,
   email: emailSchema.optional(),
+  emailVerified: z.boolean().optional(),
+  role: z.enum(UserRole).optional(),
+  status: z.enum(['active', 'suspended', 'deleted', 'pending_verification']).optional(),
 });
 
 export const updateUserStatusSchema = z.object({
@@ -73,8 +90,16 @@ export const updateUserRoleSchema = z.object({
 // Host Registration Schema
 export const registerHostSchema = z.object({
   companyName: z.string().min(2, 'Company name is required').max(255),
+  contactPerson: z.string().max(255).optional(),
+  phoneNumber: z.string().max(50).optional(),
   taxId: z.string().max(50).optional(),
   address: z.string().max(500).optional(),
+  bankIban: swissIbanSchema,
+  mwstNumber: swissMwstSchema,
+  commissionRate: z.coerce.number().min(0).max(100).optional(),
+  facilityOptions: z.union([z.array(z.string()), z.record(z.string(), z.boolean())]).optional(),
+  transferService: z.record(z.string(), z.unknown()).optional(),
+  photos: z.array(z.string()).max(3).optional(),
   website: z.url().max(255).optional().or(z.literal('')),
 });
 

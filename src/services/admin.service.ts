@@ -4,6 +4,8 @@ import { hashPassword, generateRandomToken } from '../utils/auth.utils';
 import { emailService } from './email.service';
 import { paymentService } from './payment.service';
 import { UserRole, UserStatus, VerificationStatus } from '../types/roles';
+import { userService } from './user.service';
+import { applyZurichDateRange, type AdminDateRangeFilters } from '../utils/admin-date-range';
 
 // ─── Create Host Input ───────────────────────────────────────────────
 export interface CreateHostInput {
@@ -11,6 +13,17 @@ export interface CreateHostInput {
   email: string;
   phone?: string;
   companyName: string;
+  address?: string;
+  taxId?: string;
+  contactPerson?: string;
+  companyPhone?: string;
+  companyAddress?: string;
+  bankIban?: string;
+  mwstNumber?: string;
+  commissionRate?: number;
+  facilityOptions?: Record<string, boolean> | string[];
+  transferService?: Record<string, unknown>;
+  photos?: string[];
 }
 
 // ─── Dashboard Stats ─────────────────────────────────────────────────
@@ -26,29 +39,31 @@ export interface DashboardStats {
   recentBookings: unknown[];
 }
 
+export interface AdminAnalyticsFilters extends AdminDateRangeFilters {
+  months?: number;
+}
+
 // ─── Admin Service ───────────────────────────────────────────────────
 export class AdminService {
 
   // ── Dashboard ──────────────────────────────────────────────────────
-  async getDashboardStats(): Promise<DashboardStats> {
-    const [userCount] = await db('users').count('* as count');
-    const [hostCount] = await db('hosts').count('* as count');
-    const [listingCount] = await db('parking_locations').count('* as count');
-    const [bookingCount] = await db('bookings').count('* as count');
-    const [revenueResult] = await db('bookings')
+  async getDashboardStats(filters: AdminDateRangeFilters = {}): Promise<DashboardStats> {
+    const [userCount] = await applyZurichDateRange(db('users'), 'users.created_at', filters).count('* as count');
+    const [hostCount] = await applyZurichDateRange(db('hosts'), 'hosts.created_at', filters).count('* as count');
+    const [listingCount] = await applyZurichDateRange(db('parking_locations'), 'parking_locations.created_at', filters).count('* as count');
+
+    const bookingBaseQuery = applyZurichDateRange(db('bookings'), 'bookings.created_at', filters);
+    const [bookingCount] = await bookingBaseQuery.clone().count('* as count');
+    const [revenueResult] = await bookingBaseQuery.clone()
       .where('status', '!=', 'cancelled')
       .sum('total_price as total');
-    const [pendingHostCount] = await db('hosts')
-      .where('verification_status', 'pending')
-      .count('* as count');
-    const [pendingListingCount] = await db('parking_locations')
-      .where('status', 'pending')
-      .count('* as count');
-    const [activeBookingCount] = await db('bookings')
+    const [pendingHostCount] = await applyZurichDateRange(db('hosts').where('verification_status', 'pending'), 'hosts.created_at', filters).count('* as count');
+    const [pendingListingCount] = await applyZurichDateRange(db('parking_locations').where('status', 'pending'), 'parking_locations.created_at', filters).count('* as count');
+    const [activeBookingCount] = await bookingBaseQuery.clone()
       .whereIn('status', ['confirmed', 'checked_in'])
       .count('* as count');
 
-    const recentBookings = await db('bookings')
+    const recentBookings = await bookingBaseQuery.clone()
       .leftJoin('users', 'users.id', 'bookings.customer_id')
       .leftJoin('parking_locations', 'parking_locations.id', 'bookings.location_id')
       .select(
@@ -118,6 +133,17 @@ export class AdminService {
       .returning('*');
 
     return updated;
+  }
+
+  async updateUserDetails(userId: string, data: {
+    name?: string;
+    email?: string;
+    phone?: string;
+    emailVerified?: boolean;
+    role?: UserRole;
+    status?: UserStatus;
+  }) {
+    return userService.updateAdmin(userId, data);
   }
 
   // ── Hosts ──────────────────────────────────────────────────────────
@@ -262,6 +288,15 @@ export class AdminService {
         host_type: 'operator',
         verification_status: VerificationStatus.APPROVED,
         documents_verified: true,
+        contact_person: data.contactPerson || null,
+        company_phone: data.companyPhone || data.phone || null,
+        company_address: data.companyAddress || null,
+        bank_iban: data.bankIban || null,
+        mwst_number: data.mwstNumber || null,
+        commission_rate: data.commissionRate ?? 19,
+        facility_options: data.facilityOptions ? JSON.stringify(data.facilityOptions) : '[]',
+        transfer_service: data.transferService ? JSON.stringify(data.transferService) : '{}',
+        photos: data.photos ? JSON.stringify(data.photos) : '[]',
       })
       .returning('*');
 
@@ -288,6 +323,29 @@ export class AdminService {
         verification_status: host.verification_status,
       },
     };
+  }
+
+  async updateHost(hostId: string, data: Partial<CreateHostInput>) {
+    const host = await db('hosts').where('id', hostId).first();
+    if (!host) throw new NotFoundError('Host');
+
+    const updateData: Record<string, unknown> = { updated_at: new Date() };
+    if (data.companyName !== undefined) updateData.company_name = data.companyName;
+    if (data.contactPerson !== undefined) updateData.contact_person = data.contactPerson;
+    if (data.companyPhone !== undefined || data.phone !== undefined) updateData.company_phone = data.companyPhone || data.phone || null;
+    if (data.companyAddress !== undefined) updateData.company_address = data.companyAddress;
+    if (data.bankIban !== undefined) updateData.bank_iban = data.bankIban;
+    if (data.mwstNumber !== undefined) updateData.mwst_number = data.mwstNumber;
+    if (data.commissionRate !== undefined) updateData.commission_rate = data.commissionRate;
+    if (data.facilityOptions !== undefined) updateData.facility_options = JSON.stringify(data.facilityOptions);
+    if (data.transferService !== undefined) updateData.transfer_service = JSON.stringify(data.transferService);
+    if (data.photos !== undefined) updateData.photos = JSON.stringify(data.photos);
+    if (data.address !== undefined) updateData.address = data.address;
+    if (data.taxId !== undefined) updateData.tax_id = data.taxId;
+    if (data.phone !== undefined) updateData.phone_number = data.phone;
+
+    const [updated] = await db('hosts').where('id', hostId).update(updateData).returning('*');
+    return updated;
   }
 
   // ── Listings ───────────────────────────────────────────────────────
@@ -348,10 +406,12 @@ export class AdminService {
   async listBookings(filters: {
     status?: string;
     search?: string;
+    fromDate?: string;
+    toDate?: string;
     page?: number;
     limit?: number;
   }) {
-    const { status, search, page = 1, limit = 20 } = filters;
+    const { status, search, fromDate, toDate, page = 1, limit = 20 } = filters;
     const offset = (page - 1) * limit;
 
     let query = db('bookings')
@@ -365,6 +425,7 @@ export class AdminService {
       );
 
     if (status) query = query.where('bookings.status', status);
+    query = applyZurichDateRange(query, 'bookings.start_datetime', { fromDate, toDate });
     if (search) {
       query = query.where(function () {
         this.where('bookings.booking_code', 'ilike', `%${search}%`)
@@ -484,10 +545,12 @@ export class AdminService {
   // ── Payments ───────────────────────────────────────────────────────
   async listPayments(filters: {
     status?: string;
+    fromDate?: string;
+    toDate?: string;
     page?: number;
     limit?: number;
   }) {
-    const { status, page = 1, limit = 20 } = filters;
+    const { status, fromDate, toDate, page = 1, limit = 20 } = filters;
     const offset = (page - 1) * limit;
 
     let query = db('payments')
@@ -499,6 +562,7 @@ export class AdminService {
       );
 
     if (status) query = query.where('payments.status', status);
+  query = applyZurichDateRange(query, 'payments.created_at', { fromDate, toDate });
 
     const [{ count }] = await query.clone().clearSelect().count('* as count');
     const payments = await query
@@ -537,23 +601,31 @@ export class AdminService {
   }
 
   // ── Analytics ──────────────────────────────────────────────────────
-  async getRevenueByMonth(months: number = 12) {
-    const result = await db('bookings')
+  async getRevenueByMonth(filters: AdminAnalyticsFilters = {}) {
+    const { months = 12, fromDate, toDate } = filters;
+
+    const baseQuery = applyZurichDateRange(db('bookings'), 'bookings.created_at', { fromDate, toDate });
+
+    const result = await baseQuery
       .select(
-        db.raw("to_char(created_at, 'YYYY-MM') as month"),
+        db.raw("to_char(bookings.created_at AT TIME ZONE 'Europe/Zurich', 'YYYY-MM') as month"),
         db.raw('SUM(total_price) as revenue'),
         db.raw('COUNT(*) as count')
       )
       .where('status', '!=', 'cancelled')
-      .where('created_at', '>=', db.raw(`NOW() - INTERVAL '${months} months'`))
-      .groupByRaw("to_char(created_at, 'YYYY-MM')")
-      .orderByRaw("to_char(created_at, 'YYYY-MM') ASC");
+      .modify((builder: any) => {
+        if (!fromDate && !toDate) {
+          builder.where('bookings.created_at', '>=', db.raw(`NOW() - INTERVAL '${months} months'`));
+        }
+      })
+      .groupByRaw("to_char(bookings.created_at AT TIME ZONE 'Europe/Zurich', 'YYYY-MM')")
+      .orderByRaw("to_char(bookings.created_at AT TIME ZONE 'Europe/Zurich', 'YYYY-MM') ASC");
 
     return result;
   }
 
-  async getBookingsByStatus() {
-    const result = await db('bookings')
+  async getBookingsByStatus(filters: AdminDateRangeFilters = {}) {
+    const result = await applyZurichDateRange(db('bookings'), 'bookings.created_at', filters)
       .select('status')
       .count('* as count')
       .groupBy('status')

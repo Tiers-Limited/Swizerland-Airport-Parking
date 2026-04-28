@@ -18,6 +18,22 @@ const getId = (req: Request): string => {
   return Array.isArray(id) ? id[0] : id;
 };
 
+const diffFields = (before: object, after: object, keys: string[]) => {
+  const beforeRecord = before as Record<string, unknown>;
+  const afterRecord = after as Record<string, unknown>;
+  const oldValues: Record<string, unknown> = {};
+  const newValues: Record<string, unknown> = {};
+
+  for (const key of keys) {
+    if (beforeRecord[key] !== afterRecord[key]) {
+      oldValues[key] = beforeRecord[key];
+      newValues[key] = afterRecord[key];
+    }
+  }
+
+  return { oldValues, newValues };
+};
+
 /**
  * Host Controller
  * Handles host (parking provider) management endpoints
@@ -152,15 +168,38 @@ export const hostController = {
       });
     }
 
+    if (req.user.role !== UserRole.ADMIN) {
+      throw new ForbiddenError('Host profile changes require admin approval');
+    }
+
     const data: Partial<RegisterHostInput> = req.body;
+    const before = await hostService.findByIdOrFail(host.id);
     const updatedHost = await hostService.update(host.id, data);
+    const after = await hostService.findByIdOrFail(host.id);
+    const { oldValues, newValues } = diffFields(before, after, [
+      'company_name',
+      'contact_person',
+      'company_phone',
+      'company_address',
+      'bank_iban',
+      'mwst_number',
+      'commission_rate',
+      'facility_options',
+      'transfer_service',
+      'photos',
+      'address',
+      'tax_id',
+      'phone_number',
+      'website',
+    ]);
 
     await auditService.log({
       userId: req.user.userId,
       action: 'host.update',
       resource: 'hosts',
       resourceId: host.id,
-      newValues: data,
+      oldValues,
+      newValues,
       ipAddress: getIp(req),
     });
 
@@ -189,7 +228,28 @@ export const hostController = {
       throw new ForbiddenError('You can only update your own host profile');
     }
 
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new ForbiddenError('Host profile changes require admin approval');
+    }
+
     const updatedHost = await hostService.update(id, data);
+    const after = await hostService.findByIdOrFail(id);
+    const { oldValues, newValues } = diffFields(host, after, [
+      'company_name',
+      'contact_person',
+      'company_phone',
+      'company_address',
+      'bank_iban',
+      'mwst_number',
+      'commission_rate',
+      'facility_options',
+      'transfer_service',
+      'photos',
+      'address',
+      'tax_id',
+      'phone_number',
+      'website',
+    ]);
 
     // Audit log
     await auditService.log({
@@ -197,7 +257,8 @@ export const hostController = {
       action: 'host.update',
       resource: 'hosts',
       resourceId: id,
-      newValues: data,
+      oldValues,
+      newValues,
       ipAddress: getIp(req),
     });
 

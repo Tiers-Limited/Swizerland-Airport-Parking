@@ -17,6 +17,7 @@ router.get('/host', requireRole(UserRole.HOST, UserRole.ADMIN), payoutController
 router.get('/pending', isAdmin, payoutController.getPendingPayouts);
 router.post('/', isAdmin, payoutController.createPayout);
 router.get('/list', isAdmin, payoutController.listPayouts);
+router.get('/:id/statement', requireRole(UserRole.HOST, UserRole.ADMIN), payoutController.getPayoutStatement);
 router.get('/:id', isAdmin, payoutController.getPayoutDetails);
 router.post('/:id/process', isAdmin, payoutController.processPayout);
 router.post('/:id/fail', isAdmin, payoutController.failPayout);

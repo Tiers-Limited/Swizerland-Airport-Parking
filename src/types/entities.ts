@@ -58,6 +58,14 @@ export interface Host extends BaseEntity {
   address?: string;
   phone_number?: string;
   website?: string;
+  contact_person?: string;
+  company_phone?: string;
+  company_address?: string;
+  bank_iban?: string;
+  mwst_number?: string;
+  facility_options?: Record<string, boolean>;
+  transfer_service?: Record<string, unknown>;
+  photos?: string[];
 }
 
 // Refresh Token entity for session management
@@ -97,6 +105,37 @@ export interface AuditLog extends BaseEntity {
   new_values?: Record<string, unknown>;
   ip_address?: string;
   user_agent?: string;
+}
+
+export interface PayoutStatementBooking {
+  id: string;
+  booking_code: string;
+  customer_name: string;
+  start_datetime: string;
+  end_datetime: string;
+  gross_amount: number;
+  platform_commission: number;
+  refunds: number;
+  status: string;
+}
+
+export interface PayoutStatementData {
+  host: {
+    company_name?: string;
+    company_address?: string;
+    bank_iban?: string;
+    contact_person?: string;
+  };
+  period: {
+    month: number;
+    year: number;
+    label: string;
+  };
+  bookings: PayoutStatementBooking[];
+  total_gross: number;
+  total_commission: number;
+  total_refunds: number;
+  net_payout: number;
 }
 
 // ============================================
@@ -158,6 +197,7 @@ export type BookingStatus =
   | 'pending_payment'
   | 'pending_approval'
   | 'confirmed'
+  | 'modified'
   | 'checked_in'
   | 'completed'
   | 'cancelled'
@@ -206,6 +246,22 @@ export interface Payment extends BaseEntity {
   refunded_amount: number;
   payment_method?: string;
   metadata?: Record<string, unknown>;
+}
+
+export interface Payout extends BaseEntity {
+  host_id: string;
+  amount: number;
+  commission_amount: number;
+  currency: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  booking_count: number;
+  stripe_transfer_id?: string;
+  notes?: string;
+  created_by?: string;
+  processed_by?: string;
+  processed_at?: Date;
+  statement_data?: PayoutStatementData;
+  statement_generated_at?: Date;
 }
 
 // ============================================

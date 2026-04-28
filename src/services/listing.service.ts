@@ -160,7 +160,8 @@ export class ListingService {
     const offset = (page - 1) * limit;
 
     let query = db(this.tableName)
-      .select('parking_locations.*')
+      .leftJoin('hosts', 'hosts.id', 'parking_locations.host_id')
+      .select('parking_locations.*', 'hosts.photos as host_photos', 'hosts.commission_rate as host_commission_rate')
       .where('parking_locations.status', 'active');
 
     if (filters.airportCode) {
@@ -210,7 +211,8 @@ export class ListingService {
   // Get single listing with pricing for public view
   async getPublicListing(id: string): Promise<ParkingLocation & { addons?: LocationAddon[] }> {
     const listing = await db(this.tableName)
-      .select('parking_locations.*')
+      .leftJoin('hosts', 'hosts.id', 'parking_locations.host_id')
+      .select('parking_locations.*', 'hosts.photos as host_photos', 'hosts.facility_options as host_facility_options', 'hosts.transfer_service as host_transfer_service')
       .where('parking_locations.id', id)
       .first();
 
@@ -277,7 +279,8 @@ export class ListingService {
         'parking_locations.name as location_name',
         'users.name as customer_name',
         'users.email as customer_email',
-        'users.phone as customer_phone'
+        'users.phone as customer_phone',
+        'parking_locations.host_id as host_id'
       );
 
     if (filters.status) {

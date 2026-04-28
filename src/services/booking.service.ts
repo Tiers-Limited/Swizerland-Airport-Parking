@@ -65,7 +65,8 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   draft: ['pending_payment', 'cancelled'],
   pending_payment: ['pending_approval', 'confirmed', 'cancelled'],
   pending_approval: ['confirmed', 'cancelled'],
-  confirmed: ['checked_in', 'cancelled', 'no_show'],
+  confirmed: ['modified', 'checked_in', 'cancelled', 'no_show'],
+  modified: ['checked_in', 'cancelled', 'no_show'],
   checked_in: ['completed', 'cancelled'],
   completed: [],
   cancelled: ['refunded'],
@@ -77,6 +78,48 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 
 /** Round to 2 decimal places. */
 const round2 = (n: number): number => Math.round(n * 100) / 100;
+
+function resolveCancellationDetails(
+  booking: Record<string, unknown>,
+  isAdmin: boolean,
+  reasonOverride?: string
+): { refundPercent: number; reason: string } {
+  const providedReason = reasonOverride?.trim() || '';
+  if (isAdmin && !providedReason) {
+    throw new ValidationError('Cancellation reason is required');
+  }
+
+  const bookingStatus = typeof booking.status === 'string' ? booking.status : '';
+  const now = new Date();
+  const arrival = new Date((typeof booking.start_datetime === 'string' ? booking.start_datetime : now.toISOString()));
+  const hoursUntilArrival = (arrival.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+  if (bookingStatus === 'pending_payment' || bookingStatus === 'draft') {
+    return {
+      refundPercent: 100,
+      reason: providedReason || 'Booking was not yet paid',
+    };
+  }
+
+  if (hoursUntilArrival > 24) {
+    return {
+      refundPercent: 100,
+      reason: providedReason || 'Cancelled more than 24 hours before arrival - full refund',
+    };
+  }
+
+  if (hoursUntilArrival >= 12) {
+    return {
+      refundPercent: 50,
+      reason: providedReason || 'Cancelled 12-24 hours before arrival - 50% refund',
+    };
+  }
+
+  return {
+    refundPercent: 0,
+    reason: providedReason || 'Cancelled less than 12 hours before arrival - no refund',
+  };
+}
 
 /** Calculate parking days between two dates (min 1). */
 function calcDays(startDatetime: string, endDatetime: string): number {
@@ -184,11 +227,19 @@ export class BookingService {
       addonsTotal = round2(addonsTotal);
     }
 
-    // Platform settings
+    // Platform settings plus host-specific override
     const settings = await db('platform_settings').first();
-    
+    const hostRow = await db('parking_locations')
+      .leftJoin('hosts', 'hosts.id', 'parking_locations.host_id')
+      .where('parking_locations.id', locationId)
+      .select('hosts.commission_rate as host_commission_rate')
+      .first();
+
     const serviceFeeRate = settings ? Number(settings.service_fee_rate || 5) : 5;
-    const commissionRate = settings ? Number(settings.commission_rate || 19) : 19;
+    const platformCommissionRate = settings ? Number(settings.commission_rate || 19) : 19;
+    const commissionRate = hostRow?.host_commission_rate === null || hostRow?.host_commission_rate === undefined
+      ? platformCommissionRate
+      : Number(hostRow.host_commission_rate);
 
     const serviceFee = round2(priceAfterDiscount * serviceFeeRate / 100);
     // Commission applies to parking price only, NOT add-ons
@@ -349,8 +400,59 @@ export class BookingService {
     return updated;
   }
 
+  // ── Admin Update Booking Dates ────────────────────────────────────
+  async updateBookingDates(
+    bookingId: string,
+    startDatetime: string,
+    endDatetime: string
+  ): Promise<Record<string, unknown>> {
+    const booking = await db('bookings').where('id', bookingId).first();
+    if (!booking) throw new NotFoundError('Booking');
+
+    const editableStatuses = ['draft', 'pending_payment', 'pending_approval', 'confirmed', 'modified'];
+    if (!editableStatuses.includes(booking.status)) {
+      throw new ValidationError(`Cannot modify booking in ${booking.status} status`);
+    }
+
+    const start = new Date(startDatetime);
+    const end = new Date(endDatetime);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      throw new ValidationError('Invalid booking dates');
+    }
+    if (end <= start) {
+      throw new ValidationError('Return date must be after arrival date');
+    }
+
+    const location = await db('parking_locations').where('id', booking.location_id).first();
+    if (!location) throw new NotFoundError('Parking location');
+
+    const [{ count }] = await db('bookings')
+      .where('location_id', booking.location_id)
+      .whereNot('id', bookingId)
+      .whereNotIn('status', ['cancelled', 'refunded', 'draft', 'no_show', 'checked_out'])
+      .where('start_datetime', '<', endDatetime)
+      .where('end_datetime', '>', startDatetime)
+      .count('* as count');
+
+    if (Number(count) >= Number(location.capacity_total || 0)) {
+      throw new ValidationError('The new dates conflict with an existing booking for this spot');
+    }
+
+    const [updated] = await db('bookings')
+      .where('id', bookingId)
+      .update({
+        start_datetime: startDatetime,
+        end_datetime: endDatetime,
+        status: 'modified',
+        updated_at: new Date(),
+      })
+      .returning('*');
+
+    return updated;
+  }
+
   // ── Cancel Booking with Refund Calculation ─────────────────────────
-  async cancelBooking(bookingId: string, userId: string, isAdmin: boolean = false): Promise<CancelBookingResult> {
+  async cancelBooking(bookingId: string, userId: string, isAdmin: boolean = false, reasonOverride?: string): Promise<CancelBookingResult> {
     const booking = await db('bookings').where('id', bookingId).first();
     if (!booking) throw new NotFoundError('Booking');
 
@@ -359,45 +461,28 @@ export class BookingService {
       throw new AppError('You can only cancel your own bookings', 403, 'FORBIDDEN');
     }
 
-    const cancellableStatuses = ['confirmed', 'pending_payment', 'pending_approval', 'draft'];
+    const cancellableStatuses = ['confirmed', 'modified', 'pending_payment', 'pending_approval', 'draft'];
     if (!cancellableStatuses.includes(booking.status)) {
       throw new ValidationError(`Cannot cancel booking in ${booking.status} status`);
     }
 
     // Calculate refund based on time until arrival
-    const now = new Date();
-    const arrival = new Date(booking.start_datetime);
-    const hoursUntilArrival = (arrival.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    let refundPercent = 0;
-    let reason = '';
-
-    if (booking.status === 'pending_payment' || booking.status === 'draft') {
-      refundPercent = 100;
-      reason = 'Booking was not yet paid';
-    } else if (hoursUntilArrival > 24) {
-      refundPercent = 100;
-      reason = 'Cancelled more than 24 hours before arrival - full refund';
-    } else if (hoursUntilArrival >= 12) {
-      refundPercent = 50;
-      reason = 'Cancelled 12-24 hours before arrival - 50% refund';
-    } else {
-      reason = 'Cancelled less than 12 hours before arrival - no refund';
-    }
-
-    // Admin override - always gets full control
-    if (isAdmin) {
-      // Admin can override, but we still calculate the standard amount
-      // The actual refund will be handled separately
-    }
+    const { refundPercent, reason } = resolveCancellationDetails(booking, isAdmin, reasonOverride);
 
     const refundAmount = Math.round((Number(booking.total_price) * refundPercent / 100) * 100) / 100;
+
+    let newStatus: 'cancelled' | 'refunded';
+    if (isAdmin) {
+      newStatus = 'cancelled';
+    } else {
+      newStatus = refundPercent > 0 ? 'refunded' : 'cancelled';
+    }
 
     // Update booking status
     const [updated] = await db('bookings')
       .where('id', bookingId)
       .update({
-        status: refundPercent > 0 ? 'refunded' : 'cancelled',
+        status: newStatus,
         updated_at: new Date(),
       })
       .returning('*');

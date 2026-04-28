@@ -19,6 +19,13 @@ export class HostService {
     }
 
     // Create host profile
+    let facilityOptions = '{}';
+    if (Array.isArray(data.facilityOptions)) {
+      facilityOptions = JSON.stringify(Object.fromEntries(data.facilityOptions.map((item) => [item, true])));
+    } else if (data.facilityOptions) {
+      facilityOptions = JSON.stringify(data.facilityOptions);
+    }
+
     const [host] = await db(this.tableName)
       .insert({
         user_id: userId,
@@ -27,6 +34,15 @@ export class HostService {
         tax_id: data.taxId,
         address: data.address,
         website: data.website,
+        contact_person: data.contactPerson || null,
+        company_phone: data.phoneNumber || null,
+        company_address: data.address || null,
+        bank_iban: data.bankIban || null,
+        mwst_number: data.mwstNumber || null,
+        commission_rate: data.commissionRate ?? 19,
+        facility_options: facilityOptions,
+        transfer_service: data.transferService ? JSON.stringify(data.transferService) : '{}',
+        photos: data.photos ? JSON.stringify(data.photos) : '[]',
         verification_status: VerificationStatus.PENDING,
         documents_verified: false,
         rejection_reason: null,
@@ -89,6 +105,18 @@ export class HostService {
     if (data.taxId !== undefined) updateData.tax_id = data.taxId;
     if (data.address !== undefined) updateData.address = data.address;
     if (data.website !== undefined) updateData.website = data.website;
+    if (data.contactPerson !== undefined) updateData.contact_person = data.contactPerson;
+    if (data.phoneNumber !== undefined) updateData.company_phone = data.phoneNumber;
+    if (data.bankIban !== undefined) updateData.bank_iban = data.bankIban;
+    if (data.mwstNumber !== undefined) updateData.mwst_number = data.mwstNumber;
+    if (data.commissionRate !== undefined) updateData.commission_rate = data.commissionRate;
+    if (data.facilityOptions !== undefined) {
+      updateData.facility_options = Array.isArray(data.facilityOptions)
+        ? JSON.stringify(Object.fromEntries(data.facilityOptions.map((item) => [item, true])))
+        : JSON.stringify(data.facilityOptions);
+    }
+    if (data.transferService !== undefined) updateData.transfer_service = JSON.stringify(data.transferService);
+    if (data.photos !== undefined) updateData.photos = JSON.stringify(data.photos);
 
     const [updated] = await db(this.tableName)
       .where('id', id)
@@ -168,6 +196,10 @@ export class HostService {
       .offset(offset);
 
     return { hosts, total };
+  }
+
+  async getByIdWithUser(id: string): Promise<Host & { user: unknown }> {
+    return this.getWithUser(id);
   }
 
   /**

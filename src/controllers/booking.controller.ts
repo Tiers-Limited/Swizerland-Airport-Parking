@@ -22,6 +22,21 @@ const param = (req: Request, name: string): string => {
   return Array.isArray(v) ? v[0] : v;
 };
 
+const formatZurichDateTime = (value: unknown): string => {
+  try {
+    return new Intl.DateTimeFormat('de-CH', {
+      timeZone: 'Europe/Zurich',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(value as string));
+  } catch {
+    return String(value);
+  }
+};
+
 export const bookingController = {
 
   // ── Calculate Price (public) ───────────────────────────────────────
@@ -168,14 +183,12 @@ export const bookingController = {
         const location = await db('parking_locations').where('id', locationId).first();
         const host = location ? await db('hosts').where('id', location.host_id).first() : null;
         const hostUser = host ? await db('users').where('id', host.user_id).first() : null;
-        const fmtDate = (d: unknown) => { try { return new Date(d as string).toLocaleDateString('de-CH'); } catch { return String(d); } };
-
         emailService.sendBookingConfirmationToCustomer({
           email: customerEmail,
           firstName: customerName.split(' ')[0] || 'Kunde',
           bookingCode: fullBooking.booking_code as string,
-          startDate: fmtDate(fullBooking.start_datetime),
-          endDate: fmtDate(fullBooking.end_datetime),
+          startDate: formatZurichDateTime(fullBooking.start_datetime),
+          endDate: formatZurichDateTime(fullBooking.end_datetime),
           locationName: location?.name || '',
           locationAddress: location?.address || '',
           hostPhone: location?.phone_number || '',
@@ -189,8 +202,8 @@ export const bookingController = {
             email: hostUser.email,
             hostName: hostUser.name?.split(' ')[0] || 'Host',
             bookingCode: fullBooking.booking_code as string,
-            startDate: fmtDate(fullBooking.start_datetime),
-            endDate: fmtDate(fullBooking.end_datetime),
+            startDate: formatZurichDateTime(fullBooking.start_datetime),
+            endDate: formatZurichDateTime(fullBooking.end_datetime),
             locationName: location.name,
             customerName: customerName || '',
             customerPhone: customerPhone || '',
@@ -355,18 +368,14 @@ export const bookingController = {
       const host = location ? await db('hosts').where('id', location.host_id).first() : null;
       const hostUser = host ? await db('users').where('id', host.user_id).first() : null;
 
-      const formatDate = (d: unknown) => {
-        try { return new Date(d as string).toLocaleDateString('de-CH'); } catch { return String(d); }
-      };
-
       // Email to customer
       if (customer && location) {
         emailService.sendBookingConfirmationToCustomer({
           email: customer.email,
           firstName: customer.name?.split(' ')[0] || 'Kunde',
           bookingCode: fullBooking.booking_code as string,
-          startDate: formatDate(fullBooking.start_datetime),
-          endDate: formatDate(fullBooking.end_datetime),
+          startDate: formatZurichDateTime(fullBooking.start_datetime),
+          endDate: formatZurichDateTime(fullBooking.end_datetime),
           locationName: location.name,
           locationAddress: location.address || '',
           hostPhone: location.phone_number || '',
@@ -382,8 +391,8 @@ export const bookingController = {
           email: hostUser.email,
           hostName: hostUser.name?.split(' ')[0] || 'Host',
           bookingCode: fullBooking.booking_code as string,
-          startDate: formatDate(fullBooking.start_datetime),
-          endDate: formatDate(fullBooking.end_datetime),
+          startDate: formatZurichDateTime(fullBooking.start_datetime),
+          endDate: formatZurichDateTime(fullBooking.end_datetime),
           locationName: location.name,
           customerName: customer.name || '',
           customerPhone: customer.phone || '',
