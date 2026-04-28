@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, use, useRef } from 'react';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -90,8 +90,16 @@ export default function ParkingDetailPage({ params }: Readonly<PageParams>) {
   const router = useRouter();
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
+  const arrivalTime = searchParams.get('arrival') || '10:00';
+  const returnTime = searchParams.get('return') || '12:00';
 
   const updateDateParam = useCallback((key: string, value: string) => {
+    const p = new URLSearchParams(searchParams.toString());
+    if (value) { p.set(key, value); } else { p.delete(key); }
+    router.replace(`/parking/${id}?${p.toString()}`);
+  }, [searchParams, router, id]);
+
+  const updateTimeParam = useCallback((key: string, value: string) => {
     const p = new URLSearchParams(searchParams.toString());
     if (value) { p.set(key, value); } else { p.delete(key); }
     router.replace(`/parking/${id}?${p.toString()}`);
@@ -101,6 +109,7 @@ export default function ParkingDetailPage({ params }: Readonly<PageParams>) {
   const [pricing, setPricing] = useState<PriceBreakdown | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const endDateRef = useRef<HTMLInputElement | null>(null);
 
   const imageCount = listing?.images?.length || 0;
 
@@ -182,7 +191,7 @@ export default function ParkingDetailPage({ params }: Readonly<PageParams>) {
       alert('Bitte wählen Sie Ihre Reisedaten');
       return;
     }
-    globalThis.location.href = `/booking?parking=${listing.id}&start=${startDate}&end=${endDate}`;
+    globalThis.location.href = `/booking?parking=${listing.id}&start=${startDate}&end=${endDate}&arrival=${arrivalTime}&return=${returnTime}`;
   };
 
   return (
@@ -501,19 +510,40 @@ export default function ParkingDetailPage({ params }: Readonly<PageParams>) {
                         type="date"
                         value={startDate}
                         min={formatDateForInput(new Date())}
-                        onChange={(e) => updateDateParam('startDate', e.target.value)}
+                        onChange={(e) => {
+                          updateDateParam('startDate', e.target.value);
+                          if (e.target.value) {
+                            window.setTimeout(() => {
+                              endDateRef.current?.showPicker?.();
+                              endDateRef.current?.focus();
+                            }, 0);
+                          }
+                        }}
                         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                      />
+                      <input
+                        type="time"
+                        value={arrivalTime}
+                        onChange={(e) => updateTimeParam('arrival', e.target.value)}
+                        className="mt-2 w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
                       />
                     </div>
                     <div>
                       <label htmlFor="detail-end-date" className="block text-sm font-medium text-gray-700 mb-1">Abholung</label>
                       <input
+                        ref={endDateRef}
                         id="detail-end-date"
                         type="date"
                         value={endDate}
                         min={startDate}
                         onChange={(e) => updateDateParam('endDate', e.target.value)}
                         className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
+                      />
+                      <input
+                        type="time"
+                        value={returnTime}
+                        onChange={(e) => updateTimeParam('return', e.target.value)}
+                        className="mt-2 w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
                       />
                     </div>
                   </div>

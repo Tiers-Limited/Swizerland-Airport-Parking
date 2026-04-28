@@ -1,11 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 import Link from 'next/link';
 import { Icon } from '@/components/ui/Icons';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
+import {
+  AdminDateRangeFilter,
+  type AdminDateRangeValue,
+  clearStoredAdminRange,
+  formatAdminRangeLabel,
+  getPresetRange,
+  loadStoredAdminRange,
+  storeAdminRange,
+} from '@/components/admin/AdminDateRangeFilter';
 
 interface DashboardStats {
   totalUsers: number;
@@ -30,18 +40,54 @@ interface DashboardStats {
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const defaultRange = useMemo(() => getPresetRange('thisMonth'), []);
+  const [range, setRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [appliedRange, setAppliedRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [hydrated, setHydrated] = useState(false);
 
-  const loadStats = useCallback(async () => {
-    const res = await apiCall<DashboardStats>('GET', '/admin/dashboard');
+  const loadStats = useCallback(async (activeRange: AdminDateRangeValue = appliedRange) => {
+    setLoading(true);
+    const params = new URLSearchParams({
+      fromDate: activeRange.fromDate,
+      toDate: activeRange.toDate,
+    });
+    const res = await apiCall<DashboardStats>('GET', `/admin/dashboard?${params}`);
     if (res.success && res.data) {
       setStats(res.data);
     }
     setLoading(false);
-  }, []);
+  }, [appliedRange]);
 
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    const timer = setTimeout(() => {
+      const storedRange = loadStoredAdminRange(defaultRange);
+      setRange(storedRange);
+      setAppliedRange(storedRange);
+      setHydrated(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [defaultRange]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = setTimeout(() => {
+      void loadStats();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [hydrated, loadStats]);
+
+  const handleApplyRange = () => {
+    storeAdminRange(range);
+    setAppliedRange(range);
+  };
+
+  const handleResetRange = () => {
+    clearStoredAdminRange();
+    setRange(defaultRange);
+    setAppliedRange(defaultRange);
+  };
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(val);
@@ -72,19 +118,23 @@ export default function AdminDashboardPage() {
     { label: 'ausstehende Inserate', value: stats.pendingListings, href: '/admin/listings', color: 'text-yellow-600 bg-yellow-50' },
   ];
 
-  const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray' | 'primary'> = {
-    confirmed: 'success',
-    checked_in: 'primary',
-    pending_payment: 'warning',
-    cancelled: 'error',
-    refunded: 'error',
-    draft: 'gray',
-  };
-
   return (
     <FadeIn>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+
+        <Card className="p-4 space-y-3">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Zeitraum</p>
+            <p className="text-sm text-gray-500">Aktiver Zeitraum: {formatAdminRangeLabel(appliedRange)}</p>
+          </div>
+          <AdminDateRangeFilter
+            value={range}
+            onChange={setRange}
+            onApply={handleApplyRange}
+            onReset={handleResetRange}
+          />
+        </Card>
 
         {/* Alert badges for pending items */}
         {(stats.pendingHosts > 0 || stats.pendingListings > 0) && (
@@ -149,8 +199,8 @@ export default function AdminDashboardPage() {
                     <td className="py-3 px-2">{booking.customer_name || '—'}</td>
                     <td className="py-3 px-2 text-gray-600">{booking.listing_name || '—'}</td>
                     <td className="py-3 px-2">
-                      <Badge variant={statusColors[booking.status] || 'gray'}>
-                        {(booking.status || '').replaceAll('_', ' ')}
+                      <Badge variant={getBookingStatusVariant(booking.status)}>
+                        {getBookingStatusLabel(booking.status)}
                       </Badge>
                     </td>
                     <td className="py-3 px-2 text-right font-medium">

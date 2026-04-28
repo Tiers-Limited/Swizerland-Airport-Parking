@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Button, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
 
 interface HostStats {
   totalListings: number;
@@ -59,15 +60,6 @@ export default function HostDashboard() {
       setLoading(false);
     }
   }
-
-  const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
-    confirmed: 'success',
-    pending_payment: 'warning',
-    checked_in: 'info',
-    completed: 'gray',
-    cancelled: 'error',
-    refunded: 'error',
-  };
 
   const formatCurrency = (amount: number, currency = 'CHF') => {
     return new Intl.NumberFormat('de-CH', { style: 'currency', currency }).format(amount);
@@ -128,6 +120,10 @@ export default function HostDashboard() {
     },
   ];
 
+  const now = Date.now();
+  const upcomingBookings = recentBookings.filter((booking) => new Date(booking.end_datetime).getTime() >= now);
+  const pastBookings = recentBookings.filter((booking) => new Date(booking.end_datetime).getTime() < now);
+
   return (
     <FadeIn>
       <div className="space-y-6">
@@ -153,7 +149,7 @@ export default function HostDashboard() {
           {statCards.map((stat, i) => (
             <Card key={i} className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className={cn('p-2.5 rounded-xl', stat.color)}>
+                <div className={`p-2.5 rounded-xl ${stat.color}`}>
                   {stat.icon}
                 </div>
               </div>
@@ -193,21 +189,21 @@ export default function HostDashboard() {
           </Card>
         </div>
 
-        {/* Recent Bookings */}
+        {/* Upcoming bookings */}
         <Card className="overflow-hidden">
           <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-900">Letzte Buchungen</h2>
+            <h2 className="font-semibold text-gray-900">Anstehende Buchungen</h2>
             <Link href="/host/bookings">
               <Button variant="ghost" size="sm">Alle anzeigen</Button>
             </Link>
           </div>
 
-          {recentBookings.length === 0 ? (
+          {upcomingBookings.length === 0 ? (
             <div className="p-10 text-center">
               <svg className="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
-              <p className="text-gray-500 text-sm">Noch keine Buchungen vorhanden</p>
+              <p className="text-gray-500 text-sm">Noch keine anstehenden Buchungen vorhanden</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -222,7 +218,7 @@ export default function HostDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {recentBookings.map((booking) => (
+                  {upcomingBookings.map((booking) => (
                     <tr key={booking.id} className="hover:bg-gray-50/50">
                       <td className="px-5 py-4">
                         <span className="font-mono text-sm font-medium text-baby-blue-600">{booking.booking_code}</span>
@@ -232,8 +228,56 @@ export default function HostDashboard() {
                         {formatDate(booking.start_datetime)} – {formatDate(booking.end_datetime)}
                       </td>
                       <td className="px-5 py-4">
-                        <Badge variant={statusColors[booking.status] || 'gray'}>
-                          {booking.status?.replace(/_/g, ' ')}
+                        <Badge variant={getBookingStatusVariant(booking.status)}>
+                          {getBookingStatusLabel(booking.status)}
+                        </Badge>
+                      </td>
+                      <td className="px-5 py-4 text-sm font-medium text-gray-900 text-right">
+                        {formatCurrency(Number(booking.total_price || 0), booking.currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card className="overflow-hidden">
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900">Vergangene Buchungen</h2>
+            <span className="text-sm text-gray-500">Read-only</span>
+          </div>
+
+          {pastBookings.length === 0 ? (
+            <div className="p-10 text-center">
+              <p className="text-gray-500 text-sm">Noch keine vergangenen Buchungen vorhanden</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-5 py-3">Buchungscode</th>
+                    <th className="px-5 py-3">Kunde</th>
+                    <th className="px-5 py-3">Daten</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3 text-right">Betrag</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {pastBookings.map((booking) => (
+                    <tr key={booking.id} className="hover:bg-gray-50/50">
+                      <td className="px-5 py-4">
+                        <span className="font-mono text-sm font-medium text-baby-blue-600">{booking.booking_code}</span>
+                      </td>
+                      <td className="px-5 py-4 text-sm text-gray-700">{booking.customer_name}</td>
+                      <td className="px-5 py-4 text-sm text-gray-500">
+                        {formatDate(booking.start_datetime)} – {formatDate(booking.end_datetime)}
+                      </td>
+                      <td className="px-5 py-4">
+                        <Badge variant={getBookingStatusVariant(booking.status)}>
+                          {getBookingStatusLabel(booking.status)}
                         </Badge>
                       </td>
                       <td className="px-5 py-4 text-sm font-medium text-gray-900 text-right">
@@ -249,8 +293,4 @@ export default function HostDashboard() {
       </div>
     </FadeIn>
   );
-}
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
 }

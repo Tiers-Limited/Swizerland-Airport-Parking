@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { apiCall } from '@/lib/api';
-import { Card, Badge, Spinner, Button, Modal } from '@/components/ui';
+import { Card, Badge, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
 import Link from 'next/link';
 
 interface BookingDetail {
@@ -49,9 +50,6 @@ export default function BookingDetailPage() {
   const bookingId = Array.isArray(params.id) ? params.id[0] : params.id;
   const [booking, setBooking] = useState<BookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [cancelling, setCancelling] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     async function loadBooking() {
@@ -61,42 +59,10 @@ export default function BookingDetailPage() {
       setLoading(false);
     }
     loadBooking();
-  }, [bookingId, refreshKey]);
-
-  const handleCancel = async () => {
-    setCancelling(true);
-    const res = await apiCall('POST', `/bookings/${bookingId}/cancel`, {});
-    if (res.success) {
-      setRefreshKey(k => k + 1);
-    }
-    setCancelling(false);
-    setShowCancelModal(false);
-  };
+  }, [bookingId]);
 
   const formatCurrency = (val: number, currency = 'CHF') =>
     new Intl.NumberFormat('de-CH', { style: 'currency', currency }).format(val);
-
-  const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray' | 'primary'> = {
-    draft: 'gray',
-    pending_payment: 'warning',
-    pending_approval: 'warning',
-    confirmed: 'success',
-    checked_in: 'primary',
-    completed: 'info',
-    cancelled: 'error',
-    refunded: 'error',
-  };
-
-  const statusLabels: Record<string, string> = {
-    draft: 'Entwurf',
-    pending_payment: 'Zahlung ausstehend',
-    pending_approval: 'Wartet auf Genehmigung',
-    confirmed: 'Bestätigt',
-    checked_in: 'Eingecheckt',
-    completed: 'Abgeschlossen',
-    cancelled: 'Storniert',
-    refunded: 'Erstattet',
-  };
 
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>;
@@ -126,8 +92,6 @@ export default function BookingDetailPage() {
     return 'Ausstehend';
   };
 
-  const canCancel = ['confirmed', 'pending_payment'].includes(booking.status);
-
   // Calculate total days from start/end dates
   const totalDays = (() => {
     const start = new Date(booking.start_datetime);
@@ -147,8 +111,8 @@ export default function BookingDetailPage() {
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 mt-2">Buchung {booking.booking_code}</h1>
           </div>
-          <Badge variant={statusColors[booking.status] || 'gray'} className="text-base px-4 py-1">
-            {statusLabels[booking.status] || booking.status}
+          <Badge variant={getBookingStatusVariant(booking.status)} className="text-base px-4 py-1">
+            {getBookingStatusLabel(booking.status)}
           </Badge>
         </div>
 
@@ -259,27 +223,6 @@ export default function BookingDetailPage() {
           </div>
         </Card>
 
-        {/* Actions */}
-        {canCancel && (
-          <div className="flex justify-end">
-            <Button variant="ghost" onClick={() => setShowCancelModal(true)} loading={cancelling}>
-              Buchung stornieren
-            </Button>
-          </div>
-        )}
-
-        {/* Cancel Confirmation Modal */}
-        <Modal isOpen={showCancelModal} onClose={() => setShowCancelModal(false)} title="Buchung stornieren" size="sm">
-          <div className="space-y-4">
-            <p className="text-sm text-gray-600">
-              Möchten Sie diese Buchung wirklich stornieren?
-            </p>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" onClick={() => setShowCancelModal(false)}>Abbrechen</Button>
-              <Button variant="danger" onClick={handleCancel} loading={cancelling}>Stornieren</Button>
-            </div>
-          </div>
-        </Modal>
       </div>
     </FadeIn>
   );

@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Input, Select, Spinner, Button } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
+import {
+  AdminDateRangeFilter,
+  type AdminDateRangeValue,
+  clearStoredAdminRange,
+  formatAdminRangeLabel,
+  getPresetRange,
+  loadStoredAdminRange,
+  storeAdminRange,
+} from '@/components/admin/AdminDateRangeFilter';
 
 interface PaymentRow {
   id: string;
@@ -23,14 +32,23 @@ interface PaymentRow {
 export default function AdminPaymentsPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const defaultRange = useMemo(() => getPresetRange('thisMonth'), []);
+  const [range, setRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [appliedRange, setAppliedRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [hydrated, setHydrated] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const loadPayments = useCallback(async () => {
+  const loadPayments = useCallback(async (activeRange: AdminDateRangeValue = appliedRange) => {
     setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '15' });
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: '15',
+      fromDate: activeRange.fromDate,
+      toDate: activeRange.toDate,
+    });
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (search) params.set('search', search);
 
@@ -40,9 +58,37 @@ export default function AdminPaymentsPage() {
       setTotalPages(res.data.totalPages || 1);
     }
     setLoading(false);
-  }, [page, statusFilter, search]);
+  }, [page, statusFilter, search, appliedRange]);
 
-  useEffect(() => { loadPayments(); }, [loadPayments]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const storedRange = loadStoredAdminRange(defaultRange);
+      setRange(storedRange);
+      setAppliedRange(storedRange);
+      setHydrated(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [defaultRange]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = setTimeout(() => { void loadPayments(); }, 0);
+    return () => clearTimeout(timer);
+  }, [hydrated, loadPayments]);
+
+  const handleApplyRange = () => {
+    setPage(1);
+    storeAdminRange(range);
+    setAppliedRange(range);
+  };
+
+  const handleResetRange = () => {
+    setPage(1);
+    clearStoredAdminRange();
+    setRange(defaultRange);
+    setAppliedRange(defaultRange);
+  };
 
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'gray'> = {
     succeeded: 'success',
@@ -69,6 +115,19 @@ export default function AdminPaymentsPage() {
     <FadeIn>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Zahlungen verwalten</h1>
+
+        <Card className="p-4 space-y-3">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Zeitraum</p>
+            <p className="text-sm text-gray-500">Aktiver Zeitraum: {formatAdminRangeLabel(appliedRange)}</p>
+          </div>
+          <AdminDateRangeFilter
+            value={range}
+            onChange={setRange}
+            onApply={handleApplyRange}
+            onReset={handleResetRange}
+          />
+        </Card>
 
         <Card className="p-4">
           <div className="flex flex-col sm:flex-row gap-3">

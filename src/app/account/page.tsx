@@ -25,6 +25,18 @@ interface CustomerStats {
   upcomingBookings: number;
 }
 
+const statusLabels: Record<string, string> = {
+  draft: 'Entwurf',
+  pending_payment: 'Zahlung ausstehend',
+  pending_approval: 'Wartet auf Genehmigung',
+  confirmed: 'Bestätigt',
+  modified: 'Geändert',
+  checked_in: 'Eingecheckt',
+  completed: 'Abgeschlossen',
+  cancelled: 'Storniert',
+  refunded: 'Erstattet',
+};
+
 export default function AccountDashboardPage() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<BookingRow[]>([]);
@@ -68,6 +80,9 @@ export default function AccountDashboardPage() {
     if (s === 'confirmed') return 'success' as const;
     if (s === 'checked_in') return 'primary' as const;
     if (s === 'pending_payment') return 'warning' as const;
+    if (s === 'pending_approval') return 'warning' as const;
+    if (s === 'modified') return 'info' as const;
+    if (s === 'cancelled' || s === 'refunded') return 'error' as const;
     return 'gray' as const;
   };
 
@@ -165,7 +180,7 @@ export default function AccountDashboardPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="font-medium text-gray-900">{booking.location_name || 'Parkplatz'}</span>
                       <Badge variant={statusVariant(booking.status)}>
-                        {booking.status.replace('_', ' ')}
+                        {statusLabels[booking.status] || booking.status.replaceAll('_', ' ')}
                       </Badge>
                     </div>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">

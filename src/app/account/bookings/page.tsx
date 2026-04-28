@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Card, Button, Badge, Input, Spinner, Modal } from '@/components/ui';
+import { Card, Button, Badge, Input, Spinner } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
 import type { BookingStatus } from '@/types';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
 
 interface BookingRow {
   id: string;
@@ -28,22 +29,11 @@ const filterLabels: Record<FilterType, string> = {
   cancelled: 'Storniert',
 };
 
-const statusColors: Record<string, 'success' | 'primary' | 'warning' | 'error' | 'gray'> = {
-  draft: 'gray',
-  pending_payment: 'warning',
-  confirmed: 'success',
-  checked_in: 'primary',
-  completed: 'gray',
-  cancelled: 'error',
-  refunded: 'error',
-};
-
 export default function BookingsPage() {
   const [filter, setFilter] = useState<FilterType>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -68,12 +58,6 @@ export default function BookingsPage() {
   }, [filter, searchQuery]);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
-
-  const handleCancel = async (id: string) => {
-    const res = await apiCall('POST', `/bookings/${id}/cancel`);
-    if (res.success) fetchBookings();
-    setCancelTarget(null);
-  };
 
   return (
     <div className="space-y-6">
@@ -139,8 +123,8 @@ export default function BookingsPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-gray-900">{booking.location_name || 'Parkplatz'}</h3>
-                      <Badge variant={statusColors[booking.status] || 'gray'}>
-                        {booking.status.replace('_', ' ')}
+                      <Badge variant={getBookingStatusVariant(booking.status)}>
+                        {getBookingStatusLabel(booking.status)}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -169,16 +153,6 @@ export default function BookingsPage() {
                     <Link href={`/account/bookings/${booking.id}`}>
                       <Button variant="secondary" size="sm">Details anzeigen</Button>
                     </Link>
-                    {['confirmed', 'pending_payment'].includes(booking.status) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => setCancelTarget(booking.id)}
-                      >
-                        Stornieren
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>
@@ -186,19 +160,6 @@ export default function BookingsPage() {
           ))}
         </div>
       )}
-
-      {/* Cancel Confirmation Modal */}
-      <Modal isOpen={!!cancelTarget} onClose={() => setCancelTarget(null)} title="Buchung stornieren" size="sm">
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Sind Sie sicher, dass Sie diese Buchung stornieren möchten?
-          </p>
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setCancelTarget(null)}>Abbrechen</Button>
-            <Button variant="danger" onClick={() => cancelTarget && handleCancel(cancelTarget)}>Stornieren</Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }

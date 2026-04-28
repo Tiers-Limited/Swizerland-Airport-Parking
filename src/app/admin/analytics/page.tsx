@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { apiCall } from '@/lib/api';
 import { Card, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
+import {
+  AdminDateRangeFilter,
+  type AdminDateRangeValue,
+  clearStoredAdminRange,
+  formatAdminRangeLabel,
+  getLast30DaysRange,
+  loadStoredAdminRange,
+  storeAdminRange,
+} from '@/components/admin/AdminDateRangeFilter';
 
 interface RevenueData {
   month: string;
@@ -19,19 +28,50 @@ export default function AdminAnalyticsPage() {
   const [revenue, setRevenue] = useState<RevenueData[]>([]);
   const [bookingStatus, setBookingStatus] = useState<BookingsByStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const defaultRange = useMemo(() => getLast30DaysRange(), []);
+  const [range, setRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [appliedRange, setAppliedRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
+    const timer = setTimeout(() => {
+      const storedRange = loadStoredAdminRange(defaultRange);
+      setRange(storedRange);
+      setAppliedRange(storedRange);
+      setHydrated(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [defaultRange]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    async function loadData(activeRange: AdminDateRangeValue = appliedRange) {
       const [revRes, bookRes] = await Promise.all([
-        apiCall<RevenueData[]>('GET', '/admin/analytics/revenue'),
-        apiCall<BookingsByStatus[]>('GET', '/admin/analytics/bookings'),
+        apiCall<RevenueData[]>('GET', `/admin/analytics/revenue?fromDate=${activeRange.fromDate}&toDate=${activeRange.toDate}`),
+        apiCall<BookingsByStatus[]>('GET', `/admin/analytics/bookings?fromDate=${activeRange.fromDate}&toDate=${activeRange.toDate}`),
       ]);
       if (revRes.success && revRes.data) setRevenue(revRes.data);
       if (bookRes.success && bookRes.data) setBookingStatus(bookRes.data);
       setLoading(false);
     }
-    loadData();
-  }, []);
+    const timer = setTimeout(() => { void loadData(); }, 0);
+    return () => clearTimeout(timer);
+  }, [hydrated, appliedRange]);
+
+  const handleApplyRange = () => {
+    setLoading(true);
+    storeAdminRange(range);
+    setAppliedRange(range);
+  };
+
+  const handleResetRange = () => {
+    setLoading(true);
+    clearStoredAdminRange();
+    setRange(defaultRange);
+    setAppliedRange(defaultRange);
+  };
 
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' }).format(val);
@@ -47,6 +87,7 @@ export default function AdminAnalyticsPage() {
   const statusLabels: Record<string, string> = {
     pending_payment: 'Zahlung ausstehend',
     confirmed: 'Bestätigt',
+    modified: 'Geändert',
     checked_in: 'Eingecheckt',
     completed: 'Abgeschlossen',
     cancelled: 'Storniert',
@@ -57,6 +98,7 @@ export default function AdminAnalyticsPage() {
   const statusColors: Record<string, string> = {
     pending_payment: 'bg-yellow-400',
     confirmed: 'bg-green-400',
+    modified: 'bg-sky-400',
     checked_in: 'bg-blue-400',
     completed: 'bg-emerald-400',
     cancelled: 'bg-red-400',
@@ -68,6 +110,19 @@ export default function AdminAnalyticsPage() {
     <FadeIn>
       <div className="space-y-6">
         <h1 className="text-2xl font-bold text-gray-900">Analytik</h1>
+
+        <Card className="p-4 space-y-3">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Zeitraum</p>
+            <p className="text-sm text-gray-500">Aktiver Zeitraum: {formatAdminRangeLabel(appliedRange)}</p>
+          </div>
+          <AdminDateRangeFilter
+            value={range}
+            onChange={setRange}
+            onApply={handleApplyRange}
+            onReset={handleResetRange}
+          />
+        </Card>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

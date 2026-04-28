@@ -1,9 +1,18 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { apiCall } from '@/lib/api';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { api, apiCall } from '@/lib/api';
 import { Card, Badge, Select, Spinner, Button, Alert, Modal } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
+import {
+  AdminDateRangeFilter,
+  type AdminDateRangeValue,
+  clearStoredAdminRange,
+  formatAdminRangeLabel,
+  getPresetRange,
+  loadStoredAdminRange,
+  storeAdminRange,
+} from '@/components/admin/AdminDateRangeFilter';
 
 interface PendingBooking {
   id: string;
@@ -51,6 +60,7 @@ interface PayoutRow {
   notes?: string;
   created_at: string;
   processed_at?: string;
+  statement_generated_at?: string;
 }
 
 export default function AdminPayoutsPage() {
@@ -61,6 +71,10 @@ export default function AdminPayoutsPage() {
   const [processing, setProcessing] = useState<string | null>(null);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const defaultRange = useMemo(() => getPresetRange('thisMonth'), []);
+  const [range, setRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [appliedRange, setAppliedRange] = useState<AdminDateRangeValue>(defaultRange);
+  const [hydrated, setHydrated] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
   const [failTarget, setFailTarget] = useState<string | null>(null);
 
@@ -68,10 +82,11 @@ export default function AdminPayoutsPage() {
     new Intl.NumberFormat('de-CH', { style: 'currency', currency }).format(val);
   const formatDate = (d: string) => d ? new Date(d).toLocaleDateString('de-CH') : '—';
 
-  const loadPending = useCallback(async () => {
+  const loadPending = useCallback(async (activeRange: AdminDateRangeValue = appliedRange) => {
     setLoading(true);
     // API sometimes returns { hosts: PendingHostPayout[] } or directly PendingHostPayout[]
-    const res = await apiCall('GET', '/payouts/pending');
+    const params = new URLSearchParams({ fromDate: activeRange.fromDate, toDate: activeRange.toDate });
+    const res = await apiCall('GET', `/payouts/pending?${params}`);
     if (res.success && res.data) {
       const data = res.data as unknown;
       type HostsWrapper = { hosts?: unknown };
@@ -87,11 +102,11 @@ export default function AdminPayoutsPage() {
       setPendingPayouts(hosts);
     }
     setLoading(false);
-  }, []);
+  }, [appliedRange]);
 
-  const loadHistory = useCallback(async () => {
+  const loadHistory = useCallback(async (activeRange: AdminDateRangeValue = appliedRange) => {
     setLoading(true);
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ fromDate: activeRange.fromDate, toDate: activeRange.toDate });
     if (statusFilter !== 'all') params.set('status', statusFilter);
     const res = await apiCall<{ payouts: PayoutRow[]; total: number; totalPages: number; page: number }>('GET', `/payouts/list?${params}`);
     if (res.success && res.data) {
@@ -109,12 +124,39 @@ export default function AdminPayoutsPage() {
       setPayoutHistory(list);
     }
     setLoading(false);
-  }, [statusFilter]);
+  }, [statusFilter, appliedRange]);
 
   useEffect(() => {
-    if (tab === 'pending') loadPending();
-    else loadHistory();
-  }, [tab, loadPending, loadHistory]);
+    const timer = setTimeout(() => {
+      const storedRange = loadStoredAdminRange(defaultRange);
+      setRange(storedRange);
+      setAppliedRange(storedRange);
+      setHydrated(true);
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [defaultRange]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const timer = setTimeout(() => {
+      if (tab === 'pending') loadPending();
+      else loadHistory();
+    }, 0);
+
+    return () => clearTimeout(timer);
+  }, [tab, hydrated, loadPending, loadHistory]);
+
+  const handleApplyRange = () => {
+    storeAdminRange(range);
+    setAppliedRange(range);
+  };
+
+  const handleResetRange = () => {
+    clearStoredAdminRange();
+    setRange(defaultRange);
+    setAppliedRange(defaultRange);
+  };
 
   const handleCreatePayout = async (host: PendingHostPayout) => {
     setProcessing(host.hostId);
@@ -171,6 +213,28 @@ export default function AdminPayoutsPage() {
     setFailTarget(null);
   };
 
+  const handleDownloadStatement = async (payoutId: string, fileName?: string) => {
+    setProcessing(payoutId);
+    setError('');
+    try {
+      const response = await api.get(`/payouts/${payoutId}/statement`, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = globalThis.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName || `payout-statement-${payoutId}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      globalThis.URL.revokeObjectURL(url);
+      setSuccess('Auszug wurde heruntergeladen.');
+    } catch {
+      setError('Statement konnte nicht geladen werden.');
+    } finally {
+      setProcessing(null);
+    }
+  };
+
   const statusColors: Record<string, 'success' | 'warning' | 'error' | 'gray' | 'primary'> = {
     pending: 'warning',
     processing: 'primary',
@@ -206,6 +270,19 @@ export default function AdminPayoutsPage() {
             </Button>
           </div>
         </div>
+
+        <Card className="p-4 space-y-3">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Zeitraum</p>
+            <p className="text-sm text-gray-500">Aktiver Zeitraum: {formatAdminRangeLabel(appliedRange)}</p>
+          </div>
+          <AdminDateRangeFilter
+            value={range}
+            onChange={setRange}
+            onApply={handleApplyRange}
+            onReset={handleResetRange}
+          />
+        </Card>
 
         {success && <Alert variant="success" onClose={() => setSuccess('')}>{success}</Alert>}
         {error && <Alert variant="error" onClose={() => setError('')}>{error}</Alert>}
@@ -346,6 +423,7 @@ export default function AdminPayoutsPage() {
                           <td className="py-3 px-4 text-gray-500 text-xs">
                             <p>{formatDate(p.created_at)}</p>
                             {p.processed_at && <p className="text-green-600">{formatDate(p.processed_at)}</p>}
+                            {p.statement_generated_at && <p className="text-gray-500">Statement: {formatDate(p.statement_generated_at)}</p>}
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex gap-1">
@@ -371,6 +449,15 @@ export default function AdminPayoutsPage() {
                                   Ablehnen
                                 </Button>
                               )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDownloadStatement(p.id, `payout-statement-${p.id}.pdf`)}
+                                loading={processing === p.id}
+                                disabled={!!processing}
+                              >
+                                Statement
+                              </Button>
                             </div>
                           </td>
                         </tr>

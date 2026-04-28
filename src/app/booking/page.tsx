@@ -82,8 +82,11 @@ export default function BookingPage() {
   const startDate = searchParams.get('start') || formatDateForInput(new Date());
   const endDate = searchParams.get('end') || formatDateForInput(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
   const arrivalTime = searchParams.get('arrival') || '10:00';
+  const returnTime = searchParams.get('return') || '12:00';
   const parkingId = searchParams.get('parking') || '';
 
+  const [arrivalTimeState, setArrivalTimeState] = useState(arrivalTime);
+  const [returnTimeState, setReturnTimeState] = useState(returnTime);
   const [form, setForm] = useState<BookingFormData>({
     customerName: '',
     customerEmail: '',
@@ -234,8 +237,8 @@ export default function BookingPage() {
       return;
     }
 
-    const startDatetime = `${startDate}T${arrivalTime}:00`;
-    const endDatetime = `${endDate}T12:00:00`;
+    const startDatetime = `${startDate}T${arrivalTimeState}:00`;
+    const endDatetime = `${endDate}T${returnTimeState}:00`;
     const addonsList = Object.entries(selectedAddons)
       .filter(([, qty]) => qty > 0)
       .map(([addonId, quantity]) => ({ addonId, quantity }));
@@ -452,6 +455,7 @@ export default function BookingPage() {
                     </CardContent>
                   </Card>
 
+
                   {/* Travel Details */}
                   <Card>
                     <CardHeader>
@@ -489,10 +493,9 @@ export default function BookingPage() {
                             ))}
                           </select>
                         </div>
-                       
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <Input
+                        <Input
                           label="Hinflug-Nr. (optional)"
                           value={form.outboundFlight}
                           onChange={(e) => setForm({ ...form, outboundFlight: e.target.value.toUpperCase() })}
@@ -505,9 +508,68 @@ export default function BookingPage() {
                           placeholder="z.B. LX 456"
                         />
                       </div>
-
-                     
-
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="arrival-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Ankunftsdatum
+                          </label>
+                          <input
+                            id="arrival-date"
+                            type="date"
+                            className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
+                            value={startDate}
+                            onChange={e => {
+                              router.replace(`/booking?parking=${parkingId}&start=${e.target.value}&end=${endDate}&arrival=${arrivalTimeState}&return=${returnTimeState}`, { scroll: false });
+                              setTimeout(() => {
+                                const returnDateInput = document.getElementById('return-date');
+                                if (returnDateInput) {
+                                  (returnDateInput as HTMLInputElement).focus();
+                                }
+                              }, 100);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="arrival-time" className="block text-sm font-medium text-gray-700 mb-1">
+                            Ankunftszeit
+                          </label>
+                          <input
+                            id="arrival-time"
+                            type="time"
+                            className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
+                            value={arrivalTimeState}
+                            onChange={e => setArrivalTimeState(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label htmlFor="return-date" className="block text-sm font-medium text-gray-700 mb-1">
+                            Rückgabedatum
+                          </label>
+                          <input
+                            id="return-date"
+                            type="date"
+                            className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
+                            value={endDate}
+                            onChange={e => router.replace(`/booking?parking=${parkingId}&start=${startDate}&end=${e.target.value}&arrival=${arrivalTimeState}&return=${returnTimeState}`, { scroll: false })}
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor="return-time" className="block text-sm font-medium text-gray-700 mb-1">
+                            Rückgabezeit
+                          </label>
+                          <input
+                            id="return-time"
+                            type="time"
+                            className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
+                            value={returnTimeState}
+                            onChange={e => setReturnTimeState(e.target.value)}
+                            required
+                          />
+                        </div>
+                      </div>
                       <div>
                         <label htmlFor="specialNotes" className="block text-sm font-medium text-gray-700 mb-1">
                           Besondere Wünsche (optional)
@@ -670,12 +732,12 @@ export default function BookingPage() {
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Check-in</span>
                         <span className="font-medium text-gray-900">
-                          {formatDate(startDate)} um {arrivalTime}
+                          {formatDate(startDate)} um {arrivalTimeState}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Check-out</span>
-                        <span className="font-medium text-gray-900">{formatDate(endDate)}</span>
+                        <span className="font-medium text-gray-900">{formatDate(endDate)} um {returnTimeState}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-500">Dauer</span>

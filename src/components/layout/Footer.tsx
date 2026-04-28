@@ -10,6 +10,7 @@ export default function Footer() {
     product: [
       { name: "So funktioniert's", href: '/how-it-works' },
       { name: 'Parkplatz suchen', href: '/zurich' },
+      { name: 'Parking Host werden', href: '/host-registration' },
     //   { name: 'Pricing', href: '/pricing' },
     ],
     support: [

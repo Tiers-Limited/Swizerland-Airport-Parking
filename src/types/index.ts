@@ -69,6 +69,7 @@ export interface ParkingListing {
   currency: string;
   amenities: ParkingAmenities;
   images: string[];
+  hostPhotos?: string[];
   phoneNumber: string;
   pricingTiers?: PricingTier[];
   offers: PricingOffer[];
@@ -115,7 +116,9 @@ export interface PricingOffer {
 export type BookingStatus =
   | 'draft'
   | 'pending_payment'
+  | 'pending_approval'
   | 'confirmed'
+  | 'modified'
   | 'checked_in'
   | 'completed'
   | 'cancelled'
@@ -229,6 +232,14 @@ export interface HostProfile {
   tax_id?: string;
   address?: string;
   phone_number?: string;
+  contact_person?: string;
+  company_phone?: string;
+  company_address?: string;
+  bank_iban?: string;
+  mwst_number?: string;
+  facility_options?: Record<string, boolean> | string[];
+  transfer_service?: Record<string, unknown>;
+  photos?: string[];
   website?: string;
   created_at: string;
   updated_at: string;
@@ -236,9 +247,18 @@ export interface HostProfile {
 
 export interface HostRegisterData {
   companyName?: string;
+  contactPerson?: string;
+  phoneNumber?: string;
+  companyPhone?: string;
+  companyAddress?: string;
   taxId?: string;
   address?: string;
-  phoneNumber?: string;
+  bankIban?: string;
+  mwstNumber?: string;
+  commissionRate?: number;
+  facilityOptions?: string[] | Record<string, boolean>;
+  transferService?: Record<string, unknown>;
+  photos?: string[];
   website?: string;
 }
 

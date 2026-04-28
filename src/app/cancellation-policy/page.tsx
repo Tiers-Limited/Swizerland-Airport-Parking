@@ -33,7 +33,7 @@ export default function CancellationPolicyPage() {
                 </p>
               </div>
               <p className="text-gray-600">
-                Um Ihre Buchung zu stornieren, melden Sie sich in Ihrem Konto an, gehen Sie zu «Meine Buchungen» und wählen Sie die Buchung aus, die Sie stornieren möchten. Folgen Sie den Anweisungen, um die Stornierung abzuschliessen.
+                Buchungsstornierungen werden durch unser Admin-Team bearbeitet. Bitte kontaktieren Sie den Support und geben Sie Ihren Buchungscode sowie den Stornierungsgrund an.
               </p>
             </section>
 
@@ -72,7 +72,7 @@ export default function CancellationPolicyPage() {
                 <li>Änderungen müssen mindestens 24 Stunden vor Ihrer ursprünglichen Ankunftszeit vorgenommen werden</li>
                 <li>Wenn die neuen Daten einen höheren Preis ergeben, wird Ihnen die Differenz berechnet</li>
                 <li>Wenn die neuen Daten einen niedrigeren Preis ergeben, wird die Differenz erstattet</li>
-                <li>Melden Sie sich in Ihrem Konto an, um Änderungen online vorzunehmen</li>
+                <li>Bitte kontaktieren Sie den Support, damit ein Admin die Änderung durchführen kann</li>
               </ul>
             </section>
 

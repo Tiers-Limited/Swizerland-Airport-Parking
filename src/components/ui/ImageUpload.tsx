@@ -10,13 +10,34 @@ interface ImageUploadProps {
   onChange: (images: string[]) => void;
   maxImages?: number;
   label?: string;
+  accept?: string;
+  allowedMimeTypes?: string[];
+  maxFileSizeMB?: number;
 }
 
-export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly<ImageUploadProps>) {
+const mimeTypeLabelMap: Record<string, string> = {
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'image/webp': 'WebP',
+};
+
+export function ImageUpload({
+  images,
+  onChange,
+  maxImages = 8,
+  label,
+  accept = 'image/*',
+  allowedMimeTypes,
+  maxFileSizeMB = 10,
+}: Readonly<ImageUploadProps>) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState('');
+
+  const allowedTypesLabel = allowedMimeTypes && allowedMimeTypes.length > 0
+    ? allowedMimeTypes.map((type) => mimeTypeLabelMap[type] || type.replace('image/', '').toUpperCase()).join(', ')
+    : 'PNG, JPG, WebP';
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -42,8 +63,12 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly
         setError('Nur Bilddateien erlaubt');
         continue;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        setError('Bild ist zu gross (max. 10 MB)');
+      if (allowedMimeTypes && allowedMimeTypes.length > 0 && !allowedMimeTypes.includes(file.type)) {
+        setError(`Nur ${allowedTypesLabel} erlaubt`);
+        continue;
+      }
+      if (file.size > maxFileSizeMB * 1024 * 1024) {
+        setError(`Bild ist zu gross (max. ${maxFileSizeMB} MB)`);
         continue;
       }
 
@@ -173,7 +198,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly
               <div>
                 <p className="text-sm font-medium text-gray-700">Klicken zum Hochladen</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  PNG, JPG, WebP • max 10 MB • {images.length}/{maxImages}
+                  {allowedTypesLabel} • max {maxFileSizeMB} MB • {images.length}/{maxImages}
                 </p>
               </div>
             </div>
@@ -182,7 +207,7 @@ export function ImageUpload({ images, onChange, maxImages = 8, label }: Readonly
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept={accept}
             multiple
             onChange={handleFileSelect}
             className="hidden"

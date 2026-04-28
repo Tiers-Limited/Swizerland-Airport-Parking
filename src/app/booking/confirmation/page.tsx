@@ -8,6 +8,7 @@ import { Header, Footer } from '@/components/layout';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
 import { Icon } from '@/components/ui/Icons';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
 
 interface BookingAddonLine {
   addon_id: string;
@@ -123,6 +124,9 @@ export default function BookingConfirmationPage() {
   const arrivalTime = booking.arrival_lot_datetime
     ? new Date(booking.arrival_lot_datetime).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
     : '—';
+  const returnTime = booking.end_datetime
+    ? new Date(booking.end_datetime).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })
+    : '—';
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -133,24 +137,24 @@ export default function BookingConfirmationPage() {
           {/* Success Header */}
           <div className="text-center mb-8">
             <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-              booking.status === 'confirmed' ? 'bg-green-100' : 'bg-blue-100'
+              getBookingStatusLabel(booking.status) === 'Confirmed' ? 'bg-green-100' : 'bg-blue-100'
             }`}>
-              {booking.status === 'confirmed' ? (
+              {getBookingStatusLabel(booking.status) === 'Confirmed' ? (
                 <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
               ) : (
                 <Icon name="Clock" className="h-10 w-10 text-blue-600" />
               )}
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {booking.status === 'confirmed' ? 'Buchung bestätigt!' : 'Zahlung erhalten!'}
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              {getBookingStatusLabel(booking.status) === 'Confirmed' ? 'Buchung bestätigt!' : 'Zahlung erhalten!'}
             </h1>
             <p className="text-gray-600">
-              {booking.status === 'confirmed'
+              {getBookingStatusLabel(booking.status) === 'Confirmed'
                 ? 'Ihre Parkplatzreservierung wurde erfolgreich bestätigt.'
                 : 'Ihre Zahlung wurde erfolgreich verarbeitet. Ihre Buchung wird nun vom Admin geprüft und bestätigt. Sie erhalten eine Bestätigungs-E-Mail, sobald Ihre Buchung genehmigt wurde.'}
             </p>
             {booking.status === 'pending_approval' && (
-              <Badge variant="warning" className="mt-3">Wartet auf Genehmigung</Badge>
+              <Badge variant={getBookingStatusVariant(booking.status)} className="mt-3">{getBookingStatusLabel(booking.status)}</Badge>
             )}
           </div>
 
@@ -170,7 +174,7 @@ export default function BookingConfirmationPage() {
             <CardContent className="p-6 space-y-6">
               <div>
                 <h2 className="font-semibold text-gray-900 text-lg mb-4">Buchungsdetails</h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Check-in</p>
                     <p className="font-medium text-gray-900">
@@ -181,7 +185,7 @@ export default function BookingConfirmationPage() {
                   <div>
                     <p className="text-sm text-gray-500">Check-out</p>
                     <p className="font-medium text-gray-900">
-                      {formatDate(booking.end_datetime)}
+                      {formatDate(booking.end_datetime)} um {returnTime}
                     </p>
                     <p className="text-sm text-gray-600">{days} Tage</p>
                   </div>
@@ -208,7 +212,7 @@ export default function BookingConfirmationPage() {
 
               <div className="border-t pt-6">
                 <h2 className="font-semibold text-gray-900 text-lg mb-4">Fahrzeug & Passagiere</h2>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Kennzeichen</p>
                     <p className="font-medium text-gray-900">{booking.car_plate}</p>

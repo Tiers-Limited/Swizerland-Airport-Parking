@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { apiCall } from '@/lib/api';
+import { api, apiCall } from '@/lib/api';
 import { Card, Badge, Spinner } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
 
@@ -73,6 +73,23 @@ export default function HostPayoutsPage() {
     failed: 'Fehlgeschlagen',
   };
 
+  const handleDownloadStatement = async (payoutId: string, fileName?: string) => {
+    try {
+      const response = await api.get(`/payouts/${payoutId}/statement`, { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = globalThis.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = fileName || `auszahlungsschein-${payoutId}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      globalThis.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to download payout statement', error);
+    }
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Spinner size="lg" /></div>;
   }
@@ -123,7 +140,18 @@ export default function HostPayoutsPage() {
                 {payouts.map((payout) => (
                   <tr key={payout.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      {payout.notes || `Auszahlung #${payout.id.slice(0, 8)}`}
+                      <div className="space-y-1">
+                        <p>{payout.notes || `Auszahlung #${payout.id.slice(0, 8)}`}</p>
+                        {payout.status === 'completed' && (
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadStatement(payout.id, `auszahlungsschein-${payout.id}.pdf`)}
+                            className="text-xs font-medium text-primary-600 hover:text-primary-700"
+                          >
+                            Auszahlungsschein herunterladen
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-gray-600">{payout.booking_count || '—'}</td>
                     <td className="py-3 px-4">

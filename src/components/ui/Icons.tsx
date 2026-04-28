@@ -40,6 +40,8 @@ import {
   Settings,
   LogOut,
   ExternalLink,
+  LayoutGrid,
+  List,
   // add more icons as needed
 } from 'lucide-react';
 
@@ -83,6 +85,8 @@ export const Icons = {
   Settings,
   LogOut,
   ExternalLink,
+  LayoutGrid,
+  List,
 };
 
 export interface IconProps extends React.ComponentPropsWithoutRef<'svg'> {

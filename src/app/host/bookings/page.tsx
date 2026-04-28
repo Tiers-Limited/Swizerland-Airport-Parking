@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { apiCall } from '@/lib/api';
 import { Card, Badge, Button, Spinner, Select } from '@/components/ui';
 import { FadeIn } from '@/components/animations';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
 
 interface HostBooking {
   id: string;
@@ -29,56 +30,63 @@ interface HostBooking {
 }
 
 export default function HostBookingsPage() {
-  const [bookings, setBookings] = useState<HostBooking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [bookings, setBookings] = useState<HostBooking[] | null>(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const loadBookings = useCallback(async () => {
-    setLoading(true);
-    const params = new URLSearchParams({ page: String(page), limit: '10', sortBy: 'created_at', sortOrder: 'desc' });
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-
-    const res = await apiCall<{ bookings: HostBooking[]; total: number; totalPages: number }>(
-      'GET', `/listings/my/bookings?${params}`
-    );
-    if (res.success && res.data) {
-      const bk = res.data.bookings || (Array.isArray(res.data) ? res.data as unknown as HostBooking[] : []);
-      setBookings(bk);
-      setTotalPages(res.data.totalPages || 1);
-    }
-    setLoading(false);
-  }, [statusFilter, page]);
-
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    let active = true;
+
+    const loadBookings = async () => {
+      const params = new URLSearchParams({ page: String(page), limit: '10', sortBy: 'created_at', sortOrder: 'desc' });
+      if (statusFilter !== 'all') params.set('status', statusFilter);
+
+      const res = await apiCall<{ bookings: HostBooking[]; total: number; totalPages: number }>(
+        'GET', `/listings/my/bookings?${params}`
+      );
+
+      if (!active) return;
+
+      if (res.success && res.data) {
+        const bk = res.data.bookings || (Array.isArray(res.data) ? res.data as unknown as HostBooking[] : []);
+        setBookings(bk);
+        setTotalPages(res.data.totalPages || 1);
+      } else {
+        setBookings([]);
+        setTotalPages(1);
+      }
+    };
+
+    void loadBookings();
+
+    return () => {
+      active = false;
+    };
+  }, [statusFilter, page]);
 
   const formatDate = (d?: string) => {
     if (!d) return '–';
     try {
       return new Date(d).toLocaleDateString('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch { return '–'; }
+    } catch {
+      return '–';
+    }
   };
+
   const formatTime = (d?: string) => {
     if (!d) return '–';
     try {
       return new Date(d).toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
-    } catch { return '–'; }
+    } catch {
+      return '–';
+    }
   };
-  const formatCurrency = (a: number, c = 'CHF') => new Intl.NumberFormat('de-CH', { style: 'currency', currency: c }).format(a);
 
-  const statusColors: Record<string, 'success' | 'warning' | 'error' | 'info' | 'gray'> = {
-    confirmed: 'success',
-    pending_payment: 'warning',
-    checked_in: 'info',
-    completed: 'gray',
-    cancelled: 'error',
-    refunded: 'error',
-    draft: 'gray',
-  };
+  const formatCurrency = (amount: number, currency = 'CHF') => new Intl.NumberFormat('de-CH', { style: 'currency', currency }).format(amount);
+
+  const loading = bookings === null;
 
   return (
     <FadeIn>
@@ -87,7 +95,6 @@ export default function HostBookingsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Buchungen</h1>
         </div>
 
-        {/* Filters */}
         <Card className="p-4">
           <div className="flex items-center gap-4">
             <Select
@@ -123,7 +130,6 @@ export default function HostBookingsPage() {
             <div className="space-y-3">
               {bookings.map((booking) => (
                 <Card key={booking.id} className="overflow-hidden">
-                  {/* Summary row */}
                   <button
                     type="button"
                     onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
@@ -132,8 +138,8 @@ export default function HostBookingsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-mono text-sm font-medium text-baby-blue-600">{booking.booking_code}</span>
-                        <Badge variant={statusColors[booking.status ?? ''] || 'gray'}>
-                          {booking.status ? booking.status.replace(/_/g, ' ') : ''}
+                        <Badge variant={getBookingStatusVariant(booking.status)}>
+                          {getBookingStatusLabel(booking.status)}
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-900 font-medium">{booking.customer_name}</p>
@@ -149,10 +155,9 @@ export default function HostBookingsPage() {
                     </div>
                   </button>
 
-                  {/* Expanded details */}
                   {expandedId === booking.id && (
                     <div className="border-t border-gray-100 p-5 bg-gray-50/50">
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-500 text-xs mb-0.5">E-Mail</p>
                           <p className="text-gray-900">{booking.customer_email}</p>
@@ -181,16 +186,16 @@ export default function HostBookingsPage() {
                           <p className="text-gray-500 text-xs mb-0.5">Gepäck</p>
                           <p className="text-gray-900">{booking.luggage ?? '–'}</p>
                         </div>
-                        {(booking as any).outbound_flight_no && (
+                        {booking.outbound_flight_no && (
                           <div>
                             <p className="text-gray-500 text-xs mb-0.5">Hinflug</p>
-                            <p className="text-gray-900">{(booking as any).outbound_flight_no}</p>
+                            <p className="text-gray-900">{booking.outbound_flight_no}</p>
                           </div>
                         )}
-                        {(booking as any).return_flight_no && (
+                        {booking.return_flight_no && (
                           <div>
                             <p className="text-gray-500 text-xs mb-0.5">Rückflug</p>
-                            <p className="text-gray-900">{(booking as any).return_flight_no}</p>
+                            <p className="text-gray-900">{booking.return_flight_no}</p>
                           </div>
                         )}
                       </div>
@@ -206,13 +211,12 @@ export default function HostBookingsPage() {
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-center gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
                   disabled={page <= 1}
                 >
                   Zurück
@@ -223,7 +227,7 @@ export default function HostBookingsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
                   disabled={page >= totalPages}
                 >
                   Weiter
