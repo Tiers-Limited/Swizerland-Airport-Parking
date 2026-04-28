@@ -30,11 +30,14 @@ function findMatchingTier(tiers: PricingTier[] | undefined, startDate: string, e
 function mapBackendListing(raw: Record<string, unknown>): ParkingListing {
   const distMin = raw.distance_to_airport_min;
   const rawTiers = raw.pricing_tiers;
+  const rawHostPhotos = raw.host_photos;
   const tiers: PricingTier[] = Array.isArray(rawTiers)
     ? rawTiers
     : typeof rawTiers === 'string'
       ? (() => { try { return JSON.parse(rawTiers); } catch { return []; } })()
       : [];
+  const hostPhotos = Array.isArray(rawHostPhotos) ? rawHostPhotos as string[] : [];
+  const listingImages = (raw.images as string[]) || (raw.photos as string[]) || [];
 
   return {
     id: raw.id as string,
@@ -58,7 +61,8 @@ function mapBackendListing(raw: Record<string, unknown>): ParkingListing {
       covered: false, evCharging: false, security247: false, cctv: false,
       fenced: false, lit: false, accessible: false, carWash: false,
     },
-    images: (raw.images as string[]) || (raw.photos as string[]) || [],
+    images: [...listingImages, ...hostPhotos],
+    hostPhotos,
     phoneNumber: (raw.phone_number as string) || '',
     pricingTiers: tiers,
     offers: [],
@@ -79,6 +83,11 @@ export default function ZurichSearchPage() {
   const [listings, setListings] = useState<ParkingListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('price');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
+    if (globalThis.window === undefined) return 'list';
+    const savedView = sessionStorage.getItem('zurich-list-view');
+    return savedView === 'grid' ? 'grid' : 'list';
+  });
   const [filters, setFilters] = useState({
     covered: false,
     evCharging: false,
@@ -120,6 +129,10 @@ export default function ZurichSearchPage() {
     }
     fetchListings();
   }, [startDate, endDate, sortBy]);
+
+  useEffect(() => {
+    sessionStorage.setItem('zurich-list-view', viewMode);
+  }, [viewMode]);
 
   const sortedListings = [...listings].sort((a, b) => {
     switch (sortBy) {
@@ -169,12 +182,12 @@ export default function ZurichSearchPage() {
     }
 
     return (
-      <div className="space-y-4">
+      <div className={viewMode === 'grid' ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5' : 'space-y-4'}>
         {filteredListings?.map((listing) => (
           <div key={listing.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-soft transition-shadow">
-            <div className="flex flex-col md:flex-row">
+            <div className={viewMode === 'grid' ? 'flex flex-col h-full' : 'flex flex-col md:flex-row'}>
               {/* Image */}
-              <div className="md:w-64 h-48 md:h-auto shrink-0 bg-primary-50 relative overflow-hidden">
+              <div className={viewMode === 'grid' ? 'h-56 shrink-0 bg-primary-50 relative overflow-hidden' : 'md:w-64 h-48 md:h-auto shrink-0 bg-primary-50 relative overflow-hidden'}>
                 {listing.images && listing.images.length > 0 ? (
                   <Image
                     src={listing.images[0]}
@@ -191,8 +204,8 @@ export default function ZurichSearchPage() {
               </div>
 
               {/* Content */}
-              <div className="flex-1 p-5 sm:p-6">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className={viewMode === 'grid' ? 'flex-1 p-5 sm:p-6 flex flex-col' : 'flex-1 p-5 sm:p-6'}>
+                <div className={viewMode === 'grid' ? 'flex-1 flex flex-col gap-4' : 'flex flex-col md:flex-row md:items-start md:justify-between gap-4'}>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-semibold text-gray-900 truncate">{listing.name}</h3>
@@ -227,7 +240,7 @@ export default function ZurichSearchPage() {
                   </div>
 
                   {/* Price & CTA */}
-                  <div className="text-right shrink-0">
+                  <div className={viewMode === 'grid' ? 'text-left shrink-0 mt-auto' : 'text-right shrink-0'}>
                     {(() => {
                       const tier = findMatchingTier(listing.pricingTiers, startDate, endDate);
                       if (tier) {
@@ -254,7 +267,7 @@ export default function ZurichSearchPage() {
                       );
                     })()}
                     <Link href={`/parking/${listing.id}?startDate=${startDate}&endDate=${endDate}`}>
-                      <Button size="sm">Details ansehen</Button>
+                      <Button size="sm" className={viewMode === 'grid' ? 'w-full' : ''}>Details ansehen</Button>
                     </Link>
                   </div>
                 </div>
@@ -283,7 +296,29 @@ export default function ZurichSearchPage() {
                 {startDate && endDate && <> für {days} {days === 1 ? 'Tag' : 'Tage'}</>}
               </p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={viewMode === 'list' ? 'primary' : 'ghost'}
+                  className="rounded-lg"
+                  onClick={() => setViewMode('list')}
+                  leftIcon={<Icon name="List" className="h-4 w-4" />}
+                >
+                  Liste
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={viewMode === 'grid' ? 'primary' : 'ghost'}
+                  className="rounded-lg"
+                  onClick={() => setViewMode('grid')}
+                  leftIcon={<Icon name="LayoutGrid" className="h-4 w-4" />}
+                >
+                  Grid
+                </Button>
+              </div>
               <div className="flex items-center gap-2 text-sm">
                 <label htmlFor="search-from" className="text-gray-500">Von:</label>
                 <input

@@ -8,6 +8,7 @@ import { Header, Footer } from '@/components/layout';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
 import { Icon } from '@/components/ui/Icons';
+import { getBookingStatusLabel, getBookingStatusVariant } from '@/lib/booking-status';
 
 interface BookingAddonLine {
   addon_id: string;
@@ -119,27 +120,27 @@ export default function BookingConfirmationContent() {
     <main className="flex-1 py-12">
       <div className="container mx-auto px-4 max-w-3xl">
         <div className="text-center mb-8">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-            booking.status === 'confirmed' ? 'bg-green-100' : 'bg-blue-100'
-          }`}>
-            {booking.status === 'confirmed' ? (
-              <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
-            ) : (
-              <Icon name="Clock" className="h-10 w-10 text-blue-600" />
+            <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
+              getBookingStatusLabel(booking.status) === 'Confirmed' ? 'bg-green-100' : 'bg-blue-100'
+            }`}>
+              {getBookingStatusLabel(booking.status) === 'Confirmed' ? (
+                <Icon name="CheckCircle" className="h-10 w-10 text-green-600" />
+              ) : (
+                <Icon name="Clock" className="h-10 w-10 text-blue-600" />
+              )}
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              {getBookingStatusLabel(booking.status) === 'Confirmed' ? 'Buchung bestätigt!' : 'Zahlung erhalten!'}
+            </h1>
+            <p className="text-gray-600">
+              {getBookingStatusLabel(booking.status) === 'Confirmed'
+                ? 'Ihre Parkplatzreservierung wurde erfolgreich bestätigt.'
+                : 'Ihre Zahlung wurde erfolgreich verarbeitet. Ihre Buchung wird nun vom Admin geprüft und bestätigt. Sie erhalten eine Bestätigungs-E-Mail, sobald Ihre Buchung genehmigt wurde.'}
+            </p>
+            {booking.status === 'pending_approval' && (
+              <Badge variant={getBookingStatusVariant(booking.status)} className="mt-3">{getBookingStatusLabel(booking.status)}</Badge>
             )}
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {booking.status === 'confirmed' ? 'Buchung bestätigt!' : 'Zahlung erhalten!'}
-          </h1>
-          <p className="text-gray-600">
-            {booking.status === 'confirmed'
-              ? 'Ihre Parkplatzreservierung wurde erfolgreich bestätigt.'
-              : 'Ihre Zahlung wurde erfolgreich verarbeitet. Ihre Buchung wird nun vom Admin geprüft und bestätigt. Sie erhalten eine Bestätigungs-E-Mail, sobald Ihre Buchung genehmigt wurde.'}
-          </p>
-          {booking.status === 'pending_approval' && (
-            <Badge variant="warning" className="mt-3">Wartet auf Genehmigung</Badge>
-          )}
-        </div>
 
         <Card className="mb-6">
           <CardContent className="p-6 text-center">

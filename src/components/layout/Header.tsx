@@ -295,6 +295,5 @@ export default function Header ({ transparent = false }: Readonly<HeaderProps>) 
           )}
         </div>
       </header>
-    </Suspense>
   )
 }

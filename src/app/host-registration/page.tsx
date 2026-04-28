@@ -181,23 +181,22 @@ export default function HostRegistrationPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
               <div className="space-y-6">
                 <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm text-white/90">
-                  Parking partner program for airport hosts
+                  Parkplatzpartnerprogramm für Flughafenbetreiber
                 </div>
                 <div className="space-y-4">
                   <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight">
-                    Turn your parking space into a steady booking channel.
+                    Verwandeln Sie Ihren Parkplatz in einen stetigen Buchungskanal.
                   </h1>
                   <p className="max-w-2xl text-base sm:text-lg text-white/80 leading-7">
-                    Join ZurichPark to reach travelers looking for secure airport parking near Zurich.
-                    We handle discovery, bookings, payments, and host onboarding while you focus on the parking experience.
+                    Schließen Sie sich ZurichPark an, um Reisende zu erreichen, die sichere Flughafenparkplätze in der Nähe von Zürich suchen. Wir kümmern uns um die Suche, Buchung, Bezahlung und die Anbindung der Parkhäuser, damit Sie sich ganz auf das Parkerlebnis konzentrieren können.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {[
-                    { value: 'Verified', label: 'Admin-approved onboarding' },
-                    { value: '24/7', label: 'Online booking availability' },
-                    { value: '1 portal', label: 'Manage requests in one place' },
+                    { value: 'Verifiziert', label: 'Vom Administrator genehmigtes Onboarding' },
+                    { value: '24/7', label: 'Online-Buchungsverfügbarkeit' },
+                    { value: '1 Portal', label: 'Anfragen zentral verwalten' },
                   ].map((item) => (
                     <div key={item.label} className="rounded-2xl border border-white/10 bg-white/8 px-4 py-4 backdrop-blur">
                       <p className="text-lg font-semibold text-white">{item.value}</p>
@@ -208,10 +207,10 @@ export default function HostRegistrationPage() {
 
                 <div className="flex flex-wrap gap-3">
                   <Link href="#registration-form">
-                    <Button size="lg">Start application</Button>
+                    <Button size="lg">Anwendung starten</Button>
                   </Link>
                   <Link href="#how-it-works">
-                    <Button size="lg" variant="secondary">How it works</Button>
+                    <Button size="lg" variant="secondary">So funktioniert es</Button>
                   </Link>
                 </div>
               </div>
@@ -219,13 +218,13 @@ export default function HostRegistrationPage() {
               <div className="lg:pl-8">
                 <Card className="p-6 sm:p-8 shadow-2xl shadow-slate-950/20 bg-white text-gray-900">
                   <div className="space-y-4">
-                    <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">What hosts get</p>
-                    <h2 className="text-2xl font-bold">A cleaner way to fill empty parking spots</h2>
+                    <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">Was die Gastgeber erhalten</p>
+                    <h2 className="text-2xl font-bold">Eine sauberere Methode, leere Parkplätze zu füllen</h2>
                     <ul className="space-y-3 text-sm text-gray-600">
-                      <li>• A dedicated host portal for bookings and performance overview</li>
-                      <li>• Admin-reviewed onboarding for quality and trust</li>
-                      <li>• Support for airport travelers who need a simple, reliable parking experience</li>
-                      <li>• Structured payouts and booking handling through the platform</li>
+                      <li>• Ein spezielles Gastgeberportal für Buchungen und Leistungsübersicht</li>
+                      <li>• Das Onboarding wurde vom Administrator auf Qualität und Vertrauen geprüft.</li>
+                      <li>• Unterstützung für Flughafenreisende, die ein einfaches und zuverlässiges Parkerlebnis benötigen</li>
+                      <li>• Strukturierte Auszahlungen und Buchungsabwicklung über die Plattform</li>
                     </ul>
                   </div>
                 </Card>
@@ -241,20 +240,20 @@ export default function HostRegistrationPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
                     {
-                      title: 'Better visibility',
-                      text: 'Show up in a marketplace designed for airport parking, not a generic classifieds page.',
+                      title: 'Bessere Sichtbarkeit',
+                      text: 'Präsentieren Sie sich auf einem Marktplatz, der speziell für Flughafenparkplätze konzipiert ist, und nicht auf einer allgemeinen Kleinanzeigenseite.',
                     },
                     {
-                      title: 'Simple onboarding',
-                      text: 'Submit your company details once. We review the account before the portal opens.',
+                      title: 'Einfaches Onboarding',
+                      text: 'Bitte übermitteln Sie Ihre Unternehmensdaten einmalig. Wir prüfen das Konto, bevor das Portal freigeschaltet wird.',
                     },
                     {
                       title: 'Operational control',
-                      text: 'Handle arrivals, change requests, and booking visibility from one host workspace.',
+                      text: 'Ankünfte, Änderungsanfragen und Buchungsübersicht können über einen einzigen Host-Arbeitsbereich abgewickelt werden.',
                     },
                     {
-                      title: 'Trusted payments',
-                      text: 'Bookings, refunds, and payouts are handled inside the platform flow.',
+                      title: 'Vertrauenswürdige Zahlungen',
+                      text: 'Buchungen, Rückerstattungen und Auszahlungen werden innerhalb des Plattformablaufs abgewickelt.',
                     },
                   ].map((item) => (
                     <Card key={item.title} className="p-5">
@@ -265,12 +264,12 @@ export default function HostRegistrationPage() {
                 </div>
 
                 <Card className="p-6" id="how-it-works">
-                  <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">How it works</p>
+                  <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">So funktioniert es</p>
                   <div className="mt-4 space-y-4">
                     {[
-                      'Fill out the host application with your company and contact details.',
-                      'Our team reviews the account and verifies the profile.',
-                      'After approval, you get access to the host portal and can start receiving bookings.',
+                      'Füllen Sie den Gastgeberantrag mit Ihren Firmen- und Kontaktdaten aus.',
+                      'Unser Team prüft das Konto und verifiziert das Profil.',
+                      'Nach der Genehmigung erhalten Sie Zugriff auf das Gastgeberportal und können mit der Annahme von Buchungen beginnen.',
                     ].map((item, index) => (
                       <div key={item} className="flex gap-3">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
@@ -297,20 +296,20 @@ export default function HostRegistrationPage() {
 
                 {isAuthenticated && user?.role === 'host' ? (
                   <div className="space-y-4 text-center">
-                    <p className="text-gray-700">Your account already has host access.</p>
-                    <Button onClick={() => router.push('/host')}>Go to Host Portal</Button>
+                    <p className="text-gray-700">Ihr Konto hat bereits Host-Zugriff.</p>
+                    <Button onClick={() => router.push('/host')}>Zum Host-Portal wechseln</Button>
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-6">
                     {canShowAccountFields && (
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">Create your account</p>
-                          <p className="mt-1 text-sm text-gray-500">You need an account before we can convert it into a host profile.</p>
+                          <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">Erstellen Sie Ihr Konto</p>
+                          <p className="mt-1 text-sm text-gray-500">Sie benötigen ein Konto, bevor wir es in ein Host-Profil umwandeln können.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <Input
-                            label="Full name"
+                            label="Vollständiger Name"
                             value={form.name}
                             onChange={(e) => updateField('name', e.target.value)}
                             disabled={loading}
@@ -318,7 +317,7 @@ export default function HostRegistrationPage() {
                             error={fieldErrors.name}
                           />
                           <Input
-                            label="Email"
+                            label="E-Mail"
                             type="email"
                             value={form.email}
                             onChange={(e) => updateField('email', e.target.value)}
@@ -327,14 +326,14 @@ export default function HostRegistrationPage() {
                             error={fieldErrors.email}
                           />
                           <Input
-                            label="Phone"
+                            label="Telefon"
                             value={form.phone}
                             onChange={(e) => updateField('phone', e.target.value)}
                             disabled={loading}
                           />
                           <div className="hidden md:block" />
                           <Input
-                            label="Password"
+                            label="Passwort"
                             type="password"
                             value={form.password}
                             onChange={(e) => updateField('password', e.target.value)}
@@ -343,7 +342,7 @@ export default function HostRegistrationPage() {
                             error={fieldErrors.password}
                           />
                           <Input
-                            label="Confirm password"
+                            label="Passwort bestätigen"
                             type="password"
                             value={form.confirmPassword}
                             onChange={(e) => updateField('confirmPassword', e.target.value)}
@@ -357,12 +356,12 @@ export default function HostRegistrationPage() {
 
                     <div className="space-y-4">
                       <div>
-                        <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">Host application</p>
-                        <p className="mt-1 text-sm text-gray-500">Tell us about the parking business you want to list.</p>
+                        <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">Host-Anwendung</p>
+                        <p className="mt-1 text-sm text-gray-500">Beschreiben Sie uns das Parkunternehmen, das Sie eintragen möchten.</p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Input
-                          label="Company name"
+                          label="Firmenname"
                           value={form.companyName}
                           onChange={(e) => updateField('companyName', e.target.value)}
                           disabled={loading}
@@ -370,21 +369,21 @@ export default function HostRegistrationPage() {
                           error={fieldErrors.companyName}
                         />
                         <Input
-                          label="Contact person"
+                          label="Ansprechpartner"
                           value={form.contactPerson}
                           onChange={(e) => updateField('contactPerson', e.target.value)}
                           disabled={loading}
-                          placeholder="Who should we contact?"
+                          placeholder="An wen sollen wir uns wenden?"
                         />
                         <Input
-                          label="Company phone"
+                          label="Firmentelefon"
                           value={form.phoneNumber}
                           onChange={(e) => updateField('phoneNumber', e.target.value)}
                           disabled={loading}
-                          placeholder="Main business phone"
+                          placeholder="Hauptgeschäftstelefon"
                         />
                         <Input
-                          label="Tax ID"
+                          label="Steuer-ID"
                           value={form.taxId}
                           onChange={(e) => updateField('taxId', e.target.value)}
                           disabled={loading}
@@ -394,21 +393,21 @@ export default function HostRegistrationPage() {
                           value={form.bankIban}
                           onChange={(e) => updateField('bankIban', e.target.value)}
                           disabled={loading}
-                          placeholder="For future payouts"
-                          helperText="Swiss IBAN format, for example CH12 3456 7890 1234 5678 9."
+                          placeholder="Für zukünftige Auszahlungen"
+                          helperText="Schweizer IBAN-Format, zum Beispiel CH12 3456 7890 1234 5678 9."
                           error={fieldErrors.bankIban}
                         />
                         <Input
-                          label="MWST number"
+                          label="MWST-Nummer"
                           value={form.mwstNumber}
                           onChange={(e) => updateField('mwstNumber', e.target.value)}
                           disabled={loading}
                           placeholder="Optional"
-                          helperText="Swiss VAT format, for example CHE-123.456.789 MWST."
+                          helperText="Schweizer MWST-Format, zum Beispiel CHE-123.456.789 MWST."
                           error={fieldErrors.mwstNumber}
                         />
                         <Input
-                          label="Website"
+                          label="Webseite"
                           type="url"
                           value={form.website}
                           onChange={(e) => updateField('website', e.target.value)}
@@ -416,14 +415,14 @@ export default function HostRegistrationPage() {
                           placeholder="https://..."
                         />
                         <div className="md:col-span-2">
-                          <label htmlFor="host-address" className="block text-sm font-medium text-gray-700 mb-1">Address <span className="text-error-500">*</span></label>
+                          <label htmlFor="host-address" className="block text-sm font-medium text-gray-700 mb-1">Adresse <span className="text-error-500">*</span></label>
                           <textarea
                             id="host-address"
                             value={form.address}
                             onChange={(e) => updateField('address', e.target.value)}
                             rows={4}
                             disabled={loading}
-                            placeholder="Business address or parking location address"
+                            placeholder="Geschäfteadresse oder Parkplatzadresse"
                             className="w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                           />
                         </div>
@@ -431,12 +430,12 @@ export default function HostRegistrationPage() {
                     </div>
 
                     <Button type="submit" className="w-full" loading={loading} disabled={loading}>
-                      Submit host application
+                      Host-Antrag einreichen
                     </Button>
 
                     {!isAuthenticated && (
                       <p className="text-sm text-gray-500 text-center">
-                        Already have an account? <Link href="/login?returnUrl=%2Fhost-registration" className="text-primary-600">Sign in</Link>
+                        Bereits ein Konto? <Link href="/login?returnUrl=%2Fhost-registration" className="text-primary-600">Anmelden</Link>
                       </p>
                     )}
                   </form>
