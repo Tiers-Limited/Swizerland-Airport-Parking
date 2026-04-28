@@ -57,7 +57,7 @@ export default function Footer() {
                     />
                   </svg>
                 </div>
-                <span className="font-bold text-xl text-white">ZurichPark</span>
+                <span className="font-bold text-xl text-white">Elvario</span>
               </div>
             </div>
             <p className="text-gray-400 text-sm">

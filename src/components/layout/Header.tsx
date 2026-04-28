@@ -1,12 +1,12 @@
 'use client'
 
-import { Suspense, useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import { Logo, Button, GoogleTranslate } from '@/components/ui'
-import { cn, getInitials, getFirstName } from '@/lib/utils'
-import { Icon } from '../ui/Icons'
+import { Suspense, useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { Logo, Button, GoogleTranslate } from '@/components/ui';
+import { cn, getInitials, getFirstName } from '@/lib/utils';
+import { Icon } from '../ui/Icons';
 
 interface HeaderProps {
   transparent?: boolean
@@ -33,19 +33,16 @@ export default function Header ({ transparent = false }: Readonly<HeaderProps>) 
   }
 
   return (
-    <Suspense fallback={<div className='h-16' />}>
-      <header
-        className={cn(
-          'sticky top-0 z-50 transition-all duration-300',
-          transparent
-            ? 'bg-transparent'
-            : 'bg-white/95 backdrop-blur-sm shadow-soft'
-        )}
-      >
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
-          <div className='flex justify-between items-center h-16 md:h-20'>
-            {/* Logo */}
-            <Logo size='md' />
+    <header
+      className={cn(
+        'sticky top-0 z-50 transition-all duration-300',
+        transparent ? 'bg-transparent' : 'bg-white/95 backdrop-blur-sm shadow-soft'
+      )}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16 md:h-20">
+          {/* Logo */}
+          <Logo size="lg" />
 
             {/* Desktop Navigation */}
             <nav className='hidden md:flex items-center gap-8'>
@@ -65,27 +62,26 @@ export default function Header ({ transparent = false }: Readonly<HeaderProps>) 
               ))}
             </nav>
 
-            {/* Desktop Auth */}
-            <div className='hidden md:flex items-center gap-3'>
-              <GoogleTranslate variant='compact' />
-              {isAuthenticated ? (
-                <div className='relative'>
-                  <button
-                    type='button'
-                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    className='flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors'
-                  >
-                    <div className='w-8 h-8 rounded-full bg-baby-blue-100 flex items-center justify-center text-baby-blue-600 font-medium text-sm'>
-                      {getInitials(user?.name)}
-                    </div>
-                    <span className='text-sm font-medium text-gray-700'>
-                      {getFirstName(user?.name)}
-                    </span>
-                    <Icon
-                      name='ChevronDown'
-                      className='h-4 w-4 text-gray-400'
-                    />
-                  </button>
+          {/* Desktop Auth */}
+          <div className="hidden md:flex items-center gap-3">
+            <Suspense fallback={<div className="w-10 h-10" />}>
+              <GoogleTranslate variant="compact" />
+            </Suspense>
+            {isAuthenticated ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full bg-baby-blue-100 flex items-center justify-center text-baby-blue-600 font-medium text-sm">
+                    {getInitials(user?.name)}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {getFirstName(user?.name)}
+                  </span>
+                  <Icon name="ChevronDown" className="h-4 w-4 text-gray-400" />
+                </button>
 
                   {isProfileMenuOpen && (
                     <>
