@@ -364,7 +364,7 @@ const handleBookingChange = useCallback((checkin: dayjs.Dayjs | null, checkout: 
       <section id="about" className="py-14 md:py-20 bg-primary-50/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-10 text-center">
-            Warum ZurichPark wählen?
+            Warum Elvario wählen?
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
             {features.map((item) => (
@@ -413,7 +413,7 @@ const handleBookingChange = useCallback((checkin: dayjs.Dayjs | null, checkout: 
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              title="ZurichPark Standort"
+              title="Elvario Standort"
             />
           </div>
         </div>
@@ -501,7 +501,7 @@ const handleBookingChange = useCallback((checkin: dayjs.Dayjs | null, checkout: 
           </h2>
           <div className="space-y-4 text-gray-600 leading-relaxed text-sm sm:text-base">
             <p>
-              ZurichPark wurde gegründet, um Reisenden eine einfache, günstige
+              Elvario wurde gegründet, um Reisenden eine einfache, günstige
               und sichere Möglichkeit zu bieten, ihr Auto in der Nähe des
               Flughafens Zürich zu parken.
             </p>
@@ -588,7 +588,7 @@ const handleBookingChange = useCallback((checkin: dayjs.Dayjs | null, checkout: 
               </svg>
               <p className="text-xs text-gray-500 mb-1">Support-Hotline</p>
               <p className="text-sm font-semibold text-gray-900">
-                +41 78 XXX XX XX
+                +41 445453979
               </p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-soft">
@@ -607,7 +607,7 @@ const handleBookingChange = useCallback((checkin: dayjs.Dayjs | null, checkout: 
               </svg>
               <p className="text-xs text-gray-500 mb-1">E-Mail</p>
               <p className="text-sm font-semibold text-gray-900">
-                info@zurichpark.ch
+                info@elvario.ch
               </p>
             </div>
           </div>

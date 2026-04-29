@@ -120,7 +120,7 @@ export default function TermsPage() {
                 Bei Fragen zu diesen Bedingungen kontaktieren Sie uns bitte unter:
               </p>
               <p className="text-gray-600 mt-2">
-                E-Mail: legal@zurichparking.ch<br />
+                E-Mail: legal@elvario.ch<br />
                 Adresse: Flughafenstrasse 123, 8058 Zürich, Schweiz
               </p>
             </section>

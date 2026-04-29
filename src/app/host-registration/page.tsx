@@ -188,7 +188,7 @@ export default function HostRegistrationPage() {
                     Verwandeln Sie Ihren Parkplatz in einen stetigen Buchungskanal.
                   </h1>
                   <p className="max-w-2xl text-base sm:text-lg text-white/80 leading-7">
-                    Schließen Sie sich ZurichPark an, um Reisende zu erreichen, die sichere Flughafenparkplätze in der Nähe von Zürich suchen. Wir kümmern uns um die Suche, Buchung, Bezahlung und die Anbindung der Parkhäuser, damit Sie sich ganz auf das Parkerlebnis konzentrieren können.
+                    Schließen Sie sich Elvario an, um Reisende zu erreichen, die sichere Flughafenparkplätze in der Nähe von Zürich suchen. Wir kümmern uns um die Suche, Buchung, Bezahlung und die Anbindung der Parkhäuser, damit Sie sich ganz auf das Parkerlebnis konzentrieren können.
                   </p>
                 </div>
 

@@ -7,7 +7,7 @@ import { Providers } from './providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'ZurichPark - Airport Parking Made Easy',
+  title: 'Elvario - Airport Parking Made Easy',
   description: 'Book secure airport parking near Zurich Airport (ZRH). Compare prices, find the best spots, and book in minutes.',
   keywords: 'Zurich airport parking, ZRH parking, Switzerland parking, secure parking',
 };

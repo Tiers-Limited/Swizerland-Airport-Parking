@@ -108,7 +108,7 @@ export default function PrivacyPage() {
                 <li>Widerruf der Einwilligung jederzeit</li>
               </ul>
               <p className="text-gray-600 mt-4">
-                Um diese Rechte auszuüben, kontaktieren Sie uns bitte unter privacy@zurichparking.ch.
+                Um diese Rechte auszuüben, kontaktieren Sie uns bitte unter privacy@elvario.ch.
               </p>
             </section>
 
@@ -156,7 +156,7 @@ export default function PrivacyPage() {
               </p>
               <p className="text-gray-600 mt-2">
                 Datenschutzbeauftragter<br />
-                E-Mail: privacy@zurichparking.ch<br />
+                E-Mail: privacy@elvario.ch<br />
                 Adresse: Flughafenstrasse 123, 8058 Zürich, Schweiz
               </p>
             </section>

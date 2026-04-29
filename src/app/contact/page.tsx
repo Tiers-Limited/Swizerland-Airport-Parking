@@ -1,38 +1,96 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, Button, Input, Alert } from '@/components/ui';
-import { Header, Footer } from '@/components/layout';
+import { useState } from "react";
+import { Card, CardContent, Button, Input, Alert } from "@/components/ui";
+import { Header, Footer } from "@/components/layout";
 
 const contactMethods = [
   {
-    title: 'E-Mail-Support',
-    description: 'Senden Sie uns eine E-Mail und wir antworten innerhalb von 24 Stunden.',
-    value: 'support@zurichparking.ch',
+    title: "E-Mail-Support (Gäste)",
+    description:
+      "Senden Sie uns eine E-Mail und wir antworten innerhalb von 24 Stunden.",
+    value: "support@elvario.ch",
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      <svg
+        className="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
       </svg>
     ),
   },
   {
-    title: 'Telefon',
-    description: 'Verfügbar Mo-Fr, 8:00 - 18:00 MEZ.',
-    value: '+41 44 123 45 67',
+    title: "E-Mail-Support (Hosts)",
+    description:
+      "Kontaktieren Sie uns als Host – wir helfen Ihnen schnell weiter.",
+    value: "host@elvario.ch",
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+      <svg
+        className="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+        />
       </svg>
     ),
   },
   {
-    title: 'Adresse',
-    description: 'Besuchen Sie unser Büro.',
-    value: 'Parking Solutions AG\nFlughafenstrasse 123\n8058 Zurich, Switzerland',
+    title: "Telefon",
+    description: "Verfügbar Mo-Fr, 8:00 - 18:00 MEZ.",
+    value: "+41 44545 3979",
     icon: (
-      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      <svg
+        className="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+        />
+      </svg>
+    ),
+  },
+  {
+    title: "Adresse",
+    description: "Besuchen Sie unser Büro.",
+    value:
+      "Parking Solutions AG\nFlughafenstrasse 123\n8058 Zurich, Switzerland",
+    icon: (
+      <svg
+        className="h-6 w-6"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+        />
       </svg>
     ),
   },
@@ -42,10 +100,10 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
+    name: "",
+    email: "",
+    subject: "",
+    message: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +114,7 @@ export default function ContactPage() {
       // TODO: API call to submit contact form
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setSuccess(true);
-      setForm({ name: '', email: '', subject: '', message: '' });
+      setForm({ name: "", email: "", subject: "", message: "" });
     } catch {
       // Handle error
     } finally {
@@ -91,9 +149,15 @@ export default function ContactPage() {
                     <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-600">
                       {method.icon}
                     </div>
-                    <h3 className="font-semibold text-gray-900 mb-1">{method.title}</h3>
-                    <p className="text-sm text-gray-500 mb-3">{method.description}</p>
-                    <p className="text-gray-900 whitespace-pre-line">{method.value}</p>
+                    <h3 className="font-semibold text-gray-900 mb-1">
+                      {method.title}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-3">
+                      {method.description}
+                    </p>
+                    <p className="text-gray-900 whitespace-pre-line">
+                      {method.value}
+                    </p>
                   </CardContent>
                 </Card>
               ))}
@@ -108,8 +172,13 @@ export default function ContactPage() {
                   </h2>
 
                   {success && (
-                    <Alert variant="success" className="mb-6" onClose={() => setSuccess(false)}>
-                      Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.
+                    <Alert
+                      variant="success"
+                      className="mb-6"
+                      onClose={() => setSuccess(false)}
+                    >
+                      Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb
+                      von 24 Stunden.
                     </Alert>
                   )}
 
@@ -118,21 +187,27 @@ export default function ContactPage() {
                       <Input
                         label="Ihr Name"
                         value={form.name}
-                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, name: e.target.value })
+                        }
                         required
                       />
                       <Input
                         label="E-Mail-Adresse"
                         type="email"
                         value={form.email}
-                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, email: e.target.value })
+                        }
                         required
                       />
                     </div>
                     <Input
                       label="Betreff"
                       value={form.subject}
-                      onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                      onChange={(e) =>
+                        setForm({ ...form, subject: e.target.value })
+                      }
                       required
                     />
                     <div>
@@ -141,7 +216,9 @@ export default function ContactPage() {
                       </label>
                       <textarea
                         value={form.message}
-                        onChange={(e) => setForm({ ...form, message: e.target.value })}
+                        onChange={(e) =>
+                          setForm({ ...form, message: e.target.value })
+                        }
                         required
                         rows={5}
                         className="block w-full rounded-lg border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 focus:outline-none transition-colors"
@@ -164,9 +241,24 @@ export default function ContactPage() {
         <section className="h-64 bg-gray-200 relative">
           <div className="absolute inset-0 flex items-center justify-center text-gray-500">
             <div className="text-center">
-              <svg className="h-12 w-12 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              <svg
+                className="h-12 w-12 mx-auto mb-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
               </svg>
               <p>Karte wird hier angezeigt</p>
             </div>
