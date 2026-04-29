@@ -152,3 +152,10 @@ h1,
 button,span font,label {
  text-transform: capitalize !important;
 }
+/* Make Ant Design pickers blend with your design */
+.ant-picker {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}

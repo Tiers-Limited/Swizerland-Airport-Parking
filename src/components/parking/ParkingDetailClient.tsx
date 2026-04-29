@@ -88,49 +88,29 @@ export default function ParkingDetailClient({ params }: PageParams) {
   const { id } = use(params);
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Read‑only values from URL
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
   const arrivalTime = searchParams.get('arrival') || '10:00';
   const returnTime = searchParams.get('return') || '12:00';
 
-  const updateDateParam = useCallback((key: string, value: string) => {
-    const p = new URLSearchParams(searchParams.toString());
-    if (value) { p.set(key, value); } else { p.delete(key); }
-    router.replace(`/parking/${id}?${p.toString()}`);
-  }, [searchParams, router, id]);
-
-  const updateTimeParam = useCallback((key: string, value: string) => {
-    const p = new URLSearchParams(searchParams.toString());
-    if (value) { p.set(key, value); } else { p.delete(key); }
-    router.replace(`/parking/${id}?${p.toString()}`);
-  }, [searchParams, router, id]);
-
   const [listing, setListing] = useState<ParkingListing | null>(null);
   const [pricing, setPricing] = useState<PriceBreakdown | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const endDateRef = useRef<HTMLInputElement | null>(null);
 
   const imageCount = listing?.images?.length || 0;
+  const prevImage = () => setActiveImageIndex((i) => (i - 1 + imageCount) % imageCount);
+  const nextImage = () => setActiveImageIndex((i) => (i + 1) % imageCount);
 
-  const prevImage = () => {
-    if (!imageCount) return;
-    setActiveImageIndex((i) => (i - 1 + imageCount) % imageCount);
-  };
-
-  const nextImage = () => {
-    if (!imageCount) return;
-    setActiveImageIndex((i) => (i + 1) % imageCount);
-  };
-
-  useEffect(() => {
+   useEffect(() => {
     async function fetchData() {
       setIsLoading(true);
       const res = await apiCall<Record<string, unknown>>('GET', `/listings/public/${id}`);
       if (res.success && res.data) {
         setListing(mapBackendListing(res.data));
       }
-      // Fetch server-calculated pricing
       if (startDate && endDate) {
         const params = new URLSearchParams({ locationId: id, startDate, endDate });
         const priceRes = await apiCall<PriceBreakdown>('GET', `/bookings/calculate-price?${params}`);
@@ -142,6 +122,16 @@ export default function ParkingDetailClient({ params }: PageParams) {
     }
     fetchData();
   }, [id, startDate, endDate]);
+
+  
+
+  // Helper to format date for display (e.g., "DD.MM.YYYY")
+  const formatDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  };
 
   if (isLoading) {
     return (
@@ -504,6 +494,19 @@ export default function ParkingDetailClient({ params }: PageParams) {
                 <div className="space-y-4 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div>
+                      <span className="block text-sm font-medium text-gray-700 mb-1">Abgabe</span>
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+                        {startDate ? formatDate(startDate) : '—'} · {arrivalTime}
+                      </div>
+                    </div>
+                    {/* Check-out block */}
+                    <div>
+                      <span className="block text-sm font-medium text-gray-700 mb-1">Abholung</span>
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-800">
+                        {endDate ? formatDate(endDate) : '—'} · {returnTime}
+                      </div>
+                    </div>
+                    {/* <div>
                       <label htmlFor="detail-start-date" className="block text-sm font-medium text-gray-700 mb-1">Abgabe</label>
                       <input
                         id="detail-start-date"
@@ -545,7 +548,7 @@ export default function ParkingDetailClient({ params }: PageParams) {
                         onChange={(e) => updateTimeParam('return', e.target.value)}
                         className="mt-2 w-full px-3 py-2 rounded-lg border border-gray-200 text-sm"
                       />
-                    </div>
+                    </div> */}
                   </div>
                 </div>
 

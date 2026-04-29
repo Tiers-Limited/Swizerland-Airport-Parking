@@ -10,7 +10,8 @@ import { formatCurrency, calculateDays } from '@/lib/utils';
 import { apiCall } from '@/lib/api';
 import type { ParkingListing, PricingTier } from '@/types';
 import { Icon } from '@/components/ui/Icons';
-
+import BookingDateTimePicker from '@/components/ui/BookingDateTimePicker';
+import dayjs from 'dayjs';
 /** Find a matching pricing tier for the given date range. */
 function findMatchingTier(tiers: PricingTier[] | undefined, startDate: string, endDate: string): PricingTier | null {
   if (!tiers || !Array.isArray(tiers) || tiers.length === 0 || !startDate || !endDate) return null;
@@ -80,6 +81,20 @@ type SortOption = 'price' | 'rating' | 'distance';
 export default function ZurichSearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+    const initialStartDate = searchParams.get('startDate') || '';
+  const initialEndDate = searchParams.get('endDate') || '';
+  const initialArrival = searchParams.get('arrival') || '10:00';
+  const initialReturn = searchParams.get('return') || '12:00';
+
+  const defaultCheckin = initialStartDate && initialArrival
+    ? dayjs(`${initialStartDate}T${initialArrival}`)
+    : dayjs().add(1, 'day').hour(11).minute(0);
+  const defaultCheckout = initialEndDate && initialReturn
+    ? dayjs(`${initialEndDate}T${initialReturn}`)
+    : dayjs().add(3, 'day').hour(13).minute(0);
+
+  const [checkinDateTime, setCheckinDateTime] = useState<dayjs.Dayjs | null>(defaultCheckin);
+  const [checkoutDateTime, setCheckoutDateTime] = useState<dayjs.Dayjs | null>(defaultCheckout);
   const [listings, setListings] = useState<ParkingListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('price');
@@ -95,9 +110,22 @@ export default function ZurichSearchPage() {
     priceMax: 100,
   });
 
-  const startDate = searchParams.get('startDate') || '';
-  const endDate = searchParams.get('endDate') || '';
+   // Extract current search parameters
+  const startDate = checkinDateTime?.format('YYYY-MM-DD') || '';
+  const endDate = checkoutDateTime?.format('YYYY-MM-DD') || '';
+  const arrivalTime = checkinDateTime?.format('HH:mm') || '';
+  const returnTime = checkoutDateTime?.format('HH:mm') || '';
   const days = startDate && endDate ? calculateDays(startDate, endDate) : 1;
+
+  const updateUrlParams = useCallback(() => {
+    const params = new URLSearchParams();
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    if (arrivalTime) params.set('arrival', arrivalTime);
+    if (returnTime) params.set('return', returnTime);
+    if (sortBy) params.set('sortBy', sortBy);
+    router.replace(`/zurich?${params.toString()}`);
+  }, [startDate, endDate, arrivalTime, returnTime, sortBy, router]);
 
   const updateDateParam = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -109,32 +137,68 @@ export default function ZurichSearchPage() {
     router.replace(`/zurich?${params.toString()}`);
   }, [searchParams, router]);
 
-  useEffect(() => {
-    async function fetchListings() {
-      setIsLoading(true);
-      const params = new URLSearchParams({ airportCode: 'ZRH' });
-      if (startDate) params.set('startDate', startDate);
-      if (endDate) params.set('endDate', endDate);
-      if (sortBy) params.set('sortBy', sortBy);
-
-      const res = await apiCall<{ listings: Record<string, unknown>[]; total: number }>(
-        'GET', `/listings/search?${params}`
-      );
-      console.log("Res", res)
-      if (res.success && res.data) {
-        const rawListings = res.data.listings || [];
-        setListings(rawListings.map(mapBackendListing));
-      }
-      setIsLoading(false);
+   const fetchListings = useCallback(async () => {
+    if (!startDate || !endDate) {
+      // Optionally show a toast or alert
+      console.warn('Please select both check-in and check-out dates');
+      return;
     }
-    fetchListings();
-  }, [startDate, endDate, sortBy]);
+    setIsLoading(true);
+    const params = new URLSearchParams({ airportCode: 'ZRH' });
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    if (sortBy) params.set('sortBy', sortBy);
+
+    const res = await apiCall<{ listings: Record<string, unknown>[]; total: number }>(
+      'GET', `/listings/search?${params}`
+    );
+    if (res.success && res.data) {
+      const rawListings = res.data.listings || [];
+      setListings(rawListings.map(mapBackendListing));
+      // Update URL after successful fetch
+      updateUrlParams();
+    }
+    setIsLoading(false);
+  }, [startDate, endDate, sortBy, updateUrlParams]);
+
+  // Initial fetch on mount using URL parameters (if present)
+  useEffect(() => {
+    if (initialStartDate && initialEndDate) {
+      fetchListings();
+    }
+  }, []); // Only once
 
   useEffect(() => {
     sessionStorage.setItem('zurich-list-view', viewMode);
   }, [viewMode]);
 
-  const sortedListings = [...listings].sort((a, b) => {
+
+  // useEffect(() => {
+  //   async function fetchListings() {
+  //     setIsLoading(true);
+  //     const params = new URLSearchParams({ airportCode: 'ZRH' });
+  //     if (startDate) params.set('startDate', startDate);
+  //     if (endDate) params.set('endDate', endDate);
+  //     if (sortBy) params.set('sortBy', sortBy);
+
+  //     const res = await apiCall<{ listings: Record<string, unknown>[]; total: number }>(
+  //       'GET', `/listings/search?${params}`
+  //     );
+  //     console.log("Res", res)
+  //     if (res.success && res.data) {
+  //       const rawListings = res.data.listings || [];
+  //       setListings(rawListings.map(mapBackendListing));
+  //     }
+  //     setIsLoading(false);
+  //   }
+  //   fetchListings();
+  // }, [startDate, endDate, sortBy]);
+
+  // useEffect(() => {
+  //   sessionStorage.setItem('zurich-list-view', viewMode);
+  // }, [viewMode]);
+
+ const sortedListings = [...listings].sort((a, b) => {
     switch (sortBy) {
       case 'price': return a.pricePerDay - b.pricePerDay;
       case 'rating': return (b.rating || 0) - (a.rating || 0);
@@ -150,7 +214,7 @@ export default function ZurichSearchPage() {
     if (listing.pricePerDay > filters.priceMax) return false;
     return true;
   });
-
+  
   const getAmenityBadges = (amenities: ParkingListing['amenities']) => {
     const badges: { label: string; icon: React.ReactNode }[] = [];
     if (amenities.covered) badges.push({ label: 'Überdacht', icon: <Icon name="Home" className="h-3.5 w-3.5" /> });
@@ -266,7 +330,7 @@ export default function ZurichSearchPage() {
                         </>
                       );
                     })()}
-                    <Link href={`/parking/${listing.id}?startDate=${startDate}&endDate=${endDate}`}>
+                    <Link href={`/parking/${listing.id}?startDate=${startDate}&endDate=${endDate}&arrival=${arrivalTime}&return=${returnTime}`}>
                       <Button size="sm" className={viewMode === 'grid' ? 'w-full' : ''}>Details ansehen</Button>
                     </Link>
                   </div>
@@ -285,7 +349,7 @@ export default function ZurichSearchPage() {
 
       {/* Page Header */}
       <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto flex flex-col w-full px-4 gap-5 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -296,7 +360,7 @@ export default function ZurichSearchPage() {
                 {startDate && endDate && <> für {days} {days === 1 ? 'Tag' : 'Tage'}</>}
               </p>
             </div>
-            <div className="flex items-center gap-3 flex-wrap justify-end">
+            <div className="flex items-center flex-1 gap-3 flex-wrap justify-end">
               <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
                 <Button
                   type="button"
@@ -319,27 +383,29 @@ export default function ZurichSearchPage() {
                   Grid
                 </Button>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <label htmlFor="search-from" className="text-gray-500">Von:</label>
-                <input
-                  id="search-from"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => updateDateParam('startDate', e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm"
-                />
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <label htmlFor="search-to" className="text-gray-500">Bis:</label>
-                <input
-                  id="search-to"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => updateDateParam('endDate', e.target.value)}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm"
-                />
-              </div>
+              
             </div>
+           
+          </div>
+           <div className=" flex flex-col lg:flex-row flex-wrap lg:items-end gap-3 w-full ">
+            <BookingDateTimePicker
+              onChange={(checkin, checkout) => {
+                setCheckinDateTime(checkin);
+                setCheckoutDateTime(checkout);
+              }}
+              defaultCheckin={defaultCheckin}
+              defaultCheckout={defaultCheckout}
+            />
+            <Button
+                onClick={fetchListings}
+                className="flex-1 lg:max-w-xs h-fit"
+                size="lg"
+                leftIcon={<Icon name="Search" className="h-4 w-4" />}
+                isLoading={isLoading}
+              >
+                Suchen
+              </Button>
+           
           </div>
         </div>
       </div>

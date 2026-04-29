@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState,useCallback,useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -9,7 +9,9 @@ import "react-datepicker/dist/react-datepicker.css";
 import { Header, Footer } from "@/components/layout";
 import { Button } from "@/components/ui";
 import { buildQueryString, formatDateForInput } from "@/lib/utils";
+import BookingDateTimePicker from '@/components/ui/BookingDateTimePicker';
 
+import dayjs from 'dayjs';
 export default function HomePage() {
   const router = useRouter();
   const [checkIn, setCheckIn] = useState<Date | null>(null);
@@ -19,18 +21,46 @@ export default function HomePage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [checkinDateTime, setCheckinDateTime] = useState<dayjs.Dayjs | null>(null);
+  const [checkoutDateTime, setCheckoutDateTime] = useState<dayjs.Dayjs | null>(null);
+  const [checkinDisplay, setCheckinDisplay] = useState('');
+  const [checkoutDisplay, setCheckoutDisplay] = useState('');
+// In your page.tsx
+const defaultCheckin = useMemo(() => dayjs().add(1, 'day').hour(11).minute(0), []);
+const defaultCheckout = useMemo(() => dayjs().add(3, 'day').hour(13).minute(0), []);
 
-  const handleSearch = (e: { preventDefault: () => void }) => {
+const handleBookingChange = useCallback((checkin: dayjs.Dayjs | null, checkout: dayjs.Dayjs | null) => {
+  setCheckinDateTime(checkin);
+  setCheckoutDateTime(checkout);
+  setCheckinDisplay(checkin?.format('DD MMM YYYY, HH:mm') || '');
+  setCheckoutDisplay(checkout?.format('DD MMM YYYY, HH:mm') || '');
+}, []);
+
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!checkIn || !checkOut) return;
-    const query = buildQueryString({
-      startDate: formatDateForInput(checkIn),
-      endDate: formatDateForInput(checkOut),
-      arrival: checkInTime,
-      return: checkOutTime,
-    });
-    router.push(`/zurich?${query}`);
+    if (!checkinDateTime || !checkoutDateTime) return;
+
+    // Your existing query logic...
+    const startDate = checkinDateTime.format('YYYY-MM-DD');
+    const endDate = checkoutDateTime.format('YYYY-MM-DD');
+    const arrival = checkinDateTime.format('HH:mm');
+    const returnTime = checkoutDateTime.format('HH:mm');
+
+    router.push(`/zurich?startDate=${startDate}&endDate=${endDate}&arrival=${arrival}&return=${returnTime}`);
+    
   };
+
+  // const handleSearch = (e: { preventDefault: () => void }) => {
+  //   e.preventDefault();
+  //   if (!checkIn || !checkOut) return;
+  //   const query = buildQueryString({
+  //     startDate: formatDateForInput(checkIn),
+  //     endDate: formatDateForInput(checkOut),
+  //     arrival: checkInTime,
+  //     return: checkOutTime,
+  //   });
+  //   router.push(`/zurich?${query}`);
+  // };
 
   const advantages = [
     {
@@ -220,74 +250,18 @@ export default function HomePage() {
               </h1>
 
               <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 shadow-soft">
-                <form onSubmit={handleSearch} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label
-                        htmlFor="hero-checkin"
-                        className="block text-sm font-medium text-gray-700 mb-1.5"
-                      >
-                        Check-In
-                      </label>
-                      <DatePicker
-                        id="hero-checkin"
-                        selected={checkIn}
-                        onChange={(date: Date | null) => {
-                          setCheckIn(date);
-                          if (date && checkOut && checkOut <= date)
-                            setCheckOut(null);
-                        }}
-                        selectsStart
-                        startDate={checkIn}
-                        endDate={checkOut}
-                        minDate={new Date()}
-                        dateFormat="dd.MM.yyyy"
-                        placeholderText="Datum wählen"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-primary-500 focus:ring-0 text-gray-900 text-sm transition-colors bg-white"
-                        autoComplete="off"
-                      />
-                      <input
-                        type="time"
-                        value={checkInTime}
-                        onChange={(e) => setCheckInTime(e.target.value)}
-                        className="mt-2 w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-primary-500 focus:ring-0 text-gray-900 text-sm transition-colors bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label
-                        htmlFor="hero-checkout"
-                        className="block text-sm font-medium text-gray-700 mb-1.5"
-                      >
-                        Check-Out
-                      </label>
-                      <DatePicker
-                        id="hero-checkout"
-                        selected={checkOut}
-                        onChange={(date: Date | null) => setCheckOut(date)}
-                        onInputClick={() => setCheckoutOpen(true)}
-                        selectsEnd
-                        startDate={checkIn}
-                        endDate={checkOut}
-                        minDate={checkIn || new Date()}
-                        dateFormat="dd.MM.yyyy"
-                        placeholderText="Datum wählen"
-                        className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-primary-500 focus:ring-0 text-gray-900 text-sm transition-colors bg-white"
-                        autoComplete="off"
-                        open={checkoutOpen}
-                        onCalendarClose={() => setCheckoutOpen(false)}
-                      />
-                      <input
-                        type="time"
-                        value={checkOutTime}
-                        onChange={(e) => setCheckOutTime(e.target.value)}
-                        className="mt-2 w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:border-primary-500 focus:ring-0 text-gray-900 text-sm transition-colors bg-white"
-                      />
-                    </div>
-                  </div>
-                  <Button type="submit" className="w-full" size="lg">
-                    Preis prüfen
-                  </Button>
-                </form>
+               <form onSubmit={handleSearch} className="space-y-4">
+ <BookingDateTimePicker
+        onChange={handleBookingChange}
+        defaultCheckin={defaultCheckin}
+        defaultCheckout={defaultCheckout}
+      />
+
+     
+  <Button type="submit" className="w-full" size="lg">
+    Preis prüfen
+  </Button>
+</form>
               </div>
             </div>
           </div>
